@@ -290,7 +290,7 @@ function TestimonialsEditor({ testimonials, onSaved, getText, saveConfig, onConf
     toast.success("Deleted"); onSaved();
   };
   const update = async (id: string, field: string, value: any) => {
-    await supabase.from("sip_testimonials").update({ [field]: value }).eq("id", id);
+    await supabase.from("sip_testimonials").update({ [field]: value } as any).eq("id", id);
     onSaved();
   };
 
@@ -337,7 +337,7 @@ function JourneyEditor({ steps, onSaved, getText, saveConfig, onConfigSaved }: {
     toast.success("Deleted"); onSaved();
   };
   const update = async (id: string, field: string, value: any) => {
-    await supabase.from("sip_journey_steps").update({ [field]: value }).eq("id", id);
+    await supabase.from("sip_journey_steps").update({ [field]: value } as any).eq("id", id);
     onSaved();
   };
 
@@ -379,7 +379,7 @@ function FaqEditor({ faqItems, onSaved, getText, saveConfig, onConfigSaved }: { 
     toast.success("Deleted"); onSaved();
   };
   const update = async (id: string, field: string, value: any) => {
-    await supabase.from("sip_faq_items").update({ [field]: value }).eq("id", id);
+    await supabase.from("sip_faq_items").update({ [field]: value } as any).eq("id", id);
     onSaved();
   };
 
