@@ -1757,6 +1757,87 @@ export type Database = {
           },
         ]
       }
+      program_settings: {
+        Row: {
+          about_paragraphs: Json | null
+          about_section_title: string | null
+          active_member_funnel_id: string | null
+          active_register_landing_page_id: string | null
+          favicon_url: string | null
+          feature_badges: Json | null
+          feature_cards: Json | null
+          hero_headline_line1: string | null
+          hero_headline_line2: string | null
+          hero_pill_text: string | null
+          hero_subtext: string | null
+          id: string
+          intro_video_url: string | null
+          logo_url: string | null
+          primary_color: string | null
+          program_name: string
+          program_tagline: string | null
+          show_intro_video_button: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          about_paragraphs?: Json | null
+          about_section_title?: string | null
+          active_member_funnel_id?: string | null
+          active_register_landing_page_id?: string | null
+          favicon_url?: string | null
+          feature_badges?: Json | null
+          feature_cards?: Json | null
+          hero_headline_line1?: string | null
+          hero_headline_line2?: string | null
+          hero_pill_text?: string | null
+          hero_subtext?: string | null
+          id?: string
+          intro_video_url?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          program_name?: string
+          program_tagline?: string | null
+          show_intro_video_button?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          about_paragraphs?: Json | null
+          about_section_title?: string | null
+          active_member_funnel_id?: string | null
+          active_register_landing_page_id?: string | null
+          favicon_url?: string | null
+          feature_badges?: Json | null
+          feature_cards?: Json | null
+          hero_headline_line1?: string | null
+          hero_headline_line2?: string | null
+          hero_pill_text?: string | null
+          hero_subtext?: string | null
+          id?: string
+          intro_video_url?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          program_name?: string
+          program_tagline?: string | null
+          show_intro_video_button?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "program_settings_active_member_funnel_id_fkey"
+            columns: ["active_member_funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "program_settings_active_register_landing_page_id_fkey"
+            columns: ["active_register_landing_page_id"]
+            isOneToOne: false
+            referencedRelation: "landing_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sip_faq_items: {
         Row: {
           answer: string
@@ -2420,7 +2501,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2548,7 +2629,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "member"],
     },
   },
 } as const
