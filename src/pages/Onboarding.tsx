@@ -30,7 +30,7 @@ const Onboarding = () => {
         onboarding_data: { company: data.company, team_size: data.teamSize, source: data.source },
       }).eq("id", user.id);
       await refreshProfile();
-      toast.success("Welcome to Nevorai Flow!");
+      toast.success("Welcome to Smart Income Program!");
       navigate("/dashboard");
     } finally {
       setLoading(false);

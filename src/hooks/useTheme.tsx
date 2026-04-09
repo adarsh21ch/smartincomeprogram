@@ -9,13 +9,13 @@ const ThemeContext = createContext<{
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem("nevorai-theme");
+    const saved = localStorage.getItem("sip-theme");
     return (saved === "light" || saved === "dark") ? saved : "dark";
   });
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("nevorai-theme", theme);
+    localStorage.setItem("sip-theme", theme);
   }, [theme]);
 
   const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
