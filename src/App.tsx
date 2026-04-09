@@ -38,8 +38,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminVideosPage from "./pages/AdminVideosPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminKYCPage from "./pages/AdminKYCPage";
-import AdminSubscriptionsPage from "./pages/AdminSubscriptionsPage";
 import AdminSettingsPage from "./pages/AdminSettingsPage";
+import AdminInviteCodesPage from "./pages/AdminInviteCodesPage";
 import NotFound from "./pages/NotFound";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
@@ -108,7 +108,7 @@ const App = () => (
               <Route path="/admin/videos" element={<AdminRoute><AdminVideosPage /></AdminRoute>} />
               <Route path="/admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
               <Route path="/admin/kyc" element={<AdminRoute><AdminKYCPage /></AdminRoute>} />
-              <Route path="/admin/subscriptions" element={<AdminRoute><AdminSubscriptionsPage /></AdminRoute>} />
+              <Route path="/admin/invite-codes" element={<AdminRoute><AdminInviteCodesPage /></AdminRoute>} />
               <Route path="/admin/settings" element={<AdminRoute><AdminSettingsPage /></AdminRoute>} />
 
               <Route path="*" element={<NotFound />} />

@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { DashboardLayout } from "./DashboardLayout";
-import { LayoutDashboard, Video, Users, UserCheck, CreditCard, Cog } from "lucide-react";
+import { LayoutDashboard, Video, Users, UserCheck, Cog, Ticket } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const adminTabs = [
@@ -8,7 +8,7 @@ const adminTabs = [
   { icon: Video, label: "Videos", path: "/admin/videos" },
   { icon: Users, label: "Users", path: "/admin/users" },
   { icon: UserCheck, label: "KYC", path: "/admin/kyc" },
-  { icon: CreditCard, label: "Subscriptions", path: "/admin/subscriptions" },
+  { icon: Ticket, label: "Invite Codes", path: "/admin/invite-codes" },
   { icon: Cog, label: "Settings", path: "/admin/settings" },
 ];
 
@@ -18,7 +18,6 @@ export const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Admin horizontal nav */}
         <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b border-border -mx-4 md:-mx-8 px-4 md:px-8">
           {adminTabs.map((tab) => {
             const active = tab.path === "/admin"

@@ -20,13 +20,12 @@ export const Navbar = () => {
 
         <div className="hidden md:flex items-center gap-6">
           <Link to={sectionLink("#features")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</Link>
-          <Link to={sectionLink("#pricing")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
           <Link to={sectionLink("#faq")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">FAQ</Link>
           <Link to="/auth">
             <Button variant="ghost" size="sm">Log in</Button>
           </Link>
           <Link to="/auth?tab=signup">
-            <Button variant="hero" size="sm">Start Free</Button>
+            <Button variant="hero" size="sm">Get Started</Button>
           </Link>
         </div>
 
@@ -38,13 +37,12 @@ export const Navbar = () => {
       {open && (
         <div className="md:hidden glass-card border-t border-white/[0.06] p-4 flex flex-col gap-3">
           <Link to={sectionLink("#features")} className="text-sm text-muted-foreground py-2" onClick={() => setOpen(false)}>Features</Link>
-          <Link to={sectionLink("#pricing")} className="text-sm text-muted-foreground py-2" onClick={() => setOpen(false)}>Pricing</Link>
           <Link to={sectionLink("#faq")} className="text-sm text-muted-foreground py-2" onClick={() => setOpen(false)}>FAQ</Link>
           <Link to="/auth" onClick={() => setOpen(false)}>
             <Button variant="outline" className="w-full">Log in</Button>
           </Link>
           <Link to="/auth?tab=signup" onClick={() => setOpen(false)}>
-            <Button variant="hero" className="w-full">Start Free</Button>
+            <Button variant="hero" className="w-full">Get Started</Button>
           </Link>
         </div>
       )}
