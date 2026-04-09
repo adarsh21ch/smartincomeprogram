@@ -122,6 +122,7 @@ const PublicLandingPage = () => {
   }
 
   const sections = (page.sections as any[]) || [];
+  const themeColor = page.theme_color || "#D4A017";
   const bgClass = page.background_style === "light"
     ? "bg-background text-foreground"
     : page.background_style === "gradient"
@@ -293,6 +294,20 @@ const PublicLandingPage = () => {
                   {page.description && <p className="text-lg text-muted-foreground">{page.description}</p>}
                 </div>
               )}
+
+              {/* Speaker section from dedicated fields */}
+              {(page.speaker_name || page.speaker_photo_url) && (
+                <Card className="p-6 flex flex-col sm:flex-row gap-4 items-center">
+                  {page.speaker_photo_url && (
+                    <img src={page.speaker_photo_url} alt={page.speaker_name} className="w-24 h-24 rounded-full object-cover" />
+                  )}
+                  <div>
+                    <h3 className="text-xl font-bold">{page.speaker_name}</h3>
+                    {page.speaker_role && <p className="text-sm text-muted-foreground">{page.speaker_role}</p>}
+                    {page.speaker_bio && <p className="mt-2 text-sm">{page.speaker_bio}</p>}
+                  </div>
+                </Card>
+              )}
             </div>
 
             <div className="lg:col-span-2 lg:sticky lg:top-8">
@@ -345,7 +360,7 @@ const PublicLandingPage = () => {
                     </div>
                   ))}
 
-                  <Button type="submit" className="w-full" disabled={submitting} style={{ backgroundColor: page.theme_color }}>
+                  <Button type="submit" className="w-full" disabled={submitting} style={{ backgroundColor: themeColor }}>
                     {submitting ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
                     {page.form_button_text} →
                   </Button>
