@@ -62,6 +62,11 @@ export default {
           foreground: "hsl(var(--card-foreground))",
         },
         surface: "hsl(var(--surface))",
+        gold: {
+          DEFAULT: "#D4A017",
+          light: "#F0C040",
+          dark: "#A07810",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
