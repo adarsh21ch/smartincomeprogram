@@ -31,13 +31,10 @@ export const Logo = ({ size = "default" }: { size?: "sm" | "default" | "lg" }) =
           className={sizes[size].accent}
           style={{
             fontFamily: "'Plus Jakarta Sans', 'Sora', system-ui, sans-serif",
-            fontWeight: 800,
-            fontStyle: "italic",
+            fontWeight: 700,
             color: "#D4A017",
-            letterSpacing: "-0.04em",
+            letterSpacing: "-0.025em",
             lineHeight: 1,
-            transform: "skewX(-6deg) translateX(1px)",
-            display: "inline-block",
           }}
         >
           Program
