@@ -243,7 +243,7 @@ function SpeakersEditor({ speakers, onSaved, getText, saveConfig, onConfigSaved 
     toast.success("Deleted"); onSaved();
   };
   const updateSpeaker = async (id: string, field: string, value: any) => {
-    await supabase.from("sip_speakers").update({ [field]: value }).eq("id", id);
+    await supabase.from("sip_speakers").update({ [field]: value } as any).eq("id", id);
     onSaved();
   };
 
