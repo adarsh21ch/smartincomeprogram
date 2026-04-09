@@ -122,6 +122,7 @@ const PublicLandingPage = () => {
   }
 
   const sections = (page.sections as any[]) || [];
+  const themeColor = page.theme_color || "#D4A017";
   const bgClass = page.background_style === "light"
     ? "bg-background text-foreground"
     : page.background_style === "gradient"
@@ -292,6 +293,20 @@ const PublicLandingPage = () => {
                   <h1 className="text-3xl md:text-4xl font-bold">{page.title}</h1>
                   {page.description && <p className="text-lg text-muted-foreground">{page.description}</p>}
                 </div>
+              )}
+
+              {/* Speaker section from dedicated fields */}
+              {(page.speaker_name || page.speaker_photo_url) && (
+                <Card className="p-6 flex flex-col sm:flex-row gap-4 items-center">
+                  {page.speaker_photo_url && (
+                    <img src={page.speaker_photo_url} alt={page.speaker_name} className="w-24 h-24 rounded-full object-cover" />
+                  )}
+                  <div>
+                    <h3 className="text-xl font-bold">{page.speaker_name}</h3>
+                    {page.speaker_role && <p className="text-sm text-muted-foreground">{page.speaker_role}</p>}
+                    {page.speaker_bio && <p className="mt-2 text-sm">{page.speaker_bio}</p>}
+                  </div>
+                </Card>
               )}
             </div>
 
