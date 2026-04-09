@@ -1,11 +1,11 @@
 {
   "name": "Smart Income Program",
   "short_name": "Smart Income",
-  "description": "Smart Video Funnels for Entrepreneurs — Capture leads, collect payments, guide your audience.",
+  "description": "Private members community — Build your income, build your future.",
   "start_url": "/dashboard",
   "display": "standalone",
-  "background_color": "#0a0a0f",
-  "theme_color": "#22c55e",
+  "background_color": "#050505",
+  "theme_color": "#D4A017",
   "orientation": "portrait-primary",
   "icons": [
     {
@@ -33,7 +33,7 @@
       "purpose": "maskable"
     },
     {
-      "src": "/logo.png",
+      "src": "/favicon.png",
       "sizes": "64x64",
       "type": "image/png"
     }
