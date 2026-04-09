@@ -36,14 +36,14 @@ export const SipCta = ({ getText }: Props) => {
           <p className="text-base mb-10" style={{ color: "#F5F0E8", opacity: 0.7 }}>
             {subtitle}
           </p>
-          <Link to={buttonUrl}>
+          <a href="https://smartincomeprogram.in/l/smart-income-program" target="_blank" rel="noopener noreferrer">
             <button
               className="px-10 py-4 rounded-lg text-base font-semibold transition-all hover:brightness-110"
               style={{ background: "linear-gradient(135deg, #D4A017, #A07810)", color: "#000" }}
             >
               {buttonText}
             </button>
-          </Link>
+          </a>
         </motion.div>
       </div>
     </section>

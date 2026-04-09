@@ -62,14 +62,14 @@ export const SipCommunity = ({ getText }: Props) => {
           ))}
         </div>
 
-        <Link to={ctaUrl}>
+        <a href="https://smartincomeprogram.in/l/smart-income-program" target="_blank" rel="noopener noreferrer">
           <button
             className="px-8 py-3.5 rounded-lg text-base font-semibold transition-all hover:brightness-110"
             style={{ background: "linear-gradient(135deg, #D4A017, #A07810)", color: "#000" }}
           >
             {ctaText}
           </button>
-        </Link>
+        </a>
       </div>
     </section>
   );

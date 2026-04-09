@@ -44,14 +44,14 @@ export const SipHero = ({ getText }: Props) => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link to="/auth?tab=signup">
+            <a href="https://smartincomeprogram.in/l/smart-income-program" target="_blank" rel="noopener noreferrer">
               <button
                 className="px-8 py-3.5 rounded-lg text-base font-semibold transition-all hover:brightness-110"
                 style={{ background: "linear-gradient(135deg, #D4A017, #A07810)", color: "#000" }}
               >
                 {primaryBtn}
               </button>
-            </Link>
+            </a>
             {secondaryBtn && (
               <a
                 href={secondaryUrl || "#"}
