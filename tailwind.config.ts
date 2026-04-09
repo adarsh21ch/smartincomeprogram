@@ -16,6 +16,8 @@ export default {
       fontFamily: {
         heading: ["Sora", "system-ui", "sans-serif"],
         body: ["DM Sans", "system-ui", "sans-serif"],
+        display: ["Playfair Display", "serif"],
+        sans: ["Inter", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
