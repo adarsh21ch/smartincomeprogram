@@ -87,15 +87,15 @@ const App = () => (
               <Route path="/home/courses" element={<MemberRoute><MemberHome tab="courses" /></MemberRoute>} />
               <Route path="/profile" element={<MemberRoute><MemberProfile /></MemberRoute>} />
 
-              {/* Legacy redirects */}
+              {/* Legacy redirects — preserve sub-paths */}
               <Route path="/dashboard" element={<Navigate to="/home" replace />} />
-              <Route path="/funnels" element={<Navigate to="/admin/funnels" replace />} />
-              <Route path="/landing-pages" element={<Navigate to="/admin/landing-pages" replace />} />
-              <Route path="/videos" element={<Navigate to="/admin/videos" replace />} />
-              <Route path="/leads" element={<Navigate to="/admin/leads" replace />} />
+              <Route path="/funnels/*" element={<LegacyRedirect prefix="/admin/funnels" />} />
+              <Route path="/landing-pages/*" element={<LegacyRedirect prefix="/admin/landing-pages" />} />
+              <Route path="/videos/*" element={<LegacyRedirect prefix="/admin/videos" />} />
+              <Route path="/leads/*" element={<LegacyRedirect prefix="/admin/leads" />} />
               <Route path="/payments" element={<Navigate to="/home" replace />} />
-              <Route path="/analytics" element={<Navigate to="/admin/analytics" replace />} />
-              <Route path="/live" element={<Navigate to="/admin/live" replace />} />
+              <Route path="/analytics/*" element={<LegacyRedirect prefix="/admin/analytics" />} />
+              <Route path="/live/*" element={<LegacyRedirect prefix="/admin/live" />} />
 
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminRoute><Navigate to="/admin/dashboard" replace /></AdminRoute>} />
