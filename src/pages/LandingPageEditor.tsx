@@ -182,6 +182,14 @@ const LandingPageEditor = () => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const payload = { ...form, owner_id: user!.id };
+      // Auto-generate slug from title if not manually set
+      if (!payload.slug && payload.title) {
+        payload.slug = generateSlug(payload.title);
+      }
+      // Add unique suffix for new pages to prevent conflicts
+      if (!isEdit && payload.slug) {
+        payload.slug = `${payload.slug}-${Date.now().toString(36).slice(-4)}`;
+      }
       if (isEdit) {
         const { error } = await supabase.from("landing_pages").update(payload as any).eq("id", id!);
         if (error) throw error;
