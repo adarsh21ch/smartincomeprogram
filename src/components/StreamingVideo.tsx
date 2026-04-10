@@ -274,8 +274,10 @@ export const StreamingVideo = forwardRef<HTMLVideoElement, StreamingVideoProps>(
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
+      userPausedRef.current = false;
       video.play().catch(() => {});
     } else {
+      userPausedRef.current = true;
       video.pause();
     }
   }, []);
