@@ -123,11 +123,6 @@ const PublicLandingPage = () => {
 
   const sections = (page.sections as any[]) || [];
   const themeColor = page.theme_color || "#D4A017";
-  const bgClass = page.background_style === "light"
-    ? "bg-background text-foreground"
-    : page.background_style === "gradient"
-    ? "bg-gradient-to-br from-background to-muted text-foreground"
-    : "bg-card text-card-foreground";
 
   const formFields = [
     { key: "name", label: "Full Name", enabled: page.field_name_enabled, required: page.field_name_required },
