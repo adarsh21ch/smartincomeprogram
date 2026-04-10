@@ -123,12 +123,12 @@ Deno.serve(async (req) => {
     // Fire confirmation email (non-blocking)
     if (page.send_confirmation_email && email) {
       const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-      const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
       fetch(`${supabaseUrl}/functions/v1/send-landing-page-confirmation`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${anonKey}`,
+          'Authorization': `Bearer ${serviceKey}`,
         },
         body: JSON.stringify({
           registration_id: reg.id,
