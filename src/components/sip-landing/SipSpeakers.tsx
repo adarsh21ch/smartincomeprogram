@@ -42,12 +42,12 @@ export const SipSpeakers = ({ getText, speakers }: Props) => {
                   src={speaker.photo_url}
                   alt={speaker.name}
                   className="w-24 h-24 rounded-full object-cover mx-auto mb-4"
-                  style={{ border: "2px solid rgba(212,160,23,0.4)" }}
+                  style={{ border: "2px solid rgba(197,147,14,0.4)" }}
                 />
               ) : (
                 <div
                   className="w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold"
-                  style={{ background: "#181818", border: "2px solid rgba(212,160,23,0.4)", color: "#D4A017" }}
+                  style={{ background: "#181818", border: "2px solid rgba(197,147,14,0.4)", color: "#C5930E" }}
                 >
                   {speaker.name.charAt(0)}
                 </div>
@@ -59,7 +59,7 @@ export const SipSpeakers = ({ getText, speakers }: Props) => {
               >
                 {speaker.name}
               </h3>
-              <p className="text-sm mb-4" style={{ color: "#F0C040" }}>{speaker.title}</p>
+              <p className="text-sm mb-4" style={{ color: "#D4A520" }}>{speaker.title}</p>
 
               <div className="sip-gold-divider mb-4" />
 
@@ -73,7 +73,7 @@ export const SipSpeakers = ({ getText, speakers }: Props) => {
                     <div key={j} className="flex items-start gap-2">
                       <span
                         className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0"
-                        style={{ background: "#D4A017" }}
+                        style={{ background: "#C5930E" }}
                       />
                       <span className="text-xs" style={{ color: "#888" }}>{a}</span>
                     </div>

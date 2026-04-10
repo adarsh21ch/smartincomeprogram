@@ -196,7 +196,7 @@
 
   .sip-gold-divider {
     height: 1px;
-    background: linear-gradient(90deg, transparent, #D4A017 30%, #D4A017 70%, transparent);
+    background: linear-gradient(90deg, transparent, #C5930E 30%, #C5930E 70%, transparent);
     opacity: 0.4;
   }
 
@@ -205,10 +205,10 @@
     align-items: center;
     gap: 6px;
     padding: 6px 16px;
-    border: 1px solid rgba(212,160,23,0.2);
+    border: 1px solid rgba(197,147,14,0.2);
     border-radius: 100px;
-    background: rgba(212,160,23,0.08);
-    color: #F0C040;
+    background: rgba(197,147,14,0.08);
+    color: #D4A520;
     font-size: 12px;
     font-weight: 500;
     letter-spacing: 0.08em;
@@ -217,7 +217,7 @@
 
   .sip-hero-bg {
     background:
-      radial-gradient(ellipse 60% 50% at 50% 0%, rgba(212,160,23,0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 50% at 50% 0%, rgba(197,147,14,0.08) 0%, transparent 70%),
       #050505;
   }
 
@@ -227,19 +227,19 @@
 
   .sip-card {
     background: #111111;
-    border: 1px solid rgba(212,160,23,0.12);
+    border: 1px solid rgba(197,147,14,0.12);
     border-radius: 20px;
     transition: all 0.3s;
   }
 
   .sip-card:hover {
-    border-color: rgba(212,160,23,0.35);
-    box-shadow: 0 0 40px rgba(212,160,23,0.08);
+    border-color: rgba(197,147,14,0.35);
+    box-shadow: 0 0 40px rgba(197,147,14,0.08);
     transform: translateY(-3px);
   }
 
   .sip-gold-glow {
-    background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(212,160,23,0.06) 0%, transparent 70%);
+    background: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(197,147,14,0.06) 0%, transparent 70%);
   }
 
   .sip-community-bg {

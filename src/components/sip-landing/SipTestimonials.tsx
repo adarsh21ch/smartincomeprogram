@@ -34,7 +34,7 @@ export const SipTestimonials = ({ getText, testimonials }: Props) => {
               className="relative p-7"
               style={{
                 background: "#111111",
-                border: "1px solid rgba(212,160,23,0.1)",
+                border: "1px solid rgba(197,147,14,0.1)",
                 borderRadius: "16px",
               }}
               initial={{ opacity: 0, y: 20 }}
@@ -45,14 +45,14 @@ export const SipTestimonials = ({ getText, testimonials }: Props) => {
               {/* Decorative quote */}
               <span
                 className="absolute top-4 left-6 text-6xl leading-none select-none"
-                style={{ color: "rgba(212,160,23,0.15)", fontFamily: "'Playfair Display', serif" }}
+                style={{ color: "rgba(197,147,14,0.15)", fontFamily: "'Playfair Display', serif" }}
               >
                 "
               </span>
 
               <div className="flex gap-0.5 mb-3">
                 {Array.from({ length: t.rating }).map((_, j) => (
-                  <Star key={j} size={14} fill="#D4A017" stroke="#D4A017" />
+                  <Star key={j} size={14} fill="#C5930E" stroke="#C5930E" />
                 ))}
               </div>
 
@@ -68,7 +68,7 @@ export const SipTestimonials = ({ getText, testimonials }: Props) => {
                 ) : (
                   <div
                     className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
-                    style={{ background: "#181818", color: "#D4A017" }}
+                    style={{ background: "#181818", color: "#C5930E" }}
                   >
                     {t.name.charAt(0)}
                   </div>

@@ -37,7 +37,7 @@ export const SipHero = ({ getText }: Props) => {
               width={512}
               height={512}
               className="w-20 h-20 md:w-48 md:h-48 lg:w-64 lg:h-64 xl:w-72 xl:h-72 object-contain drop-shadow-2xl"
-              style={{ filter: "drop-shadow(0 0 30px rgba(212,160,23,0.2))" }}
+              style={{ filter: "drop-shadow(0 0 30px rgba(197,147,14,0.2))" }}
             />
           </motion.div>
 
@@ -56,7 +56,7 @@ export const SipHero = ({ getText }: Props) => {
             >
               {line1}
               <br />
-              <span style={{ color: "#D4A017" }}>{line2}</span>
+              <span style={{ color: "#C5930E" }}>{line2}</span>
             </h1>
 
             <p
@@ -71,7 +71,7 @@ export const SipHero = ({ getText }: Props) => {
               <Link to="/auth">
                 <button
                   className="px-8 py-3.5 rounded-lg text-base font-medium transition-all hover:bg-white/5"
-                  style={{ border: "1px solid rgba(212,160,23,0.4)", color: "#F0C040" }}
+                  style={{ border: "1px solid rgba(197,147,14,0.4)", color: "#D4A520" }}
                 >
                   Login / Sign Up
                 </button>
@@ -103,7 +103,7 @@ const RegisterButton = ({ settings }: { settings: any }) => {
     <Link to={url}>
       <button
         className="px-8 py-3.5 rounded-lg text-base font-semibold transition-all hover:brightness-110"
-        style={{ background: "linear-gradient(135deg, #D4A017, #A07810)", color: "#000" }}
+        style={{ background: "linear-gradient(135deg, #C5930E, #8B6914)", color: "#000" }}
       >
         Register for Program →
       </button>

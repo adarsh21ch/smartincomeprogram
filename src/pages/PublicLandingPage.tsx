@@ -122,7 +122,7 @@ const PublicLandingPage = () => {
   }
 
   const sections = (page.sections as any[]) || [];
-  const themeColor = page.theme_color || "#D4A017";
+  const themeColor = page.theme_color || "#C5930E";
   const displayPos = page.testimonials_display_position || "post_registration";
   const showTestimonialsOnRegistration = page.testimonials_enabled && testimonials.length > 0 && (displayPos === "registration" || displayPos === "both");
   const showTestimonialsPostRegistration = page.testimonials_enabled && testimonials.length > 0 && (displayPos === "post_registration" || displayPos === "both");
@@ -228,7 +228,7 @@ const PublicLandingPage = () => {
   return (
     <div className="sip-landing min-h-screen flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-center px-4 md:px-8 py-4" style={{ borderBottom: '1px solid rgba(212,160,23,0.15)' }}>
+      <header className="flex items-center justify-center px-4 md:px-8 py-4" style={{ borderBottom: '1px solid rgba(197,147,14,0.15)' }}>
         <Logo size="sm" />
       </header>
 
@@ -257,8 +257,8 @@ const PublicLandingPage = () => {
               </>
             ) : (
               <div className="sip-card p-12 text-center space-y-3">
-                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto" style={{ background: 'rgba(212,160,23,0.15)' }}>
-                  <Check style={{ color: '#D4A017' }} size={32} />
+                <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto" style={{ background: 'rgba(197,147,14,0.15)' }}>
+                  <Check style={{ color: '#C5930E' }} size={32} />
                 </div>
                 <h2 className="text-2xl font-bold" style={{ color: '#F5F0E8' }}>You're Registered!</h2>
                 <p style={{ color: '#888' }}>Thank you for registering. We'll see you at the session!</p>
@@ -276,7 +276,7 @@ const PublicLandingPage = () => {
             {page.linked_funnel_id && (
               <button
                 className="w-full px-8 py-3.5 rounded-lg text-base font-semibold transition-all hover:brightness-110 flex items-center justify-center gap-2"
-                style={{ background: 'linear-gradient(135deg, #D4A017, #A07810)', color: '#000' }}
+                style={{ background: 'linear-gradient(135deg, #C5930E, #8B6914)', color: '#000' }}
                 onClick={() => window.location.href = `/f/${page.linked_funnel_id}`}
               >
                 Continue to full session journey <ChevronRight size={16} />
@@ -298,7 +298,7 @@ const PublicLandingPage = () => {
               {(page.speaker_name || page.speaker_photo_url) && (
                 <div className="sip-card p-6 flex flex-col sm:flex-row gap-4 items-center">
                   {page.speaker_photo_url && (
-                    <img src={page.speaker_photo_url} alt={page.speaker_name} className="w-24 h-24 rounded-full object-cover" style={{ border: '2px solid rgba(212,160,23,0.3)' }} />
+                    <img src={page.speaker_photo_url} alt={page.speaker_name} className="w-24 h-24 rounded-full object-cover" style={{ border: '2px solid rgba(197,147,14,0.3)' }} />
                   )}
                   <div>
                     <h3 className="text-xl font-bold" style={{ color: '#F5F0E8' }}>{page.speaker_name}</h3>
@@ -323,7 +323,7 @@ const PublicLandingPage = () => {
               <div className="sip-card p-6 space-y-5">
                 <div>
                   <h3 className="text-lg font-bold" style={{ color: '#F5F0E8' }}>{page.form_title}</h3>
-                  <p className="text-sm" style={{ color: '#D4A017' }}>{page.form_subtitle}</p>
+                  <p className="text-sm" style={{ color: '#C5930E' }}>{page.form_subtitle}</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -339,13 +339,13 @@ const PublicLandingPage = () => {
 
                   {formFields.map((f) => (
                     <div key={f.key} className="space-y-1.5">
-                      <Label style={{ color: '#F5F0E8' }}>{f.label} {f.required && <span style={{ color: '#D4A017' }}>*</span>}</Label>
+                      <Label style={{ color: '#F5F0E8' }}>{f.label} {f.required && <span style={{ color: '#C5930E' }}>*</span>}</Label>
                       {(f as any).fieldType === "state_dropdown" ? (
                         <Select
                           value={formData[f.key] || "__none__"}
                           onValueChange={(val) => setFormData((prev) => ({ ...prev, [f.key]: val === "__none__" ? "" : val }))}
                         >
-                          <SelectTrigger className="bg-[#181818] border-[rgba(212,160,23,0.2)] text-white">
+                          <SelectTrigger className="bg-[#181818] border-[rgba(197,147,14,0.2)] text-white">
                             <SelectValue placeholder="Select State" />
                           </SelectTrigger>
                           <SelectContent>
@@ -364,7 +364,7 @@ const PublicLandingPage = () => {
                           value={formData[f.key] || ""}
                           onChange={(e) => setFormData((prev) => ({ ...prev, [f.key]: e.target.value }))}
                           required={f.required}
-                          className="bg-[#181818] border-[rgba(212,160,23,0.2)] text-white placeholder:text-[#555]"
+                          className="bg-[#181818] border-[rgba(197,147,14,0.2)] text-white placeholder:text-[#555]"
                         />
                       )}
                     </div>
@@ -374,7 +374,7 @@ const PublicLandingPage = () => {
                     type="submit"
                     disabled={submitting}
                     className="w-full px-8 py-3.5 rounded-lg text-base font-semibold transition-all hover:brightness-110 disabled:opacity-50 flex items-center justify-center"
-                    style={{ background: 'linear-gradient(135deg, #D4A017, #A07810)', color: '#000' }}
+                    style={{ background: 'linear-gradient(135deg, #C5930E, #8B6914)', color: '#000' }}
                   >
                     {submitting ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
                     {page.form_button_text} →
@@ -390,7 +390,7 @@ const PublicLandingPage = () => {
         )}
       </main>
 
-      <footer className="text-center py-6 text-xs" style={{ color: '#555', borderTop: '1px solid rgba(212,160,23,0.15)' }}>
+      <footer className="text-center py-6 text-xs" style={{ color: '#555', borderTop: '1px solid rgba(197,147,14,0.15)' }}>
         © Smart Income Program · Powered by Smart Income
       </footer>
     </div>
