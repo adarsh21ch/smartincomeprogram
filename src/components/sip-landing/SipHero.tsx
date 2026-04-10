@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useProgramSettings } from "@/hooks/useProgramSettings";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import heroLogo from "@/assets/sip-hero-logo.png";
+import sipLogo from "@/assets/sip-logo.png";
 
 interface Props {
   getText: (section: string, key: string, fallback?: string) => string;
