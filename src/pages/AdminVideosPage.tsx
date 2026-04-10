@@ -258,6 +258,31 @@ const AdminVideosPage = () => {
           onSuccess={() => queryClient.invalidateQueries({ queryKey: ["admin-all-videos"] })}
         />
       )}
+
+      {/* Video Preview Modal */}
+      {previewVideo && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setPreviewVideo(null)}>
+          <div className="relative w-full max-w-4xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium text-white truncate pr-4">{previewVideo.title}</h3>
+              <button onClick={() => setPreviewVideo(null)} className="text-white/70 hover:text-white p-1">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="aspect-video rounded-xl overflow-hidden bg-black">
+              <video
+                src={previewVideo.url}
+                controls
+                autoPlay
+                playsInline
+                preload="auto"
+                controlsList="nodownload"
+                className="w-full h-full"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 };
