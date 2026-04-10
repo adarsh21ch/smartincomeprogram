@@ -47,8 +47,32 @@ export const uploadVideoToR2 = async ({
     });
 
     onStage?.("Finalizing…");
+
+    // Extract duration from file if possible
+    let durationSeconds: number | null = null;
+    try {
+      durationSeconds = await new Promise<number | null>((resolve) => {
+        const tempVideo = document.createElement("video");
+        tempVideo.preload = "metadata";
+        tempVideo.muted = true;
+        const objectUrl = URL.createObjectURL(file);
+        const cleanup = () => { URL.revokeObjectURL(objectUrl); tempVideo.remove(); };
+        const timeout = setTimeout(() => { cleanup(); resolve(null); }, 5000);
+        tempVideo.onloadedmetadata = () => {
+          clearTimeout(timeout);
+          const dur = isFinite(tempVideo.duration) && tempVideo.duration > 0 ? Math.round(tempVideo.duration) : null;
+          cleanup();
+          resolve(dur);
+        };
+        tempVideo.onerror = () => { clearTimeout(timeout); cleanup(); resolve(null); };
+        tempVideo.src = objectUrl;
+      });
+    } catch {
+      // duration extraction is best-effort
+    }
+
     const { data: confirmData, error: confirmError } = await supabase.functions.invoke("confirm-r2-upload", {
-      body: { videoId, fileSizeBytes: file.size },
+      body: { videoId, fileSizeBytes: file.size, durationSeconds },
     });
     if (confirmError || !confirmData?.publicUrl)
       throw new Error(confirmData?.error || confirmError?.message || "Confirmation failed");

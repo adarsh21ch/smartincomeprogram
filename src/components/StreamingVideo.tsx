@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { Loader2, AlertTriangle, RotateCcw, Play, VolumeX } from "lucide-react";
+import { useState, useRef, useEffect, useCallback, forwardRef } from "react";
+import { Loader2, AlertTriangle, RotateCcw, Play, Pause, VolumeX, Volume2 } from "lucide-react";
 import { resolveVideoPlaybackUrl } from "@/lib/videoPlayback";
 
 interface StreamingVideoProps {
@@ -9,16 +9,15 @@ interface StreamingVideoProps {
   className?: string;
   autoPlay?: boolean;
   controls?: boolean;
-  /** Show custom overlay states (buffering, error, unmute) */
   showOverlays?: boolean;
   onError?: () => void;
 }
 
 /**
- * Unified streaming-optimized video component.
- * Handles buffering, error, retry, and autoplay policy across all surfaces.
+ * Unified streaming-optimized video component with custom controls.
+ * Uses forwardRef and avoids browser-native controls to prevent EmptyRanges errors.
  */
-export const StreamingVideo = ({
+export const StreamingVideo = forwardRef<HTMLVideoElement, StreamingVideoProps>(({
   src,
   poster,
   title,
@@ -27,8 +26,9 @@ export const StreamingVideo = ({
   controls = true,
   showOverlays = true,
   onError,
-}: StreamingVideoProps) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
+}, ref) => {
+  const internalRef = useRef<HTMLVideoElement>(null);
+  const videoRef = (ref as React.RefObject<HTMLVideoElement>) || internalRef;
   const srcRef = useRef<string | null>(null);
   const playbackSrc = resolveVideoPlaybackUrl(src);
 
@@ -39,10 +39,16 @@ export const StreamingVideo = ({
   const [showPlay, setShowPlay] = useState(false);
   const [showUnmute, setShowUnmute] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [metadataLoaded, setMetadataLoaded] = useState(false);
+  const [metadataTimedOut, setMetadataTimedOut] = useState(false);
 
   const bufferTimer = useRef<ReturnType<typeof setTimeout>>();
   const unmuteTimer = useRef<ReturnType<typeof setTimeout>>();
-  const stalledRetryTimer = useRef<ReturnType<typeof setTimeout>>();
+  const metadataTimer = useRef<ReturnType<typeof setTimeout>>();
 
   // Stable src — never change src mid-playback
   useEffect(() => {
@@ -58,12 +64,24 @@ export const StreamingVideo = ({
     setShowPlay(false);
     setShowUnmute(false);
     setRetryCount(0);
+    setMetadataLoaded(false);
+    setMetadataTimedOut(false);
 
     video.src = playbackSrc;
     video.load();
 
+    // Metadata timeout — if metadata doesn't load in 15s, show warning
+    if (metadataTimer.current) clearTimeout(metadataTimer.current);
+    metadataTimer.current = setTimeout(() => {
+      if (!metadataLoaded) {
+        setMetadataTimedOut(true);
+        setIsLoading(false);
+      }
+    }, 15000);
+
     if (autoPlay) {
       video.muted = true;
+      setIsMuted(true);
       video.play()
         .then(() => {
           setShowUnmute(true);
@@ -80,26 +98,32 @@ export const StreamingVideo = ({
     const video = videoRef.current;
     if (!video) return;
 
+    const onLoadedMetadata = () => {
+      setMetadataLoaded(true);
+      setMetadataTimedOut(false);
+      if (metadataTimer.current) clearTimeout(metadataTimer.current);
+      if (isFinite(video.duration) && video.duration > 0) {
+        setDuration(video.duration);
+      }
+    };
     const onLoadedData = () => setIsLoading(false);
     const onCanPlay = () => { setIsLoading(false); setIsBuffering(false); setBufferingSlow(false); };
-    const onPlaying = () => { setIsLoading(false); setIsBuffering(false); setBufferingSlow(false); setShowPlay(false); };
+    const onPlaying = () => { setIsLoading(false); setIsBuffering(false); setBufferingSlow(false); setShowPlay(false); setIsPlaying(true); };
+    const onPause = () => setIsPlaying(false);
 
-    const onWaiting = () => {
-      // Only show buffering if we've actually started playing
-      if (video.currentTime > 0) {
-        setIsBuffering(true);
+    const onTimeUpdate = () => {
+      if (isFinite(video.currentTime)) {
+        setCurrentTime(video.currentTime);
+      }
+      if (isFinite(video.duration) && video.duration > 0) {
+        setDuration(video.duration);
       }
     };
 
-    const onStalled = () => {
-      // Auto-recovery: if stalled for 3s, try nudging playback
-      if (stalledRetryTimer.current) clearTimeout(stalledRetryTimer.current);
-      stalledRetryTimer.current = setTimeout(() => {
-        if (video && !video.paused && video.readyState < 3) {
-          const ct = video.currentTime;
-          video.currentTime = ct; // nudge
-        }
-      }, 3000);
+    const onWaiting = () => {
+      if (video.currentTime > 0) {
+        setIsBuffering(true);
+      }
     };
 
     const onErrorHandler = () => {
@@ -134,29 +158,36 @@ export const StreamingVideo = ({
       onError?.();
     };
 
-    // Progress event — indicates data is downloading, clear buffering state
     const onProgress = () => {
-      if (video.buffered.length > 0 && video.readyState >= 2) {
-        setIsBuffering(false);
+      try {
+        if (video.buffered && video.buffered.length > 0 && video.readyState >= 2) {
+          setIsBuffering(false);
+        }
+      } catch {
+        // SafeGuard: ignore DOMException from buffered access
       }
     };
 
+    video.addEventListener("loadedmetadata", onLoadedMetadata);
     video.addEventListener("loadeddata", onLoadedData);
     video.addEventListener("canplay", onCanPlay);
     video.addEventListener("canplaythrough", onCanPlay);
     video.addEventListener("playing", onPlaying);
+    video.addEventListener("pause", onPause);
+    video.addEventListener("timeupdate", onTimeUpdate);
     video.addEventListener("waiting", onWaiting);
-    video.addEventListener("stalled", onStalled);
     video.addEventListener("error", onErrorHandler);
     video.addEventListener("progress", onProgress);
 
     return () => {
+      video.removeEventListener("loadedmetadata", onLoadedMetadata);
       video.removeEventListener("loadeddata", onLoadedData);
       video.removeEventListener("canplay", onCanPlay);
       video.removeEventListener("canplaythrough", onCanPlay);
       video.removeEventListener("playing", onPlaying);
+      video.removeEventListener("pause", onPause);
+      video.removeEventListener("timeupdate", onTimeUpdate);
       video.removeEventListener("waiting", onWaiting);
-      video.removeEventListener("stalled", onStalled);
       video.removeEventListener("error", onErrorHandler);
       video.removeEventListener("progress", onProgress);
     };
@@ -178,7 +209,7 @@ export const StreamingVideo = ({
     return () => {
       if (bufferTimer.current) clearTimeout(bufferTimer.current);
       if (unmuteTimer.current) clearTimeout(unmuteTimer.current);
-      if (stalledRetryTimer.current) clearTimeout(stalledRetryTimer.current);
+      if (metadataTimer.current) clearTimeout(metadataTimer.current);
     };
   }, []);
 
@@ -188,6 +219,7 @@ export const StreamingVideo = ({
     setError(null);
     setIsLoading(true);
     setRetryCount(0);
+    setMetadataTimedOut(false);
     const currentSrc = srcRef.current;
     if (currentSrc) {
       video.src = currentSrc;
@@ -199,6 +231,7 @@ export const StreamingVideo = ({
     const video = videoRef.current;
     if (!video) return;
     video.muted = false;
+    setIsMuted(false);
     video.play().catch(() => {});
     setShowPlay(false);
   }, []);
@@ -207,8 +240,42 @@ export const StreamingVideo = ({
     const video = videoRef.current;
     if (!video) return;
     video.muted = false;
+    setIsMuted(false);
     setShowUnmute(false);
   }, []);
+
+  const togglePlay = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
+    if (!video.muted) setShowUnmute(false);
+  }, []);
+
+  const formatTime = (s: number) => {
+    if (!isFinite(s) || s < 0) return "0:00";
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  };
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const video = videoRef.current;
+    if (!video || !metadataLoaded || !isFinite(duration) || duration <= 0) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    video.currentTime = pct * duration;
+  };
 
   if (!playbackSrc) {
     return (
@@ -218,17 +285,19 @@ export const StreamingVideo = ({
     );
   }
 
+  const seekPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
   return (
     <div className={`relative bg-black ${className}`}>
       <video
         ref={videoRef}
         className="w-full h-full"
-        controls={controls && !error && !showPlay}
         playsInline
         preload="metadata"
         controlsList="nodownload"
         poster={poster || undefined}
         title={title}
+        onClick={controls ? togglePlay : undefined}
       />
 
       {showOverlays && (
@@ -238,6 +307,22 @@ export const StreamingVideo = ({
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 z-20 pointer-events-none">
               <Loader2 size={36} className="text-white animate-spin" />
               <p className="text-xs text-white/60 mt-2">Loading video…</p>
+            </div>
+          )}
+
+          {/* Metadata timeout warning */}
+          {metadataTimedOut && !error && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 z-20 gap-3">
+              <AlertTriangle size={32} className="text-amber-400" />
+              <p className="text-sm text-white/90 text-center px-4">
+                This video is taking longer than expected to load. It may not be web-optimized.
+              </p>
+              <button
+                onClick={handleRetry}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:brightness-110"
+              >
+                <RotateCcw size={14} /> Retry
+              </button>
             </div>
           )}
 
@@ -266,7 +351,7 @@ export const StreamingVideo = ({
           )}
 
           {/* Play prompt (when autoplay blocked) */}
-          {showPlay && !error && (
+          {showPlay && !error && !metadataTimedOut && (
             <button
               onClick={handlePlayTap}
               className="absolute inset-0 flex flex-col items-center justify-center bg-black/50 z-20"
@@ -290,6 +375,34 @@ export const StreamingVideo = ({
           )}
         </>
       )}
+
+      {/* Custom controls bar */}
+      {controls && !error && !showPlay && !metadataTimedOut && !isLoading && (
+        <div className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-black/80 to-transparent px-3 pb-2 pt-6">
+          {/* Seek bar */}
+          <div className="h-1 bg-white/20 rounded-full cursor-pointer mb-2" onClick={handleSeek}>
+            <div
+              className="h-full bg-primary rounded-full transition-all duration-150"
+              style={{ width: `${seekPercent}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <button onClick={togglePlay} className="text-white hover:text-primary transition-colors">
+                {isPlaying ? <Pause size={18} /> : <Play size={18} />}
+              </button>
+              <button onClick={toggleMute} className="text-white/70 hover:text-white transition-colors">
+                {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+              </button>
+              <span className="text-[11px] text-white/60 font-mono">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
+});
+
+StreamingVideo.displayName = "StreamingVideo";

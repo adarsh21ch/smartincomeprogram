@@ -254,8 +254,12 @@ const CustomVideoPlayer = ({
     }
     setCurrent(v.currentTime);
     onTimeUpdate?.(v.currentTime, v.duration);
-    if (v.buffered.length > 0) {
-      setBuffered(v.buffered.end(v.buffered.length - 1));
+    try {
+      if (v.buffered && v.buffered.length > 0) {
+        setBuffered(v.buffered.end(v.buffered.length - 1));
+      }
+    } catch {
+      // SafeGuard: ignore DOMException from buffered access
     }
   };
 

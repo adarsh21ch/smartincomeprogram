@@ -121,14 +121,19 @@ export const VideoPlayer = ({
     if (!video) return;
 
     const handleLoaded = () => {
-      setDuration(video.duration);
+      if (isFinite(video.duration) && video.duration > 0) {
+        setDuration(video.duration);
+      }
       setIsLoading(false);
       if (initialPosition > 0) {
         video.currentTime = initialPosition;
       }
     };
 
-    const handleTimeUpdate = () => setCurrentTime(video.currentTime);
+    const handleTimeUpdate = () => {
+      if (isFinite(video.currentTime)) setCurrentTime(video.currentTime);
+      if (isFinite(video.duration) && video.duration > 0) setDuration(video.duration);
+    };
     const handlePlaying = () => { setIsPlaying(true); setIsBuffering(false); setIsLoading(false); setBufferingTooLong(false); };
     const handlePause = () => setIsPlaying(false);
     const handleWaiting = () => setIsBuffering(true);
@@ -214,9 +219,9 @@ export const VideoPlayer = ({
 
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !isFinite(video.duration) || video.duration <= 0) return;
     const rect = e.currentTarget.getBoundingClientRect();
-    const pct = (e.clientX - rect.left) / rect.width;
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     video.currentTime = pct * video.duration;
   };
 
@@ -227,7 +232,7 @@ export const VideoPlayer = ({
 
   const seekForward = () => {
     const video = videoRef.current;
-    if (video) video.currentTime = Math.min(video.duration, video.currentTime + 10);
+    if (video && isFinite(video.duration)) video.currentTime = Math.min(video.duration, video.currentTime + 10);
   };
 
   const toggleMute = () => {
