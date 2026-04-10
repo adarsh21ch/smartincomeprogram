@@ -702,36 +702,6 @@ const LandingPageEditor = () => {
     </>
   );
 
-  const renderSeoStep = () => (
-    <>
-      <h2 className="text-lg font-heading font-semibold">SEO & Social</h2>
-      <p className="text-sm text-muted-foreground">Optimize how your page appears in search and social shares.</p>
-      <div className="space-y-4 mt-4">
-        <div className="p-4 bg-muted/50 rounded-xl space-y-3">
-          <Label className="font-semibold">Landing Page URL</Label>
-          <div className="flex items-center gap-2">
-            <Input readOnly value={`${window.location.origin}/l/${form.slug}`} className="bg-muted border-border" />
-            <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/l/${form.slug}`); toast.success("Copied!"); }}>
-              <Link2 size={14} />
-            </Button>
-          </div>
-        </div>
-
-        <div className="p-4 bg-muted/50 rounded-xl space-y-3">
-          <h3 className="font-semibold">SEO / Social Preview</h3>
-          <div><Label>OG Title</Label><Input value={form.og_title || ""} onChange={(e) => updateField("og_title", e.target.value)} placeholder={form.title} className="mt-1.5 bg-muted border-border" /></div>
-          <div><Label>OG Description</Label><Textarea value={form.og_description || ""} onChange={(e) => updateField("og_description", e.target.value)} rows={2} className="mt-1.5 bg-muted border-border" /></div>
-          <ImageUploadField
-            label="Social Preview Image"
-            helperText="This image appears when your page is shared on social media"
-            value={form.og_image_url || ""}
-            onChange={(url) => updateField("og_image_url", url)}
-            folder="og-images"
-          />
-        </div>
-      </div>
-    </>
-  );
 
   const renderPublishStep = () => {
     const isPublished = form.status === "published";
