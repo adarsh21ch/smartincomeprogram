@@ -8,7 +8,7 @@ interface Props {
 
 export const SipHero = ({ getText }: Props) => {
   const { settings } = useProgramSettings();
-  const badge = getText("hero", "badge_text", "Private Members Community");
+  const badge = getText("hero", "badge_text", "SMART INCOME PROGRAM");
   const line1 = getText("hero", "headline_line1", "Build Your Income.");
   const line2 = getText("hero", "headline_line2", "Build Your Future.");
   const subtitle = getText("hero", "subtitle", "A structured learning and growth platform for driven individuals.");
