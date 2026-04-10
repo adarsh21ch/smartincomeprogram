@@ -270,14 +270,11 @@ const AdminVideosPage = () => {
               </button>
             </div>
             <div className="aspect-video rounded-xl overflow-hidden bg-black">
-              <video
+              <StreamingVideo
                 src={previewVideo.url}
-                controls
-                autoPlay
-                playsInline
-                preload="auto"
-                controlsList="nodownload"
+                title={previewVideo.title}
                 className="w-full h-full"
+                controls
               />
             </div>
           </div>
