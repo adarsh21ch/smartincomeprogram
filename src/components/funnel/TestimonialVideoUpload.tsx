@@ -334,7 +334,7 @@ export const TestimonialVideoUpload = ({
               <p className="text-xs text-muted-foreground">
                 MP4, MOV, WEBM • Max {maxSeconds} seconds • Max {MAX_SIZE_MB}MB
               </p>
-              <p className="text-xs text-muted-foreground">Portrait videos look best in the live preview.</p>
+              <p className="text-xs text-muted-foreground">Portrait or landscape — both supported.</p>
             </div>
 
             {uploading ? (
