@@ -246,3 +246,12 @@
     background: linear-gradient(135deg, #0A0A0A 0%, #1A1200 100%);
   }
 }
+
+/* Scrollbar hide utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
