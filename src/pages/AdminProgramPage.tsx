@@ -1,6 +1,6 @@
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { useProgramSettings } from "@/hooks/useProgramSettings";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,9 +10,11 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
 import { Loader2, ExternalLink, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 
 const AdminProgramPage = () => {
   const { settings, isLoading, updateSettings } = useProgramSettings();
+  const queryClient = useQueryClient();
 
   // Branding state
   const [programName, setProgramName] = useState("");
@@ -26,11 +28,49 @@ const AdminProgramPage = () => {
   const [heroPill, setHeroPill] = useState("");
   const [showIntroVideo, setShowIntroVideo] = useState(true);
   const [introVideoUrl, setIntroVideoUrl] = useState("");
+  const [aboutSectionTitle, setAboutSectionTitle] = useState("");
+
+  // About Tab state
   const [aboutTitle, setAboutTitle] = useState("");
+  const [aboutContent, setAboutContent] = useState("");
 
   // Program flow state
   const [registerPageId, setRegisterPageId] = useState<string>("__none__");
   const [memberFunnelId, setMemberFunnelId] = useState<string>("__none__");
+  const [coursesFunnelId, setCoursesFunnelId] = useState<string>("__none__");
+
+  // Invite code required
+  const [inviteCodeRequired, setInviteCodeRequired] = useState(false);
+
+  // Fetch invite_code_required from platform_settings
+  const { data: platformSettings } = useQuery({
+    queryKey: ["platform-settings-invite"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("platform_settings")
+        .select("*")
+        .eq("key", "invite_code_required")
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const inviteCodeMutation = useMutation({
+    mutationFn: async (required: boolean) => {
+      const { error } = await supabase
+        .from("platform_settings")
+        .upsert(
+          { key: "invite_code_required", value: required ? "true" : "false" },
+          { onConflict: "key" }
+        );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["platform-settings-invite"] });
+      toast.success("Invite code setting saved!");
+    },
+    onError: () => toast.error("Failed to save invite code setting"),
+  });
 
   // Load settings into state
   useEffect(() => {
@@ -44,10 +84,19 @@ const AdminProgramPage = () => {
     setHeroPill(settings.hero_pill_text || "");
     setShowIntroVideo(settings.show_intro_video_button ?? true);
     setIntroVideoUrl(settings.intro_video_url || "");
-    setAboutTitle(settings.about_section_title || "");
+    setAboutSectionTitle(settings.about_section_title || "");
+    setAboutTitle(settings.about_title || "About the Program");
+    setAboutContent(settings.about_content || "");
     setRegisterPageId(settings.active_register_landing_page_id || "__none__");
     setMemberFunnelId(settings.active_member_funnel_id || "__none__");
+    setCoursesFunnelId(settings.active_courses_funnel_id || "__none__");
   }, [settings]);
+
+  useEffect(() => {
+    if (platformSettings) {
+      setInviteCodeRequired(platformSettings.value === "true");
+    }
+  }, [platformSettings]);
 
   // Fetch landing pages and funnels for dropdowns
   const { data: landingPages = [] } = useQuery({
@@ -91,7 +140,14 @@ const AdminProgramPage = () => {
       hero_pill_text: heroPill,
       show_intro_video_button: showIntroVideo,
       intro_video_url: introVideoUrl || null,
-      about_section_title: aboutTitle,
+      about_section_title: aboutSectionTitle,
+    });
+  };
+
+  const saveAboutTab = () => {
+    updateSettings.mutate({
+      about_title: aboutTitle,
+      about_content: aboutContent,
     });
   };
 
@@ -107,6 +163,12 @@ const AdminProgramPage = () => {
     });
   };
 
+  const saveCoursesFunnel = () => {
+    updateSettings.mutate({
+      active_courses_funnel_id: coursesFunnelId === "__none__" ? null : coursesFunnelId,
+    });
+  };
+
   if (isLoading) {
     return (
       <AdminLayout>
@@ -119,6 +181,7 @@ const AdminProgramPage = () => {
 
   const selectedPage = landingPages.find((p) => p.id === registerPageId);
   const selectedFunnel = funnels.find((f) => f.id === memberFunnelId);
+  const selectedCoursesFunnel = funnels.find((f) => f.id === coursesFunnelId);
 
   return (
     <AdminLayout>
@@ -188,12 +251,40 @@ const AdminProgramPage = () => {
             </div>
           )}
           <div>
-            <Label className="text-xs">About Section Title</Label>
-            <Input value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} className="mt-1 bg-muted border-border" />
+            <Label className="text-xs">About Section Title (Landing Page)</Label>
+            <Input value={aboutSectionTitle} onChange={(e) => setAboutSectionTitle(e.target.value)} className="mt-1 bg-muted border-border" />
           </div>
           <Button variant="hero" size="sm" onClick={saveContent} disabled={updateSettings.isPending}>
             {updateSettings.isPending ? <Loader2 size={14} className="animate-spin" /> : null}
             Save Content
+          </Button>
+        </section>
+
+        {/* About Tab Content (for Members) */}
+        <section className="glass-card p-6 space-y-4">
+          <div>
+            <h2 className="text-lg font-heading font-semibold">About Tab</h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Content shown to members in the "About" tab of their dashboard.
+            </p>
+          </div>
+          <div>
+            <Label className="text-xs">About Tab Title</Label>
+            <Input value={aboutTitle} onChange={(e) => setAboutTitle(e.target.value)} className="mt-1 bg-muted border-border" placeholder="About the Program" />
+          </div>
+          <div>
+            <Label className="text-xs">About Tab Content</Label>
+            <Textarea
+              value={aboutContent}
+              onChange={(e) => setAboutContent(e.target.value)}
+              className="mt-1 bg-muted border-border"
+              rows={6}
+              placeholder="Write about your program here. Supports multiple paragraphs."
+            />
+          </div>
+          <Button variant="hero" size="sm" onClick={saveAboutTab} disabled={updateSettings.isPending}>
+            {updateSettings.isPending ? <Loader2 size={14} className="animate-spin" /> : null}
+            Save About Content
           </Button>
         </section>
 
@@ -202,7 +293,7 @@ const AdminProgramPage = () => {
           <div>
             <h2 className="text-lg font-heading font-semibold">Program Flow</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Select which landing page visitors see when they click Register, and which funnel members see after joining.
+              Select which landing page visitors see when they click Register, and which funnels members see.
             </p>
           </div>
 
@@ -251,8 +342,8 @@ const AdminProgramPage = () => {
           {/* Member Funnel */}
           <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
             <div>
-              <Label className="text-sm font-medium">Member Welcome Funnel</Label>
-              <p className="text-xs text-muted-foreground mt-0.5">After a member registers, they'll see this funnel's content in their member dashboard.</p>
+              <Label className="text-sm font-medium">Member Program Funnel</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">Content shown in the member's "Program" tab.</p>
             </div>
             <Select value={memberFunnelId} onValueChange={setMemberFunnelId}>
               <SelectTrigger className="bg-muted border-border">
@@ -268,7 +359,7 @@ const AdminProgramPage = () => {
             {memberFunnelId === "__none__" ? (
               <div className="flex items-center gap-2 text-xs text-warning">
                 <AlertTriangle size={14} />
-                No funnel selected. Members will see an empty dashboard.
+                No funnel selected. Members will see an empty Program tab.
               </div>
             ) : (
               <div className="flex items-center gap-2 text-xs text-success">
@@ -288,6 +379,73 @@ const AdminProgramPage = () => {
                 </Button>
               )}
             </div>
+          </div>
+
+          {/* Courses Funnel */}
+          <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
+            <div>
+              <Label className="text-sm font-medium">Courses Funnel</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">Content shown in the member's "Courses" tab.</p>
+            </div>
+            <Select value={coursesFunnelId} onValueChange={setCoursesFunnelId}>
+              <SelectTrigger className="bg-muted border-border">
+                <SelectValue placeholder="Select a funnel..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">— None selected —</SelectItem>
+                {publishedFunnels.map((f) => (
+                  <SelectItem key={f.id} value={f.id}>{f.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {coursesFunnelId === "__none__" ? (
+              <div className="flex items-center gap-2 text-xs text-warning">
+                <AlertTriangle size={14} />
+                No funnel selected. Members will see "Courses coming soon."
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-xs text-success">
+                <CheckCircle2 size={14} />
+                Active: {selectedCoursesFunnel?.title}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Button variant="hero" size="sm" onClick={saveCoursesFunnel} disabled={updateSettings.isPending}>
+                Save
+              </Button>
+              {selectedCoursesFunnel && (
+                <Button variant="outline" size="sm" asChild>
+                  <a href={`/f/${selectedCoursesFunnel.slug}`} target="_blank" rel="noopener">
+                    <ExternalLink size={12} className="mr-1" /> Preview
+                  </a>
+                </Button>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Registration Settings */}
+        <section className="glass-card p-6 space-y-4">
+          <div>
+            <h2 className="text-lg font-heading font-semibold">Registration Settings</h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              Control how new members can register for the program.
+            </p>
+          </div>
+          <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-muted/30">
+            <div>
+              <Label className="text-sm font-medium">Require invite code to register</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                When ON, users must enter a valid invite code during signup.
+              </p>
+            </div>
+            <Switch
+              checked={inviteCodeRequired}
+              onCheckedChange={(checked) => {
+                setInviteCodeRequired(checked);
+                inviteCodeMutation.mutate(checked);
+              }}
+            />
           </div>
         </section>
       </div>
