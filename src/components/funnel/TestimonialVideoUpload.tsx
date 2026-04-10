@@ -113,6 +113,7 @@ export const TestimonialVideoUpload = ({
   onClear,
 }: TestimonialVideoUploadProps) => {
   const [uploading, setUploading] = useState(false);
+  const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
   const [fileName, setFileName] = useState("");
