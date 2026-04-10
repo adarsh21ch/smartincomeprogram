@@ -1,0 +1,1 @@
+UPDATE video_assets SET public_url = 'https://cdn.nevorai.com/' || r2_key WHERE r2_key IS NOT NULL AND r2_key != '';
