@@ -62,19 +62,19 @@ export const CompletionCard = ({
     issueCertificate();
   }, [profile?.id, funnelId, memberName, programName, signatory]);
 
-  const handleDownload = async () => {
+  const handleDownload = () => {
     const el = document.getElementById("certificate-card");
-    if (!el) return;
-    try {
-      const { default: html2canvas } = await import("html2canvas" as any);
-      const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#faf8f0" });
-      const link = document.createElement("a");
-      link.download = `${programName.replace(/\s+/g, "_")}_Certificate.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
-    } catch (e) {
-      toast.error("Download failed. Try again.");
-    }
+    if (!el) { toast.error("Download failed. Try again."); return; }
+    // Use browser print as fallback — simple and reliable
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) { toast.error("Download failed. Try again."); return; }
+    printWindow.document.write(`
+      <html><head><title>Certificate</title><style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#faf8f0;font-family:Georgia,serif;}</style></head>
+      <body>${el.outerHTML}</body></html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); }, 500);
   };
 
   const displayDate = issueDate
