@@ -65,6 +65,7 @@ Deno.serve(async (req) => {
     const s3 = new S3Client({
       region: "auto",
       endpoint: R2_ENDPOINT,
+      forcePathStyle: true,
       credentials: {
         accessKeyId: R2_ACCESS_KEY_ID,
         secretAccessKey: R2_SECRET_ACCESS_KEY,
