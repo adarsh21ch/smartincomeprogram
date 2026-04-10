@@ -234,6 +234,11 @@ const PublicLandingPage = () => {
 
       {/* Main Content */}
       <main className="flex-1 px-4 md:px-8 py-8 max-w-7xl mx-auto w-full">
+        {/* Preload video in background while user fills form */}
+        {video?.public_url && !submitted && (
+          <video src={video.public_url} preload="auto" muted className="hidden" aria-hidden="true" />
+        )}
+
         {submitted ? (
           <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in">
             {video?.public_url ? (
@@ -246,11 +251,32 @@ const PublicLandingPage = () => {
                     )}
                   </div>
                 )}
-                <PostSubmitVideoPlayer
-                  videoUrl={video.public_url}
-                  thumbnailUrl={video.thumbnail_url}
-                />
-
+                <div className="relative rounded-xl overflow-hidden">
+                  <video
+                    ref={videoRef}
+                    src={video.public_url}
+                    poster={video.thumbnail_url || undefined}
+                    autoPlay
+                    muted
+                    playsInline
+                    controls
+                    className="w-full aspect-video bg-black rounded-xl"
+                  />
+                  {showUnmuteHint && (
+                    <button
+                      onClick={() => {
+                        if (videoRef.current) {
+                          videoRef.current.muted = false;
+                        }
+                        setShowUnmuteHint(false);
+                      }}
+                      className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-sm animate-in fade-in"
+                      style={{ background: 'rgba(0,0,0,0.7)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }}
+                    >
+                      <VolumeX size={14} /> Tap to unmute
+                    </button>
+                  )}
+                </div>
               </>
             ) : (
               <div className="sip-card p-12 text-center space-y-3">
