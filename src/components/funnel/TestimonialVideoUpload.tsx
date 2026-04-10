@@ -15,6 +15,9 @@ interface TestimonialVideoUploadProps {
     videoUrl: string;
     thumbnailUrl: string | null;
     durationSeconds: number;
+    videoOrientation?: string;
+    videoWidth?: number;
+    videoHeight?: number;
   }) => void;
   onClear: () => void;
 }
