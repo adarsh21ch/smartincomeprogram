@@ -66,7 +66,7 @@ export const SipHero = ({ getText }: Props) => {
               {subtitle}
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start mb-12">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start mb-6 md:mb-8">
               <RegisterButton settings={settings} />
               <Link to="/auth">
                 <button
