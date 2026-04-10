@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
         subject,
         html,
         text: plainText,
-        from: `${fromName} <noreply@smartincomeprogram.com>`,
+        from: `${fromName} <noreply@smartincomeprogram.in>`,
         sender_domain: senderDomain,
         purpose: 'transactional',
         idempotency_key: `lp-confirm-${registration_id}`,
