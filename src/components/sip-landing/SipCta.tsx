@@ -59,7 +59,7 @@ export const SipCta = ({ getText }: Props) => {
             <Link to={registerUrl}>
               <button
                 className="px-10 py-4 rounded-lg text-base font-semibold transition-all hover:brightness-110"
-                style={{ background: "linear-gradient(135deg, #C5930E, #8B6914)", color: "#000" }}
+                style={{ background: "linear-gradient(135deg, #E8B830, #B8860B)", color: "#000" }}
               >
                 Register for Program →
               </button>
@@ -67,7 +67,7 @@ export const SipCta = ({ getText }: Props) => {
             <Link to="/auth">
               <button
                 className="px-10 py-4 rounded-lg text-base font-medium transition-all hover:bg-white/5"
-                style={{ border: "1px solid rgba(197,147,14,0.4)", color: "#D4A520" }}
+                style={{ border: "1px solid rgba(197,147,14,0.4)", color: "#E8B830" }}
               >
                 Login / Sign Up
               </button>

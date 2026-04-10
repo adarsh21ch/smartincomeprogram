@@ -41,7 +41,7 @@ export const SipJourney = ({ getText, steps }: Props) => {
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold"
                   style={{
-                    background: "linear-gradient(135deg, #C5930E, #8B6914)",
+                    background: "linear-gradient(135deg, #E8B830, #B8860B)",
                     color: "#000",
                     fontFamily: "'Playfair Display', serif",
                     boxShadow: "0 0 20px rgba(197,147,14,0.3)",
@@ -81,7 +81,7 @@ export const SipJourney = ({ getText, steps }: Props) => {
                 <div
                   className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
                   style={{
-                    background: "linear-gradient(135deg, #C5930E, #8B6914)",
+                    background: "linear-gradient(135deg, #E8B830, #B8860B)",
                     color: "#000",
                     fontFamily: "'Playfair Display', serif",
                     boxShadow: "0 0 16px rgba(197,147,14,0.25)",

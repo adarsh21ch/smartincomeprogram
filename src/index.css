@@ -179,9 +179,9 @@
 
   /* SIP Landing Page Gold Theme */
   .sip-landing {
-    --sip-gold: #C5930E;
-    --sip-gold-light: #D4A520;
-    --sip-gold-dark: #8B6914;
+    --sip-gold: #E8B830;
+    --sip-gold-light: #E8B830;
+    --sip-gold-dark: #B8860B;
     --sip-black-deep: #050505;
     --sip-black-rich: #0A0A0A;
     --sip-black-card: #111111;
@@ -196,7 +196,7 @@
 
   .sip-gold-divider {
     height: 1px;
-    background: linear-gradient(90deg, transparent, #C5930E 30%, #C5930E 70%, transparent);
+    background: linear-gradient(90deg, transparent, #E8B830 30%, #E8B830 70%, transparent);
     opacity: 0.4;
   }
 
@@ -208,7 +208,7 @@
     border: 1px solid rgba(197,147,14,0.2);
     border-radius: 100px;
     background: rgba(197,147,14,0.08);
-    color: #D4A520;
+    color: #E8B830;
     font-size: 12px;
     font-weight: 500;
     letter-spacing: 0.08em;

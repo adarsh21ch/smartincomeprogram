@@ -85,7 +85,7 @@ export const SipCommunity = ({ getText }: Props) => {
         <Link to={registerUrl}>
           <button
             className="px-8 py-3.5 rounded-lg text-base font-semibold transition-all hover:brightness-110"
-            style={{ background: "linear-gradient(135deg, #C5930E, #8B6914)", color: "#000" }}
+            style={{ background: "linear-gradient(135deg, #E8B830, #B8860B)", color: "#000" }}
           >
             {ctaText}
           </button>
