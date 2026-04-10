@@ -20,10 +20,10 @@ export const SipHero = ({ getText }: Props) => {
   const trust3 = getText("hero", "trust_3", "🏆 Proven System");
 
   return (
-    <section className="sip-hero-bg min-h-screen flex items-center justify-center pt-16">
-      <div className="container py-24 md:py-32">
+    <section className="sip-hero-bg min-h-[calc(100vh-4rem)] flex items-center justify-center pt-16">
+      <div className="container py-10 md:py-16 lg:py-20">
         {/* Desktop: two-column | Mobile: single column centered */}
-        <div className="flex flex-col md:flex-row items-center gap-10 md:gap-16 lg:gap-20">
+        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-12 lg:gap-16">
           {/* Left — Large Logo (desktop only visible large, mobile smaller) */}
           <motion.div
             className="flex-shrink-0 flex items-center justify-center"
@@ -48,10 +48,10 @@ export const SipHero = ({ getText }: Props) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.15 }}
           >
-            <span className="sip-gold-badge mb-8 inline-block">{badge}</span>
+            <span className="sip-gold-badge mb-4 md:mb-6 inline-block">{badge}</span>
 
             <h1
-              className="text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-4"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               {line1}
@@ -60,13 +60,13 @@ export const SipHero = ({ getText }: Props) => {
             </h1>
 
             <p
-              className="text-base md:text-lg leading-relaxed mb-10 max-w-xl md:max-w-none"
+              className="text-sm md:text-base leading-relaxed mb-6 md:mb-8 max-w-xl md:max-w-none"
               style={{ color: "#F5F0E8", opacity: 0.8 }}
             >
               {subtitle}
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start mb-12">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start mb-6 md:mb-8">
               <RegisterButton settings={settings} />
               <Link to="/auth">
                 <button
@@ -78,7 +78,7 @@ export const SipHero = ({ getText }: Props) => {
               </Link>
             </div>
 
-            <div className="sip-gold-divider max-w-xs mx-auto md:mx-0 mb-8" />
+            <div className="sip-gold-divider max-w-xs mx-auto md:mx-0 mb-4" />
 
             <div className="flex flex-wrap justify-center md:justify-start gap-6 md:gap-10">
               {[trust1, trust2, trust3].map((t, i) => (
