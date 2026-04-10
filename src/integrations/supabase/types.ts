@@ -1697,6 +1697,7 @@ export type Database = {
           full_name: string
           id: string
           instagram_url: string | null
+          is_active: boolean | null
           kyc_status: string | null
           kyc_verified_at: string | null
           onboarding_completed: boolean | null
@@ -1717,6 +1718,7 @@ export type Database = {
           full_name: string
           id: string
           instagram_url?: string | null
+          is_active?: boolean | null
           kyc_status?: string | null
           kyc_verified_at?: string | null
           onboarding_completed?: boolean | null
@@ -1737,6 +1739,7 @@ export type Database = {
           full_name?: string
           id?: string
           instagram_url?: string | null
+          is_active?: boolean | null
           kyc_status?: string | null
           kyc_verified_at?: string | null
           onboarding_completed?: boolean | null
@@ -1759,8 +1762,11 @@ export type Database = {
       }
       program_settings: {
         Row: {
+          about_content: string | null
           about_paragraphs: Json | null
           about_section_title: string | null
+          about_title: string | null
+          active_courses_funnel_id: string | null
           active_member_funnel_id: string | null
           active_register_landing_page_id: string | null
           favicon_url: string | null
@@ -1780,8 +1786,11 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          about_content?: string | null
           about_paragraphs?: Json | null
           about_section_title?: string | null
+          about_title?: string | null
+          active_courses_funnel_id?: string | null
           active_member_funnel_id?: string | null
           active_register_landing_page_id?: string | null
           favicon_url?: string | null
@@ -1801,8 +1810,11 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          about_content?: string | null
           about_paragraphs?: Json | null
           about_section_title?: string | null
+          about_title?: string | null
+          active_courses_funnel_id?: string | null
           active_member_funnel_id?: string | null
           active_register_landing_page_id?: string | null
           favicon_url?: string | null
@@ -1822,6 +1834,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "program_settings_active_courses_funnel_id_fkey"
+            columns: ["active_courses_funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "program_settings_active_member_funnel_id_fkey"
             columns: ["active_member_funnel_id"]

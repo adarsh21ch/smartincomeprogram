@@ -1,16 +1,17 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/hooks/useTheme";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { MemberRoute } from "@/components/auth/MemberRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import ResetPassword from "./pages/ResetPassword";
-import Onboarding from "./pages/Onboarding";
+import MemberHome from "./pages/MemberHome";
+import MemberProfile from "./pages/MemberProfile";
 import Dashboard from "./pages/Dashboard";
 import FunnelsPage from "./pages/FunnelsPage";
 import FunnelEditor from "./pages/FunnelEditor";
@@ -27,7 +28,6 @@ import PaymentsPage from "./pages/PaymentsPage";
 import AnalyticsPage from "./pages/AnalyticsPage";
 import ProfilePage from "./pages/ProfilePage";
 import KYCPage from "./pages/KYCPage";
-import NotificationsPage from "./pages/NotificationsPage";
 import SettingsPage from "./pages/SettingsPage";
 import BillingPage from "./pages/BillingPage";
 import LivePage from "./pages/LivePage";
@@ -81,33 +81,39 @@ const App = () => (
               <Route path="/video/:id" element={<PublicVideoPage />} />
               <Route path="/s/:slug" element={<PublicLivePage />} />
 
-              {/* Auth Required */}
-              <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/funnels" element={<ProtectedRoute><FunnelsPage /></ProtectedRoute>} />
-              <Route path="/landing-pages" element={<ProtectedRoute><LandingPagesPage /></ProtectedRoute>} />
-              <Route path="/landing-pages/create" element={<ProtectedRoute><LandingPageEditor /></ProtectedRoute>} />
-              <Route path="/landing-pages/:id" element={<ProtectedRoute><LandingPageDetail /></ProtectedRoute>} />
-              <Route path="/landing-pages/:id/edit" element={<ProtectedRoute><LandingPageEditor /></ProtectedRoute>} />
-              <Route path="/funnels/create" element={<ProtectedRoute><FunnelEditor /></ProtectedRoute>} />
-              <Route path="/funnels/:id" element={<ProtectedRoute><FunnelDetail /></ProtectedRoute>} />
-              <Route path="/funnels/:id/edit" element={<ProtectedRoute><FunnelEditor /></ProtectedRoute>} />
-              <Route path="/videos" element={<ProtectedRoute><VideosPage /></ProtectedRoute>} />
-              <Route path="/leads" element={<ProtectedRoute><LeadsPage /></ProtectedRoute>} />
-              <Route path="/payments" element={<ProtectedRoute><PaymentsPage /></ProtectedRoute>} />
-              <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
-              <Route path="/live" element={<ProtectedRoute><LivePage /></ProtectedRoute>} />
-              <Route path="/live/:id" element={<ProtectedRoute><LiveDetailPage /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-              <Route path="/kyc" element={<ProtectedRoute><KYCPage /></ProtectedRoute>} />
-              <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-              <Route path="/billing" element={<ProtectedRoute><BillingPage /></ProtectedRoute>} />
-              <Route path="/upgrade" element={<ProtectedRoute><PricingFullPage /></ProtectedRoute>} />
+              {/* Member Routes */}
+              <Route path="/home" element={<MemberRoute><MemberHome tab="program" /></MemberRoute>} />
+              <Route path="/home/about" element={<MemberRoute><MemberHome tab="about" /></MemberRoute>} />
+              <Route path="/home/courses" element={<MemberRoute><MemberHome tab="courses" /></MemberRoute>} />
+              <Route path="/profile" element={<MemberRoute><MemberProfile /></MemberRoute>} />
 
-              {/* Admin */}
-              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+              {/* Legacy redirects */}
+              <Route path="/dashboard" element={<Navigate to="/home" replace />} />
+              <Route path="/funnels" element={<Navigate to="/admin/funnels" replace />} />
+              <Route path="/landing-pages" element={<Navigate to="/admin/landing-pages" replace />} />
+              <Route path="/videos" element={<Navigate to="/admin/videos" replace />} />
+              <Route path="/leads" element={<Navigate to="/admin/leads" replace />} />
+              <Route path="/payments" element={<Navigate to="/admin/payments" replace />} />
+              <Route path="/analytics" element={<Navigate to="/admin/analytics" replace />} />
+              <Route path="/live" element={<Navigate to="/admin/live" replace />} />
+
+              {/* Admin Routes */}
+              <Route path="/admin" element={<AdminRoute><Navigate to="/admin/dashboard" replace /></AdminRoute>} />
+              <Route path="/admin/dashboard" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+              <Route path="/admin/funnels" element={<AdminRoute><FunnelsPage /></AdminRoute>} />
+              <Route path="/admin/funnels/create" element={<AdminRoute><FunnelEditor /></AdminRoute>} />
+              <Route path="/admin/funnels/:id" element={<AdminRoute><FunnelDetail /></AdminRoute>} />
+              <Route path="/admin/funnels/:id/edit" element={<AdminRoute><FunnelEditor /></AdminRoute>} />
+              <Route path="/admin/landing-pages" element={<AdminRoute><LandingPagesPage /></AdminRoute>} />
+              <Route path="/admin/landing-pages/create" element={<AdminRoute><LandingPageEditor /></AdminRoute>} />
+              <Route path="/admin/landing-pages/:id" element={<AdminRoute><LandingPageDetail /></AdminRoute>} />
+              <Route path="/admin/landing-pages/:id/edit" element={<AdminRoute><LandingPageEditor /></AdminRoute>} />
+              <Route path="/admin/live" element={<AdminRoute><LivePage /></AdminRoute>} />
+              <Route path="/admin/live/:id" element={<AdminRoute><LiveDetailPage /></AdminRoute>} />
               <Route path="/admin/videos" element={<AdminRoute><AdminVideosPage /></AdminRoute>} />
+              <Route path="/admin/leads" element={<AdminRoute><LeadsPage /></AdminRoute>} />
+              <Route path="/admin/payments" element={<AdminRoute><PaymentsPage /></AdminRoute>} />
+              <Route path="/admin/analytics" element={<AdminRoute><AnalyticsPage /></AdminRoute>} />
               <Route path="/admin/users" element={<AdminRoute><AdminUsersPage /></AdminRoute>} />
               <Route path="/admin/kyc" element={<AdminRoute><AdminKYCPage /></AdminRoute>} />
               <Route path="/admin/invite-codes" element={<AdminRoute><AdminInviteCodesPage /></AdminRoute>} />
