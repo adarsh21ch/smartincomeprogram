@@ -10,6 +10,7 @@ interface TestimonialVideoUploadProps {
   value: string;
   thumbnailUrl?: string | null;
   durationSeconds?: number | null;
+  orientation?: string | null;
   maxSeconds: number;
   onUploaded: (payload: {
     videoUrl: string;
