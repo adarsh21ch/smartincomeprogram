@@ -31,14 +31,20 @@ const formatDuration = (seconds?: number | null) => {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 };
 
-const getVideoMetadata = (file: File): Promise<{ duration: number }> =>
+const getVideoMetadata = (file: File): Promise<{ duration: number; width: number; height: number; orientation: string }> =>
   new Promise((resolve, reject) => {
     const video = document.createElement("video");
     const objectUrl = URL.createObjectURL(file);
 
     video.preload = "metadata";
     video.onloadedmetadata = () => {
-      resolve({ duration: Math.round(video.duration) });
+      const orientation = video.videoHeight > video.videoWidth ? "portrait" : "landscape";
+      resolve({
+        duration: Math.round(video.duration),
+        width: video.videoWidth,
+        height: video.videoHeight,
+        orientation,
+      });
       URL.revokeObjectURL(objectUrl);
     };
     video.onerror = () => {
