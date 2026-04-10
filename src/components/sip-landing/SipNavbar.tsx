@@ -33,17 +33,6 @@ export const SipNavbar = () => {
               Login
             </button>
           </Link>
-          <a href="https://smartincomeprogram.in/l/smart-income-program">
-            <button
-              className="px-5 py-2.5 text-sm font-semibold rounded-lg transition-all"
-              style={{
-                background: "linear-gradient(135deg, #D4A017, #A07810)",
-                color: "#000",
-              }}
-            >
-              Join Program →
-            </button>
-          </a>
         </div>
 
         <button className="md:hidden text-white" onClick={() => setOpen(!open)}>
@@ -64,14 +53,6 @@ export const SipNavbar = () => {
               Login
             </button>
           </Link>
-          <a href="https://smartincomeprogram.in/l/smart-income-program" onClick={() => setOpen(false)}>
-            <button
-              className="w-full py-2.5 text-sm font-semibold rounded-lg"
-              style={{ background: "linear-gradient(135deg, #D4A017, #A07810)", color: "#000" }}
-            >
-              Join Program →
-            </button>
-          </a>
         </div>
       )}
     </nav>
