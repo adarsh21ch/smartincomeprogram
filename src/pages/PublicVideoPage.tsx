@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/landing/Logo";
 import { Video } from "lucide-react";
+import { StreamingVideo } from "@/components/StreamingVideo";
 
 const PublicVideoPage = () => {
   const { id } = useParams();
@@ -52,22 +53,14 @@ const PublicVideoPage = () => {
           <Logo size="sm" />
         </div>
 
-        <div className="aspect-video bg-card rounded-xl overflow-hidden mb-6 relative">
-          {video.public_url ? (
-            <video
-              src={video.public_url}
-              controls
-              playsInline
-              preload="auto"
-              controlsList="nodownload"
-              className="w-full h-full"
-              poster={video.thumbnail_url || undefined}
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Video size={48} className="text-muted-foreground" />
-            </div>
-          )}
+        <div className="aspect-video bg-card rounded-xl overflow-hidden mb-6">
+          <StreamingVideo
+            src={video.public_url}
+            poster={video.thumbnail_url}
+            title={video.title}
+            className="w-full h-full"
+            controls
+          />
         </div>
 
         <h1 className="text-2xl font-heading font-bold mb-2">{video.title}</h1>

@@ -15,6 +15,7 @@ import {
 import { Loader2, Check, Lock, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { TestimonialsViewer } from "@/components/funnel/TestimonialsViewer";
+import { StreamingVideo } from "@/components/StreamingVideo";
 
 const PublicLandingPage = () => {
   const { slug } = useParams();
@@ -247,14 +248,12 @@ const PublicLandingPage = () => {
                   </div>
                 )}
                 <div className="aspect-video rounded-xl overflow-hidden bg-black">
-                  <video
+                  <StreamingVideo
                     src={video.public_url}
-                    controls
-                    playsInline
-                    preload="auto"
-                    controlsList="nodownload"
+                    poster={video.thumbnail_url}
+                    title={video.title}
                     className="w-full h-full"
-                    poster={video.thumbnail_url || undefined}
+                    controls
                   />
                 </div>
               </>
