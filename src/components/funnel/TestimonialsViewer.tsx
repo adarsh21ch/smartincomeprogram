@@ -348,7 +348,7 @@ const VideoPlayer = ({ videoUrl, thumbnailUrl, durationSeconds, orientation }: {
         className="testimonial-video-el w-full h-full block"
         preload="metadata"
         playsInline
-        poster={thumbnailUrl || undefined}
+        poster={posterSrc}
         muted={muted}
         onEnded={handleEnded}
         style={{
