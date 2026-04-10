@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useEffect } from "react";
-import { Loader2, ExternalLink, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Loader2, ExternalLink, AlertTriangle, CheckCircle2, Plus, Trash2, Eye, Monitor, Tablet, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 
 const AdminProgramPage = () => {
