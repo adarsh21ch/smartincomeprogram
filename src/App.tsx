@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/useAuth";
@@ -52,6 +52,16 @@ import TermsPage from "./pages/TermsPage";
 import RefundPolicyPage from "./pages/RefundPolicyPage";
 import InstallApp from "./pages/InstallApp";
 
+/** Redirects old paths like /funnels/:id/edit → /admin/funnels/:id/edit */
+const LegacyRedirect = ({ prefix }: { prefix: string }) => {
+  const location = useLocation();
+  // Extract the wildcard part after the matched path segment
+  const segments = location.pathname.split("/").filter(Boolean);
+  const rest = segments.slice(1).join("/"); // drop the first segment (e.g. "funnels")
+  const target = rest ? `${prefix}/${rest}` : prefix;
+  return <Navigate to={target + location.search + location.hash} replace />;
+};
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -87,15 +97,15 @@ const App = () => (
               <Route path="/home/courses" element={<MemberRoute><MemberHome tab="courses" /></MemberRoute>} />
               <Route path="/profile" element={<MemberRoute><MemberProfile /></MemberRoute>} />
 
-              {/* Legacy redirects */}
+              {/* Legacy redirects — preserve sub-paths */}
               <Route path="/dashboard" element={<Navigate to="/home" replace />} />
-              <Route path="/funnels" element={<Navigate to="/admin/funnels" replace />} />
-              <Route path="/landing-pages" element={<Navigate to="/admin/landing-pages" replace />} />
-              <Route path="/videos" element={<Navigate to="/admin/videos" replace />} />
-              <Route path="/leads" element={<Navigate to="/admin/leads" replace />} />
+              <Route path="/funnels/*" element={<LegacyRedirect prefix="/admin/funnels" />} />
+              <Route path="/landing-pages/*" element={<LegacyRedirect prefix="/admin/landing-pages" />} />
+              <Route path="/videos/*" element={<LegacyRedirect prefix="/admin/videos" />} />
+              <Route path="/leads/*" element={<LegacyRedirect prefix="/admin/leads" />} />
               <Route path="/payments" element={<Navigate to="/home" replace />} />
-              <Route path="/analytics" element={<Navigate to="/admin/analytics" replace />} />
-              <Route path="/live" element={<Navigate to="/admin/live" replace />} />
+              <Route path="/analytics/*" element={<LegacyRedirect prefix="/admin/analytics" />} />
+              <Route path="/live/*" element={<LegacyRedirect prefix="/admin/live" />} />
 
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminRoute><Navigate to="/admin/dashboard" replace /></AdminRoute>} />
