@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { Star, Volume2, VolumeX, Play, Pause } from "lucide-react";
-import { resolveVideoPlaybackUrl } from "@/lib/videoPlayback";
 
 interface Testimonial {
   id: string;
@@ -126,7 +125,6 @@ const VideoPlayer = ({ videoUrl, thumbnailUrl, durationSeconds }: {
   videoUrl: string; thumbnailUrl?: string; durationSeconds?: number;
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const playbackUrl = resolveVideoPlaybackUrl(videoUrl) ?? videoUrl;
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -175,7 +173,7 @@ const VideoPlayer = ({ videoUrl, thumbnailUrl, durationSeconds }: {
     >
       <video
         ref={videoRef}
-        src={playbackUrl}
+        src={videoUrl}
         poster={thumbnailUrl || undefined}
         muted={muted}
         playsInline
