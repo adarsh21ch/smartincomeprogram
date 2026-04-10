@@ -1,7 +1,7 @@
 {
-  "name": "Smart Income Program",
-  "short_name": "Smart Income",
-  "description": "Private members community — Build your income, build your future.",
+  "name": "Smart Income Funnel",
+  "short_name": "Smart Income Funnel",
+  "description": "Build smart income funnels — capture leads, collect payments, and guide your audience.",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#050505",

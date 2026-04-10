@@ -72,7 +72,7 @@ export const InstallAppBanner = () => {
           <img src="/icons/icon-192x192.png" alt="" className="w-full h-full" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-white truncate">Smart Income Program</p>
+          <p className="text-sm font-semibold text-white truncate">Smart Income Funnel</p>
           <p className="text-[11px] text-white/50">Install app for the best experience</p>
         </div>
         {isIOS ? (
