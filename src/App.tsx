@@ -41,6 +41,7 @@ import AdminKYCPage from "./pages/AdminKYCPage";
 import AdminSettingsPage from "./pages/AdminSettingsPage";
 import AdminInviteCodesPage from "./pages/AdminInviteCodesPage";
 import AdminLandingPageManager from "./pages/AdminLandingPageManager";
+import AdminProgramPage from "./pages/AdminProgramPage";
 import NotFound from "./pages/NotFound";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";

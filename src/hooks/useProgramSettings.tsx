@@ -19,7 +19,7 @@ export const useProgramSettings = () => {
   });
 
   const updateSettings = useMutation({
-    mutationFn: async (updates: Record<string, any>) => {
+    mutationFn: async (updates: Partial<NonNullable<typeof settings>>) => {
       if (!settings?.id) throw new Error("No settings row found");
       const { error } = await supabase
         .from("program_settings")

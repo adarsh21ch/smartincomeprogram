@@ -1,10 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 import { DashboardLayout } from "./DashboardLayout";
-import { LayoutDashboard, Video, Users, UserCheck, Cog, Ticket, Globe } from "lucide-react";
+import { LayoutDashboard, Video, Users, UserCheck, Cog, Ticket, Globe, Settings2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const adminTabs = [
   { icon: LayoutDashboard, label: "Overview", path: "/admin" },
+  { icon: Settings2, label: "Program", path: "/admin/program" },
   { icon: Video, label: "Videos", path: "/admin/videos" },
   { icon: Users, label: "Users", path: "/admin/users" },
   { icon: UserCheck, label: "KYC", path: "/admin/kyc" },
