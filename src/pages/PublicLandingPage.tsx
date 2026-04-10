@@ -455,23 +455,22 @@ const PublicLandingPage = () => {
                       {page.description && <p className="text-lg" style={{ color: '#888' }}>{page.description}</p>}
                     </div>
                   )}
-                </div>
 
-                <div className="lg:col-span-2 lg:sticky lg:top-8 space-y-5">
-                  {/* Speaker above register form */}
                   {(page.speaker_name || page.speaker_photo_url) && (
-                    <div className="sip-card p-5 flex gap-4 items-start">
+                    <div className="sip-card p-6 flex gap-5 items-start">
                       {page.speaker_photo_url && (
-                        <img src={page.speaker_photo_url} alt={page.speaker_name} className="w-16 h-16 rounded-full object-cover shrink-0" style={{ border: '2px solid rgba(197,147,14,0.3)' }} />
+                        <img src={page.speaker_photo_url} alt={page.speaker_name} className="w-20 h-20 rounded-full object-cover shrink-0" style={{ border: '2px solid rgba(197,147,14,0.3)' }} />
                       )}
                       <div className="min-w-0">
-                        <h3 className="text-base font-bold" style={{ color: '#F5F0E8' }}>{page.speaker_name}</h3>
+                        <h3 className="text-lg font-bold" style={{ color: '#F5F0E8' }}>{page.speaker_name}</h3>
                         {page.speaker_role && <p className="text-xs font-medium mt-0.5" style={{ color: '#888' }}>{page.speaker_role}</p>}
-                        {page.speaker_bio && <p className="mt-1.5 text-xs leading-relaxed" style={{ color: '#aaa' }}>{page.speaker_bio}</p>}
+                        {page.speaker_bio && <p className="mt-2 text-sm leading-relaxed" style={{ color: '#aaa' }}>{page.speaker_bio}</p>}
                       </div>
                     </div>
                   )}
+                </div>
 
+                <div className="lg:col-span-2 lg:sticky lg:top-8">
                   <div className="sip-card p-6 space-y-5">
                     <div>
                       <h3 className="text-lg font-bold" style={{ color: '#F5F0E8' }}>{page.form_title}</h3>
