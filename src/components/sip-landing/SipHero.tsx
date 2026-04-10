@@ -32,12 +32,12 @@ export const SipHero = ({ getText }: Props) => {
             transition={{ duration: 0.7 }}
           >
             <img
-              src={heroLogo}
+              src={sipLogo}
               alt="Smart Income Program"
-              width={1024}
-              height={1024}
-              className="w-48 h-48 sm:w-56 sm:h-56 md:w-72 md:h-72 lg:w-[340px] lg:h-[340px] xl:w-[400px] xl:h-[400px] object-contain drop-shadow-2xl"
-              style={{ filter: "drop-shadow(0 0 40px rgba(212,160,23,0.25))" }}
+              width={512}
+              height={512}
+              className="w-20 h-20 md:w-48 md:h-48 lg:w-64 lg:h-64 xl:w-72 xl:h-72 object-contain drop-shadow-2xl"
+              style={{ filter: "drop-shadow(0 0 30px rgba(212,160,23,0.2))" }}
             />
           </motion.div>
 
