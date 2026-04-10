@@ -4,7 +4,7 @@ import { Video, ClipboardList, MessageCircle, Route, BarChart3, Radio } from "lu
 const features = [
   {
     icon: Video,
-    title: "Video Funnels",
+    title: "Smart Funnels",
     description: "Controlled playback, timed CTAs, and video access limits — your video, your rules.",
   },
   {

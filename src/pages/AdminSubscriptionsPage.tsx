@@ -95,7 +95,7 @@ const FEATURE_TOGGLES = [
   { field: "feature_go_live", label: "Go Live", desc: "Host live sessions", icon: Video },
   { field: "feature_landing_pages", label: "Landing Pages", desc: "Create standalone landing pages", icon: FileText },
   { field: "feature_video_sharing", label: "Video Sharing", desc: "Share videos with prospects", icon: Video },
-  { field: "multilevel_funnel_enabled", label: "Multi-level Funnels", desc: "Create step-by-step video funnel sequences", icon: TrendingUp },
+  { field: "multilevel_funnel_enabled", label: "Multi-level Funnels", desc: "Create step-by-step funnel sequences", icon: TrendingUp },
   { field: "feature_team_analytics", label: "Team Analytics", desc: "View analytics for your entire team", icon: Users },
   { field: "feature_advanced_analytics", label: "Advanced Analytics", desc: "Detailed conversion and engagement data", icon: Zap },
   { field: "feature_priority_support", label: "Priority Support", desc: "Priority WhatsApp/email support", icon: Shield },

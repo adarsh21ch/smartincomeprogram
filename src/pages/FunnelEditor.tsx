@@ -447,7 +447,7 @@ const FunnelEditor = () => {
           <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-3">
             <Video size={22} className="text-primary" />
           </div>
-          <h3 className="font-heading font-bold text-sm group-hover:text-primary transition-colors">Single Video Funnel</h3>
+          <h3 className="font-heading font-bold text-sm group-hover:text-primary transition-colors">Single Step Funnel</h3>
           <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">
             One video with lead capture, CTA, and optional payment. Simple and effective.
           </p>

@@ -26,7 +26,7 @@ export const Footer = () => {
           <div>
             <Logo size="sm" />
             <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
-              The smart video funnel platform for digital entrepreneurs.
+              The smart income funnel platform for digital entrepreneurs.
             </p>
           </div>
           {Object.entries(links).map(([title, items]) => (

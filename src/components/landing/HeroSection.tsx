@@ -31,7 +31,7 @@ export const HeroSection = () => {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-primary/5 mb-8">
               <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
               <span className="text-xs text-muted-foreground font-medium">
-                Smart Video Funnels for Entrepreneurs
+                Smart Income Funnels for Entrepreneurs
               </span>
             </div>
           </motion.div>
@@ -42,8 +42,8 @@ export const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
           >
-            Turn Random Videos Into{" "}
-            <span className="gradient-text">Structured Funnels.</span>
+            Turn Random Content Into{" "}
+            <span className="gradient-text">Smart Funnels.</span>
           </motion.h1>
 
           <motion.p
@@ -52,7 +52,7 @@ export const HeroSection = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            Build smart video funnels that capture leads, structure your content, and guide your audience step by step.
+            Build smart income funnels that capture leads, structure your content, and guide your audience step by step.
           </motion.p>
 
           <motion.div

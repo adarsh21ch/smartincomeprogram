@@ -2,9 +2,9 @@ export const brand = {
   name: "Smart Income Program",
   nameShort: "Smart Income",
   nameAccent: "Program",
-  tagline: "Turn Random Videos Into Structured Funnels.",
+  tagline: "Turn Random Content Into Smart Funnels.",
   description:
-    "Build smart video funnels that capture leads, collect payments, and guide your audience — all in one place.",
+    "Build smart income funnels that capture leads, collect payments, and guide your audience — all in one place.",
   domain: "smartincomeprogram.com",
   supportEmail: "support@smartincomeprogram.com",
   social: {
