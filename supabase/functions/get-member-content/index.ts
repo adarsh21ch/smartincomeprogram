@@ -174,7 +174,8 @@ Deno.serve(async (req) => {
       }
 
       const asset = step.video_asset_id ? videoAssets[step.video_asset_id] : null;
-      const videoUrl = asset?.r2_object_key ? `${r2PublicUrl}/${asset.r2_object_key}` : null;
+      // Prefer stored public_url (CDN), fall back to constructing from r2_key
+      const videoUrl = asset?.public_url || (asset?.r2_key ? `${r2PublicUrl}/${asset.r2_key}` : null);
 
       return {
         id: step.id,
