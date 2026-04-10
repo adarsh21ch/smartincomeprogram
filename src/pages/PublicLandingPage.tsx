@@ -12,7 +12,7 @@ import { Logo } from "@/components/landing/Logo";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Loader2, Check, Lock, ChevronRight, VolumeX } from "lucide-react";
+import { Loader2, Check, Lock, ChevronRight, ChevronDown, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { TestimonialsViewer } from "@/components/funnel/TestimonialsViewer";
 
@@ -356,8 +356,30 @@ const PublicLandingPage = () => {
                 </div>
               )}
 
-              {/* Registration form — prominently placed on mobile */}
-              <div className="sip-card p-5 space-y-4">
+              {/* Testimonials BEFORE registration form on mobile */}
+              {showTestimonialsOnRegistration && (
+                <div>
+                  <TestimonialsViewer
+                    testimonials={testimonials}
+                    sectionTitle={page.testimonials_section_title || "What our members say"}
+                  />
+                </div>
+              )}
+
+              {/* Register Now scroll button */}
+              <button
+                type="button"
+                onClick={() => {
+                  document.getElementById('mobile-register-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+                className="w-full px-6 py-3 rounded-lg text-base font-semibold flex items-center justify-center gap-2 sticky top-2 z-30"
+                style={{ background: 'linear-gradient(135deg, #E8B830, #C99A18)', color: '#000', boxShadow: '0 4px 20px rgba(232,184,48,0.3)' }}
+              >
+                Register Now <ChevronDown size={18} />
+              </button>
+
+              {/* Registration form */}
+              <div id="mobile-register-form" className="sip-card p-5 space-y-4 scroll-mt-4">
                 <div>
                   <h3 className="text-lg font-bold" style={{ color: '#F5F0E8' }}>{page.form_title}</h3>
                   <p className="text-sm" style={{ color: '#E8B830' }}>{page.form_subtitle}</p>
@@ -420,16 +442,6 @@ const PublicLandingPage = () => {
                   <Lock size={12} /> Your information is safe with us
                 </p>
               </div>
-
-              {/* Testimonials below form on mobile */}
-              {showTestimonialsOnRegistration && (
-                <div className="mt-4">
-                  <TestimonialsViewer
-                    testimonials={testimonials}
-                    sectionTitle={page.testimonials_section_title || "What our members say"}
-                  />
-                </div>
-              )}
             </div>
 
             {/* ── DESKTOP LAYOUT (lg+) ── */}
