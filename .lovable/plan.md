@@ -1,97 +1,63 @@
 
-Do I know what the issue is? Yes.
 
-Exact diagnosis
-- This is not mainly a CORS problem.
-- The app is still using raw uploaded R2 files as the final playback source.
-- `src/lib/mp4Faststart.ts` does not actually faststart or transcode the file; it only reads metadata and returns the original upload.
-- So a 200–300MB upload can still be a heavy, non-stream-optimized MP4, which is why playback still buffers/stalls.
-- Some surfaces also use different player implementations (`StreamingVideo`, `VideoPlayer`, `PublicFunnel`, `TestimonialsViewer`), so playback behavior is inconsistent.
-- The current upload path improved upload speed, but it did not solve the real playback problem.
+# Video Playback Optimization — Aligned with Reference Project
 
-Exact solution
-- Stop using raw R2 uploads as the final video users watch.
-- Keep one `video_assets` record per video, and reuse that same video across funnels and landing pages.
-- Move final playback to Cloudflare Stream direct uploads with tus/resumable upload for large files.
-- Let Cloudflare Stream generate the optimized streaming output automatically.
-- Store the Stream playback URL on the video record, and make every player use that stable playback URL.
-- Keep the current UI. Only change upload + playback plumbing.
+## What I found
 
-Why this is the correct fix
-- R2 is object storage. It is fine for storing files, but not the best final playback layer for large unprocessed videos.
-- For 200MB+ videos, Cloudflare itself recommends direct creator uploads with tus.
-- Lovable Cloud edge functions are not the right place to ffmpeg-transcode 300MB videos.
-- So the shortest reliable solution is: Stream for playback, not raw R2.
+After comparing the reference code you shared with this project's current implementation, **the upload pipeline is already nearly identical**. The edge functions (`get-r2-upload-url`, `confirm-r2-upload`), the client upload utility, and the DB schema all match.
 
-Implementation plan
-1. Database
-- Add playback fields to `video_assets`:
-  - `source_provider`
-  - `stream_uid`
-  - `playback_url`
-  - `hls_url`
-  - `processing_status`
-  - `processing_error`
-- Keep existing `r2_key/public_url` temporarily as legacy fallback only.
+The differences causing playback issues are:
 
-2. Upload flow
-- Replace the creator upload path in `src/lib/r2VideoUpload.ts` with Cloudflare Stream direct upload using tus.
-- Use one-time upload URLs from a backend function.
-- Mark videos as `processing` first, then `ready` when Stream finishes.
-- Keep one uploaded video reusable across all funnels/pages.
+1. **`get-r2-upload-url` has extra `normalizeR2Endpoint` logic and `forcePathStyle: true`** — the reference project does NOT use `forcePathStyle` or endpoint normalization. This can cause presigned URL mismatches.
+2. **`get-r2-upload-url` adds `CacheControl` header** to the PutObjectCommand — the reference does not. This changes the presigned URL signature and can cause CORS/signing failures on some R2 configurations.
+3. **`r2VideoUpload.ts` has complex multipart upload logic** that the reference project doesn't use — the reference keeps it simple with a single XHR PUT for all files. The multipart path introduces extra round-trips and failure points.
+4. **`mp4Faststart.ts` tries to read the entire file into memory** for moov relocation — for 200MB+ files this can crash the browser tab or cause long freezes before upload even starts.
+5. **Video players use `preload="auto"`** which tells the browser to download the entire file eagerly — for large raw MP4s this overwhelms bandwidth.
 
-3. Backend functions
-- Add a function to create the Stream upload session.
-- Add a webhook or status-sync function to mark a video ready and save:
-  - `stream_uid`
-  - `playback_url/hls_url`
-  - thumbnail
-  - duration
-- Update these readers to prefer the new playback fields:
-  - `supabase/functions/get-funnel-data/index.ts`
-  - `supabase/functions/get-member-content/index.ts`
-  - `supabase/functions/get-landing-page-data/index.ts`
+## Plan
 
-4. Frontend playback
-- Upgrade the shared player layer to support HLS:
-  - native HLS on Safari/iPhone/iPad
-  - `hls.js` on Chrome/Edge/Firefox
-- Apply that shared playback layer everywhere users watch videos:
-  - `src/components/StreamingVideo.tsx`
-  - `src/components/member/VideoPlayer.tsx`
-  - `src/pages/PublicFunnel.tsx`
-  - `src/components/funnel/TestimonialsViewer.tsx`
-  - `src/pages/PublicVideoPage.tsx`
-  - `src/pages/PublicLandingPage.tsx`
-- Remove dependence on raw `public_url` for playback.
+### Step 1: Simplify `get-r2-upload-url` to match reference
+- Remove `normalizeR2Endpoint` function
+- Remove `forcePathStyle: true` from S3Client
+- Remove `CacheControl` from PutObjectCommand
+- Use the raw `R2_ENDPOINT` directly (as the reference does)
 
-5. Backfill existing videos
-- Migrate current videos to the new playback source and write back the new `playback_url/hls_url`.
-- Keep old raw URLs only until migration is complete.
-- Supersede the old hardcoded CDN URL logic so it cannot come back later.
+### Step 2: Simplify `r2VideoUpload.ts` to match reference
+- Remove multipart upload path entirely (the reference uses single XHR PUT for all sizes)
+- Keep: XHR with progress, 30min timeout, error cleanup
+- Remove: `ensureFaststart` call — skip client-side moov relocation (it causes browser freezes on large files and the moov issue should be handled at encoding time, not upload time)
+- Keep duration extraction only (lightweight, doesn't read whole file)
 
-What this will fix
-- Faster start time
-- Smooth seek forward/backward
-- Better behavior on mobile and slower networks
-- No more relying on one large raw MP4 file for all viewers
-- Same single uploaded video can still be reused across many funnels and landing pages
+### Step 3: Simplify `mp4Faststart.ts`
+- Remove the moov relocation logic (memory-intensive, unreliable for large files)
+- Keep only the `extractDuration` function for metadata
 
-Important note about autoplay
-- We can make videos auto-start where browsers allow it.
-- Guaranteed unmuted autoplay is blocked by browser policy, so the correct implementation is muted-first autoplay with tap-to-unmute when needed.
+### Step 4: Fix video playback across all players
+- Change `preload="auto"` to `preload="metadata"` everywhere (StreamingVideo, VideoPlayer, PublicFunnel) — this is the single biggest improvement. `preload="auto"` tells the browser to download the entire 200MB file immediately, which is why playback stalls.
+- Ensure `playsInline` is set everywhere
+- Add `poster` attribute where thumbnails are available
 
-Files most directly causing the current problem
-- `src/lib/mp4Faststart.ts`
-- `src/lib/r2VideoUpload.ts`
-- `supabase/functions/confirm-r2-upload/index.ts`
-- `supabase/functions/r2-multipart-upload/index.ts`
-- `src/components/StreamingVideo.tsx`
-- `src/components/member/VideoPlayer.tsx`
-- `src/pages/PublicFunnel.tsx`
+### Step 5: Redeploy edge functions
+- Deploy updated `get-r2-upload-url`
+- `confirm-r2-upload` stays as-is (already matches reference)
 
-Required from you for the recommended fix
-- Cloudflare Account ID
-- Cloudflare Stream API token with upload/read/webhook permissions
+## Files changed
 
-If we implement this route, this stops being a “debug R2 forever” problem and becomes a clean video pipeline: upload once, process once, play smoothly everywhere.
+| File | Change |
+|------|--------|
+| `supabase/functions/get-r2-upload-url/index.ts` | Remove normalizeR2Endpoint, forcePathStyle, CacheControl |
+| `src/lib/r2VideoUpload.ts` | Remove multipart logic, remove faststart call, simple XHR PUT |
+| `src/lib/mp4Faststart.ts` | Keep only extractDuration, remove moov relocation |
+| `src/components/StreamingVideo.tsx` | `preload="metadata"` instead of `preload="auto"` |
+| `src/components/member/VideoPlayer.tsx` | `preload="metadata"` instead of `preload="auto"` |
+| `src/pages/PublicFunnel.tsx` | `preload="metadata"` instead of `preload="auto"` |
+
+## No new secrets needed
+All R2 secrets are already configured and match the reference project's requirements.
+
+## Expected result
+- Uploads work reliably (simple single PUT, no multipart complexity)
+- Videos start playing immediately (browser only fetches metadata first, then streams on demand)
+- Seeking works without re-downloading the entire file
+- No browser tab freezes from moov relocation on large files
+
