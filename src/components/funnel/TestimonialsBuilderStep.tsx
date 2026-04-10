@@ -100,7 +100,7 @@ export const TestimonialsBuilderStep = ({
   const getSetting = (key: string, fallback: string) =>
     platformSettings.find((s) => s.key === key)?.value || fallback;
 
-  const maxVideoSeconds = parseInt(getSetting("testimonial_max_video_seconds", "60"), 10);
+  const maxVideoSeconds = parseInt(getSetting("testimonial_max_video_seconds", "90"), 10);
 
   const { data: testimonials = [], isLoading } = useQuery({
     queryKey: ["landing-page-testimonials", landingPageId],
