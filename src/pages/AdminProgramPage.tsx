@@ -34,6 +34,25 @@ const AdminProgramPage = () => {
   const [aboutTitle, setAboutTitle] = useState("");
   const [aboutContent, setAboutContent] = useState("");
 
+  // Member Experience state
+  const [welcomeMessage, setWelcomeMessage] = useState("Welcome back, [name]! 👋");
+  const [welcomeTagline, setWelcomeTagline] = useState("Your success journey continues today.");
+  const [programTabTitle, setProgramTabTitle] = useState("Your Program");
+  const [coursesTabTitle, setCoursesTabTitle] = useState("Your Courses");
+  const [completionMessage, setCompletionMessage] = useState("Congratulations! You have completed the program.");
+  const [certificateSignatory, setCertificateSignatory] = useState("");
+
+  // About Tab Builder state
+  const [aboutOverview, setAboutOverview] = useState("");
+  const [mentorName, setMentorName] = useState("");
+  const [mentorTitle, setMentorTitle] = useState("");
+  const [mentorBio, setMentorBio] = useState("");
+  const [benefits, setBenefits] = useState<string[]>([]);
+  const [faqItems, setFaqItems] = useState<Array<{ question: string; answer: string }>>([]);
+
+  // Preview state
+  const [previewDevice, setPreviewDevice] = useState<"mobile" | "tablet" | "desktop">("mobile");
+
   // Program flow state
   const [registerPageId, setRegisterPageId] = useState<string>("__none__");
   const [memberFunnelId, setMemberFunnelId] = useState<string>("__none__");
@@ -90,6 +109,19 @@ const AdminProgramPage = () => {
     setRegisterPageId(settings.active_register_landing_page_id || "__none__");
     setMemberFunnelId(settings.active_member_funnel_id || "__none__");
     setCoursesFunnelId(settings.active_courses_funnel_id || "__none__");
+    // New fields
+    setWelcomeMessage((settings as any).welcome_message || "Welcome back, [name]! 👋");
+    setWelcomeTagline((settings as any).welcome_tagline || "Your success journey continues today.");
+    setProgramTabTitle((settings as any).program_tab_title || "Your Program");
+    setCoursesTabTitle((settings as any).courses_tab_title || "Your Courses");
+    setCompletionMessage((settings as any).completion_message || "Congratulations! You have completed the program.");
+    setCertificateSignatory((settings as any).certificate_signatory || "");
+    setAboutOverview((settings as any).about_overview_text || "");
+    setMentorName((settings as any).mentor_name || "");
+    setMentorTitle((settings as any).mentor_title || "");
+    setMentorBio((settings as any).mentor_bio || "");
+    setBenefits(Array.isArray((settings as any).benefits) ? (settings as any).benefits : []);
+    setFaqItems(Array.isArray((settings as any).faq_items) ? (settings as any).faq_items : []);
   }, [settings]);
 
   useEffect(() => {
