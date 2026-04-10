@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
     if (videoAssetIds.length > 0) {
       const { data: assets } = await supabase
         .from("video_assets")
-        .select("id, r2_object_key, thumbnail_url, duration_seconds")
+        .select("id, r2_key, public_url, thumbnail_url, duration_seconds")
         .in("id", videoAssetIds);
       if (assets) {
         for (const a of assets) videoAssets[a.id] = a;
