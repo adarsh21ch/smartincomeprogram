@@ -40,7 +40,7 @@ const setGlobalPlaying = (el: HTMLVideoElement | null) => {
 export const TestimonialsViewer = ({ testimonials, sectionTitle }: TestimonialsViewerProps) => {
   const activeItems = testimonials.filter((t) => {
     if (t.type === "both") return Boolean(t.review_text?.trim()) || Boolean(t.video_url);
-    if (t.type === "video") return Boolean(t.video_url);
+    if (t.type === "video") return true; // Show video testimonials even without video yet (shows name/photo)
     return Boolean(t.review_text?.trim());
   });
 
