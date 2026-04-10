@@ -54,7 +54,7 @@ export const SipFaq = ({ getText, faqItems }: Props) => {
                     size={20}
                     className="shrink-0 transition-transform duration-200"
                     style={{
-                      color: "#C5930E",
+                      color: "#E8B830",
                       transform: isOpen ? "rotate(45deg)" : "rotate(0deg)",
                     }}
                   />

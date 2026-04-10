@@ -52,7 +52,7 @@ export const SipTestimonials = ({ getText, testimonials }: Props) => {
 
               <div className="flex gap-0.5 mb-3">
                 {Array.from({ length: t.rating }).map((_, j) => (
-                  <Star key={j} size={14} fill="#C5930E" stroke="#C5930E" />
+                  <Star key={j} size={14} fill="#E8B830" stroke="#E8B830" />
                 ))}
               </div>
 
@@ -68,7 +68,7 @@ export const SipTestimonials = ({ getText, testimonials }: Props) => {
                 ) : (
                   <div
                     className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
-                    style={{ background: "#181818", color: "#C5930E" }}
+                    style={{ background: "#181818", color: "#E8B830" }}
                   >
                     {t.name.charAt(0)}
                   </div>

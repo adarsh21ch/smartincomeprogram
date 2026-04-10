@@ -56,7 +56,7 @@ export const SipHero = ({ getText }: Props) => {
             >
               {line1}
               <br />
-              <span style={{ color: "#C5930E" }}>{line2}</span>
+              <span style={{ color: "#E8B830" }}>{line2}</span>
             </h1>
 
             <p
@@ -71,7 +71,7 @@ export const SipHero = ({ getText }: Props) => {
               <Link to="/auth">
                 <button
                   className="px-8 py-3.5 rounded-lg text-base font-medium transition-all hover:bg-white/5"
-                  style={{ border: "1px solid rgba(197,147,14,0.4)", color: "#D4A520" }}
+                  style={{ border: "1px solid rgba(197,147,14,0.4)", color: "#E8B830" }}
                 >
                   Login / Sign Up
                 </button>
@@ -103,7 +103,7 @@ const RegisterButton = ({ settings }: { settings: any }) => {
     <Link to={url}>
       <button
         className="px-8 py-3.5 rounded-lg text-base font-semibold transition-all hover:brightness-110"
-        style={{ background: "linear-gradient(135deg, #C5930E, #8B6914)", color: "#000" }}
+        style={{ background: "linear-gradient(135deg, #E8B830, #C99A18)", color: "#000" }}
       >
         Register for Program →
       </button>
