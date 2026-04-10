@@ -75,6 +75,7 @@ We look forward to having you there.`,
   speaker_photo_url: "",
   testimonials_enabled: false,
   testimonials_section_title: "What our members say",
+  testimonials_display_position: "post_registration",
 };
 
 const sectionTypes = [
@@ -785,8 +786,10 @@ const LandingPageEditor = () => {
       userId={user!.id}
       testimonialsEnabled={form.testimonials_enabled ?? false}
       testimonialsSectionTitle={form.testimonials_section_title ?? "What our members say"}
+      testimonialsDisplayPosition={(form as any).testimonials_display_position ?? "post_registration"}
       onToggleEnabled={(v) => updateField("testimonials_enabled", v)}
       onTitleChange={(v) => updateField("testimonials_section_title", v)}
+      onDisplayPositionChange={(v) => updateField("testimonials_display_position", v)}
     />
   );
 
