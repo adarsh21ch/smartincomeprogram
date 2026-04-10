@@ -41,6 +41,7 @@ import AdminKYCPage from "./pages/AdminKYCPage";
 import AdminSettingsPage from "./pages/AdminSettingsPage";
 import AdminInviteCodesPage from "./pages/AdminInviteCodesPage";
 import AdminLandingPageManager from "./pages/AdminLandingPageManager";
+import AdminProgramPage from "./pages/AdminProgramPage";
 import NotFound from "./pages/NotFound";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
@@ -112,6 +113,7 @@ const App = () => (
               <Route path="/admin/invite-codes" element={<AdminRoute><AdminInviteCodesPage /></AdminRoute>} />
               <Route path="/admin/landing-page" element={<AdminRoute><AdminLandingPageManager /></AdminRoute>} />
               <Route path="/admin/settings" element={<AdminRoute><AdminSettingsPage /></AdminRoute>} />
+              <Route path="/admin/program" element={<AdminRoute><AdminProgramPage /></AdminRoute>} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>
