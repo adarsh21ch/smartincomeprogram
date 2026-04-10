@@ -1,63 +1,27 @@
 
 
-# Video Playback Optimization — Aligned with Reference Project
+# Re-configure R2 Secrets for This Project
 
-## What I found
-
-After comparing the reference code you shared with this project's current implementation, **the upload pipeline is already nearly identical**. The edge functions (`get-r2-upload-url`, `confirm-r2-upload`), the client upload utility, and the DB schema all match.
-
-The differences causing playback issues are:
-
-1. **`get-r2-upload-url` has extra `normalizeR2Endpoint` logic and `forcePathStyle: true`** — the reference project does NOT use `forcePathStyle` or endpoint normalization. This can cause presigned URL mismatches.
-2. **`get-r2-upload-url` adds `CacheControl` header** to the PutObjectCommand — the reference does not. This changes the presigned URL signature and can cause CORS/signing failures on some R2 configurations.
-3. **`r2VideoUpload.ts` has complex multipart upload logic** that the reference project doesn't use — the reference keeps it simple with a single XHR PUT for all files. The multipart path introduces extra round-trips and failure points.
-4. **`mp4Faststart.ts` tries to read the entire file into memory** for moov relocation — for 200MB+ files this can crash the browser tab or cause long freezes before upload even starts.
-5. **Video players use `preload="auto"`** which tells the browser to download the entire file eagerly — for large raw MP4s this overwhelms bandwidth.
+## Problem
+The current R2 secrets (endpoint, keys, bucket, public URL) may point to a different Cloudflare account, causing uploaded videos to return 404 on playback.
 
 ## Plan
+I'll ask you to re-submit all 5 R2 secrets with the correct values for this project's Cloudflare account:
 
-### Step 1: Simplify `get-r2-upload-url` to match reference
-- Remove `normalizeR2Endpoint` function
-- Remove `forcePathStyle: true` from S3Client
-- Remove `CacheControl` from PutObjectCommand
-- Use the raw `R2_ENDPOINT` directly (as the reference does)
+1. **R2_ENDPOINT** — `https://<your-account-id>.r2.cloudflarestorage.com`
+2. **R2_ACCESS_KEY_ID** — R2 API token access key
+3. **R2_SECRET_ACCESS_KEY** — R2 API token secret key
+4. **R2_BUCKET_NAME** — The bucket name (e.g. `my-videos`)
+5. **R2_PUBLIC_URL** — The public URL for serving files (either `https://pub-xxx.r2.dev` or a custom domain like `https://cdn.yourdomain.com`)
 
-### Step 2: Simplify `r2VideoUpload.ts` to match reference
-- Remove multipart upload path entirely (the reference uses single XHR PUT for all sizes)
-- Keep: XHR with progress, 30min timeout, error cleanup
-- Remove: `ensureFaststart` call — skip client-side moov relocation (it causes browser freezes on large files and the moov issue should be handled at encoding time, not upload time)
-- Keep duration extraction only (lightweight, doesn't read whole file)
+After you provide these, I'll update all 5 secrets and then test the upload + playback flow end-to-end to confirm videos work.
 
-### Step 3: Simplify `mp4Faststart.ts`
-- Remove the moov relocation logic (memory-intensive, unreliable for large files)
-- Keep only the `extractDuration` function for metadata
+## Where to find these in Cloudflare
+1. Log in to **dash.cloudflare.com** → select the correct account
+2. Go to **R2 Object Storage** → your bucket → **Settings** → copy the **S3 API endpoint** (that's `R2_ENDPOINT`)
+3. The bucket name is shown at the top
+4. For public URL: in bucket Settings → **Public access** → copy the public URL domain
+5. For keys: **R2 Object Storage** → **Manage R2 API Tokens** → create or copy an existing token's Access Key ID and Secret Access Key
 
-### Step 4: Fix video playback across all players
-- Change `preload="auto"` to `preload="metadata"` everywhere (StreamingVideo, VideoPlayer, PublicFunnel) — this is the single biggest improvement. `preload="auto"` tells the browser to download the entire 200MB file immediately, which is why playback stalls.
-- Ensure `playsInline` is set everywhere
-- Add `poster` attribute where thumbnails are available
-
-### Step 5: Redeploy edge functions
-- Deploy updated `get-r2-upload-url`
-- `confirm-r2-upload` stays as-is (already matches reference)
-
-## Files changed
-
-| File | Change |
-|------|--------|
-| `supabase/functions/get-r2-upload-url/index.ts` | Remove normalizeR2Endpoint, forcePathStyle, CacheControl |
-| `src/lib/r2VideoUpload.ts` | Remove multipart logic, remove faststart call, simple XHR PUT |
-| `src/lib/mp4Faststart.ts` | Keep only extractDuration, remove moov relocation |
-| `src/components/StreamingVideo.tsx` | `preload="metadata"` instead of `preload="auto"` |
-| `src/components/member/VideoPlayer.tsx` | `preload="metadata"` instead of `preload="auto"` |
-| `src/pages/PublicFunnel.tsx` | `preload="metadata"` instead of `preload="auto"` |
-
-## No new secrets needed
-All R2 secrets are already configured and match the reference project's requirements.
-
-## Expected result
-- Uploads work reliably (simple single PUT, no multipart complexity)
-- Videos start playing immediately (browser only fetches metadata first, then streams on demand)
-- Seeking works without re-downloading the entire file
-- No browser tab freezes from moov relocation on large files
+No code changes needed — just secret updates.
 
