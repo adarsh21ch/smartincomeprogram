@@ -1,69 +1,58 @@
 
-Issue diagnosis
 
-- Do I know what the issue is? Yes.
-- This is mainly a video delivery/encoding problem, not just a UI/div problem.
-- From the current code and recent network data:
-  1. Admin preview, landing-page video, and public video page are all playing the raw `public_url` directly from `pub-...r2.dev`.
-  2. The uploaded test video is about 288 MB, `duration_seconds` is still `null`, and there is no thumbnail. That strongly suggests uploads are not being processed/normalized after upload.
-  3. `get-member-content` is using `r2_object_key`, but the actual table field is `r2_key`, so member delivery is also inconsistent/broken.
-  4. Since even the simple admin preview stutters, the root issue is the source asset + delivery path, not only the custom player.
+## Video Streaming Fix — Refined Plan
 
-Plan
+### Root Cause
+The 288MB video uploaded to R2 almost certainly has its **moov atom at the end of the file**. This means browsers must download the entire file before they can start playing, causing the 1-second play/pause stutter loop as the browser repeatedly tries and fails to parse incomplete data.
 
-1. Fix the obvious backend/data bugs first
-- Correct `get-member-content` to use `r2_key`.
-- Standardize all video URL generation so every surface uses one stable playback field/path.
-- Stop relying on the raw `r2.dev` URL for playback if the CDN/custom delivery domain is available, and backfill existing video records if needed.
+### Critical Constraint
+**ffmpeg cannot run inside Supabase Edge Functions.** Edge functions run on Deno Deploy with ~150MB memory limits and short execution windows. Processing a 288MB video there is not possible.
 
-2. Add proper post-upload video processing
-- Change uploads from “ready immediately” to “processing” first.
-- Generate a web-safe playback version after upload:
-  - minimum: optimized H.264/AAC MP4
-  - best fix: adaptive streaming output (HLS) for mobile + slow networks
-- Save and use the processed playback URL instead of the raw original upload.
-- Fill `duration_seconds` and thumbnail during processing.
+### Practical Solution (3 parts)
 
-3. Improve delivery stability
-- Add cache headers for video objects.
-- Make sure byte-range requests are supported and URLs do not rotate during playback.
-- Keep playback URLs stable for the full viewing session.
+---
 
-4. Unify playback UI across the app
-- Use one robust player pattern for:
-  - admin preview
-  - creator video gallery preview
-  - landing-page post-submit video
-  - public video page
-  - member player
-- Keep buffering/error/retry states, avoid remounting the `src`, and remove modal autoplay behavior that can create confusing play/pause loops.
-- Only use muted autoplay where it actually improves UX.
+#### Part 1: Client-Side Faststart Processing (Immediate Fix)
+Use **mp4box.js** (a pure-JavaScript MP4 muxer/demuxer) in the browser to move the moov atom to the front **before uploading**. This is lightweight and works on files up to ~500MB in modern browsers.
 
-5. Optional fallback
-- If you want, I can also add direct video-link support as a fallback import method.
-- But that is not the real fix unless the linked source is already optimized for streaming.
+- Install `mp4box` npm package
+- In `r2VideoUpload.ts`, before uploading, run a faststart pass using mp4box.js to relocate the moov atom
+- Extract `duration_seconds` from the parsed MP4 metadata
+- Pass `durationSeconds` to `confirm-r2-upload` so it gets saved to the database
+- Show a "Optimizing video..." step in the upload progress UI
+- This fixes the core streaming issue without any server-side processing
 
-Technical details
+#### Part 2: Upload Pipeline Hardening
+- In `get-r2-upload-url`, add `CacheControl: "public, max-age=86400"` to the PutObjectCommand so R2 objects have proper cache headers
+- In `confirm-r2-upload`, ensure `duration_seconds` from the client is saved
+- Ensure the CDN URL (`cdn.nevorai.com`) is always used, never the raw R2 URL
 
-- Files likely involved:
-  - `src/components/member/VideoPlayer.tsx`
-  - `src/pages/AdminVideosPage.tsx`
-  - `src/pages/VideosPage.tsx`
-  - `src/pages/PublicLandingPage.tsx`
-  - `src/pages/PublicVideoPage.tsx`
-  - `src/pages/PublicFunnel.tsx`
-  - `supabase/functions/get-member-content/index.ts`
-  - `supabase/functions/get-r2-upload-url/index.ts`
-  - `supabase/functions/confirm-r2-upload/index.ts`
-- I may also add a small backend processing step and, if needed, minimal `video_assets` fields for playback/processing status and final processed URL.
+#### Part 3: Player Stability
+- In `StreamingVideo.tsx`, prevent re-mounting when parent re-renders by using a stable `srcRef` pattern (already partially done — verify no regressions)
+- In `VideoPlayer.tsx` (member area), ensure the `<source>` element src is never changed while playing — use the ref pattern from StreamingVideo
+- Remove `crossOrigin="anonymous"` if the CDN doesn't send proper CORS headers for credentialed requests (this can cause silent failures)
 
-Validation after implementation
+---
 
-- Test the same uploaded video end-to-end in admin preview, landing-page success video, public share page, and member area.
-- Verify there is no 1-second stop/play loop, buffering is stable, seek works, and playback is smooth on desktop Chrome, iPhone Safari, and Android Chrome.
+### Files to Change
 
-Bottom line
+| File | Change |
+|------|--------|
+| `package.json` | Add `mp4box` dependency |
+| `src/lib/r2VideoUpload.ts` | Add faststart optimization step before upload |
+| `src/pages/AdminVideosPage.tsx` | Show "Optimizing..." state during processing |
+| `supabase/functions/get-r2-upload-url/index.ts` | Add CacheControl to PutObjectCommand |
+| `supabase/functions/confirm-r2-upload/index.ts` | Save duration_seconds properly |
+| `src/components/StreamingVideo.tsx` | Remove `crossOrigin="anonymous"`, minor stability fixes |
+| `src/components/member/VideoPlayer.tsx` | Remove `crossOrigin="anonymous"`, use stable src pattern |
 
-- Yes, there is an issue from our side.
-- The real fix is not another small player tweak. It is to stop streaming raw uploads as-is, fix the broken member URL field, and move playback to a processed/stable delivery path.
-- Once approved, I’ll implement it in that order.
+### Backfill Existing Videos
+- Create a small utility (admin button or one-time script) that downloads the existing video, runs faststart via mp4box.js, and re-uploads. Or simply re-upload the video through the fixed pipeline.
+
+### What This Fixes
+- Videos will have moov atom at the start = instant playback start
+- Browser can seek without downloading the whole file  
+- Duration metadata saved to database
+- Cache headers enable CDN edge caching
+- No more stutter/pause loop
+
