@@ -16,6 +16,7 @@ import {
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
+  { icon: Settings, label: "Program", path: "/admin/program" },
   { icon: Layers, label: "Funnels", path: "/admin/funnels" },
   { icon: FileText, label: "Landing Pages", path: "/admin/landing-pages" },
   { icon: Radio, label: "Live", path: "/admin/live" },
