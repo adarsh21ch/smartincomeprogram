@@ -6,7 +6,7 @@
  * Also extracts duration metadata.
  */
 
-import MP4Box from "mp4box";
+import * as MP4Box from "mp4box";
 
 export interface FaststartResult {
   file: File;
