@@ -15,6 +15,7 @@ import {
 import { Loader2, Check, Lock, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { TestimonialsViewer } from "@/components/funnel/TestimonialsViewer";
+import { PostSubmitVideoPlayer } from "@/components/landing/PostSubmitVideoPlayer";
 
 const PublicLandingPage = () => {
   const { slug } = useParams();
