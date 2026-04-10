@@ -1,23 +1,28 @@
 
 
-## Fix Email Domain Setup
+## Plan: Revert to Native Video Player + Preload Video for Instant Playback
 
-### Problem
-The email domain `notify.smartincomeprogram.in` failed provisioning because it already exists in another provider account (Mailgun). Meanwhile, landing page confirmation emails work fine using `notify.smartincomeprogram.com`.
+### What the user wants
+1. Go back to the **older/native HTML5 video player** interface (with browser controls) instead of the custom `PostSubmitVideoPlayer`
+2. **Preload the video in the background** while the user is filling the registration form, so it plays instantly after submission
+3. Video should **autoplay muted** on the post-submit screen, with a "Tap to unmute" hint
 
-### Solution
-Delete the failed `smartincomeprogram.in` domain and set up a new one using a different subdomain prefix (e.g., `mail.smartincomeprogram.in`) to avoid the conflict. Alternatively, we can set up `smartincomeprogram.com` since your landing page emails already use that domain.
+### Is preloading safe?
+Yes -- completely safe. We will use a hidden `<link rel="preload">` tag or a hidden `<video preload="auto">` element while the form is visible. The browser will buffer the video in the background. When the user submits, the video is already cached and plays instantly. This costs no extra bandwidth since the user will watch the video anyway.
 
-### Steps
+### Changes
 
-1. **Delete the failed domain** `smartincomeprogram.in` from Cloud → Emails → Manage Domains
-2. **Re-add with a different subdomain prefix** — use `mail` instead of `notify` (so it becomes `mail.smartincomeprogram.in`), OR switch to `smartincomeprogram.com`
-3. **Add required DNS records** at your domain registrar and wait for verification
-4. **Update the auth-email-hook** Edge Function to use the new verified sender domain
-5. **Update the landing page confirmation** Edge Function to use the same verified domain for consistency
-6. **Re-deploy** both Edge Functions
+**File: `src/pages/PublicLandingPage.tsx`**
+- Add a hidden `<video>` element (invisible, muted, `preload="auto"`) that loads the video URL as soon as the page data is fetched -- while the user is filling the form
+- On form submit, when `submitted` becomes `true`, replace the custom `PostSubmitVideoPlayer` with a native `<video>` element that uses `autoPlay`, `muted`, `playsInline`, and standard browser `controls`
+- Add a small "Tap to unmute" floating pill overlay (same as current) since autoplay requires muted
+- Remove the `PostSubmitVideoPlayer` import
 
-### What you need to decide
-- Which domain do you want to use: `smartincomeprogram.in` (with a different prefix like `mail`) or `smartincomeprogram.com`?
-- Do you have access to DNS settings for whichever domain you choose?
+**File: `src/components/landing/PostSubmitVideoPlayer.tsx`**
+- No deletion needed, but it will no longer be used on this page
+
+### Technical detail
+- The preload hidden video: `<video src={videoUrl} preload="auto" muted className="hidden" />` rendered whenever `video?.public_url` is available (even before submission)
+- The visible video post-submit: native `<video>` with `ref`, `autoPlay`, `muted`, `playsInline`, `controls`, plus a small unmute hint overlay that disappears on click or after 5 seconds
+- Use a `useEffect` to call `.play()` on mount as fallback for browsers that don't honor `autoPlay` attribute
 
