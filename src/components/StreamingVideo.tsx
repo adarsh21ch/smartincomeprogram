@@ -49,6 +49,7 @@ export const StreamingVideo = forwardRef<HTMLVideoElement, StreamingVideoProps>(
   const bufferTimer = useRef<ReturnType<typeof setTimeout>>();
   const unmuteTimer = useRef<ReturnType<typeof setTimeout>>();
   const metadataTimer = useRef<ReturnType<typeof setTimeout>>();
+  const userPausedRef = useRef(false);
 
   // Stable src — never change src mid-playback
   useEffect(() => {
