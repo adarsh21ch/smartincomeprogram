@@ -148,7 +148,7 @@ export const TestimonialVideoUpload = ({
     setStatusLabel("Checking video");
 
     try {
-      const { duration } = await getVideoMetadata(file);
+      const { duration, width, height, orientation } = await getVideoMetadata(file);
 
       if (duration > maxSeconds) {
         throw new Error(`Your video is ${duration} seconds. Max allowed is ${maxSeconds} seconds.`);
