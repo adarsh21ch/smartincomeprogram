@@ -1,43 +1,26 @@
 
-# Phase 1 — Nevorai Flow Production Upgrade
 
-## Batch A: Landing Page Cleanup & Auth Removal
-1. **Remove login/signup toggles** from landing page editor (`allow_login`, `allow_signup` fields)
-2. **Remove auth-related UI** from public landing pages
-3. **Fix labels** — replace "Hero image URL", "Photo URL", "Image URL" with upload buttons across the landing page editor
+## Update R2 Public URL to Custom Domain
 
-## Batch B: Image Upload System
-4. **Create a reusable `ImageUploadField` component** that handles device upload → storage bucket → returns URL
-5. **Create `landing-page-assets` storage bucket** for landing page media
-6. **Replace all URL input fields** in the landing page editor with the upload component:
-   - Hero image
-   - Section images
-   - Speaker/Host photo
-   - OG image
-7. **Show image previews** with change/remove options
+### What
+Replace the current `R2_PUBLIC_URL` secret (which likely points to the rate-limited `pub-*.r2.dev` URL) with your custom domain `https://smartincomeprogram.in`.
 
-## Batch C: Private Funnel Flow Polish
-8. **Improve CodeGateScreen** wording — use "Unlock Program", "Get Access" instead of generic text
-9. **Improve PrivateLeadForm** — premium wording, "Continue to Program" button
-10. **Add success popup/modal** after form submission with content visible behind
-11. **Add loading state** "Unlocking your access…" between form submit and content reveal
+### Why
+- Custom domain removes rate limiting
+- Enables Cloudflare caching and CDN features
+- Professional branded URLs for all video assets (e.g., `https://smartincomeprogram.in/videos/abc/video.mp4`)
 
-## Batch D: Live Preview for Landing Page Editor
-12. **Add split-pane layout** — editor left, live preview right (desktop)
-13. **Add Edit/Preview tabs** on mobile
-14. **Build `LandingPagePreview` component** that renders sections in real-time
+### Steps
 
-## Batch E: Mobile & UX Polish
-15. **Mobile-optimize** the landing page editor (touch-friendly, collapsible sections)
-16. **Fix section labels** and helper text across editors for non-technical users
-17. **Add friendly error messages** for uploads, form validation, missing fields
+1. **Update the `R2_PUBLIC_URL` secret** to `https://smartincomeprogram.in` (no trailing slash)
 
----
+2. **Redeploy affected edge functions** that reference `R2_PUBLIC_URL`:
+   - `confirm-r2-upload` — sets `public_url` when confirming uploads
+   - `upload-testimonial-video` — sets `public_url` for testimonial videos
 
-### Not in Phase 1 (Future phases):
-- Email confirmation system (needs email domain setup)
-- Multiple access codes per funnel
-- Advanced analytics
-- WhatsApp notifications
-- Paid funnels
-- Team access
+3. **Verify** by testing the upload flow end-to-end
+
+### Technical Details
+- The edge functions construct URLs as `${R2_PUBLIC_URL}/${r2_key}`, so the secret must not have a trailing slash
+- Existing videos in the database will still have old URLs — they'll continue working if the old public dev URL stays enabled, or we can run a migration to update them
+
