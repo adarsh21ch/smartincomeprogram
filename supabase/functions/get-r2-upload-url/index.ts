@@ -25,6 +25,7 @@ function sanitizeFilename(filename: string): string {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+    console.log("R2_ENDPOINT:", R2_ENDPOINT, "R2_BUCKET_NAME:", R2_BUCKET_NAME);
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return new Response(JSON.stringify({ error: "No auth" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
