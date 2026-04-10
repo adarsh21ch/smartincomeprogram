@@ -276,7 +276,7 @@ const PublicLandingPage = () => {
             {page.linked_funnel_id && (
               <button
                 className="w-full px-8 py-3.5 rounded-lg text-base font-semibold transition-all hover:brightness-110 flex items-center justify-center gap-2"
-                style={{ background: 'linear-gradient(135deg, #E8B830, #B8860B)', color: '#000' }}
+                style={{ background: 'linear-gradient(135deg, #E8B830, #C99A18)', color: '#000' }}
                 onClick={() => window.location.href = `/f/${page.linked_funnel_id}`}
               >
                 Continue to full session journey <ChevronRight size={16} />
@@ -374,7 +374,7 @@ const PublicLandingPage = () => {
                     type="submit"
                     disabled={submitting}
                     className="w-full px-8 py-3.5 rounded-lg text-base font-semibold transition-all hover:brightness-110 disabled:opacity-50 flex items-center justify-center"
-                    style={{ background: 'linear-gradient(135deg, #E8B830, #B8860B)', color: '#000' }}
+                    style={{ background: 'linear-gradient(135deg, #E8B830, #C99A18)', color: '#000' }}
                   >
                     {submitting ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
                     {page.form_button_text} →

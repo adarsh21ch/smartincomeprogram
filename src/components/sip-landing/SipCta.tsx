@@ -59,7 +59,7 @@ export const SipCta = ({ getText }: Props) => {
             <Link to={registerUrl}>
               <button
                 className="px-10 py-4 rounded-lg text-base font-semibold transition-all hover:brightness-110"
-                style={{ background: "linear-gradient(135deg, #E8B830, #B8860B)", color: "#000" }}
+                style={{ background: "linear-gradient(135deg, #E8B830, #C99A18)", color: "#000" }}
               >
                 Register for Program →
               </button>
