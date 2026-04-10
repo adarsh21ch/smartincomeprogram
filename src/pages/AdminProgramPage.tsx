@@ -502,6 +502,204 @@ const AdminProgramPage = () => {
             />
           </div>
         </section>
+
+        {/* Member Experience Editor */}
+        <section className="glass-card p-6 space-y-4">
+          <div>
+            <h2 className="text-lg font-heading font-semibold">Member Experience</h2>
+            <p className="text-xs text-muted-foreground mt-1">Customise messages and labels members see.</p>
+          </div>
+          <div>
+            <Label className="text-xs">Welcome Message (use [name] for member's first name)</Label>
+            <Input value={welcomeMessage} onChange={(e) => setWelcomeMessage(e.target.value)} className="mt-1 bg-muted border-border" />
+            <p className="text-xs text-muted-foreground mt-1">Preview: {welcomeMessage.replace("[name]", "Adarsh")}</p>
+          </div>
+          <div>
+            <Label className="text-xs">Motivational Tagline</Label>
+            <Input value={welcomeTagline} onChange={(e) => setWelcomeTagline(e.target.value)} className="mt-1 bg-muted border-border" />
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <Label className="text-xs">Program Tab Title</Label>
+              <Input value={programTabTitle} onChange={(e) => setProgramTabTitle(e.target.value)} className="mt-1 bg-muted border-border" />
+            </div>
+            <div>
+              <Label className="text-xs">Courses Tab Title</Label>
+              <Input value={coursesTabTitle} onChange={(e) => setCoursesTabTitle(e.target.value)} className="mt-1 bg-muted border-border" />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Completion Message</Label>
+            <Textarea value={completionMessage} onChange={(e) => setCompletionMessage(e.target.value)} className="mt-1 bg-muted border-border" rows={2} />
+          </div>
+          <div>
+            <Label className="text-xs">Certificate Signatory Name</Label>
+            <Input value={certificateSignatory} onChange={(e) => setCertificateSignatory(e.target.value)} className="mt-1 bg-muted border-border" placeholder="e.g. Adarsh Jain, Founder" />
+          </div>
+          <Button variant="hero" size="sm" onClick={saveMemberExperience} disabled={updateSettings.isPending}>
+            {updateSettings.isPending ? <Loader2 size={14} className="animate-spin" /> : null}
+            Save Member Experience
+          </Button>
+        </section>
+
+        {/* About Tab Builder */}
+        <section className="glass-card p-6 space-y-5">
+          <div>
+            <h2 className="text-lg font-heading font-semibold">About Tab Builder</h2>
+            <p className="text-xs text-muted-foreground mt-1">Structured content for the member About tab.</p>
+          </div>
+
+          {/* Overview */}
+          <div>
+            <Label className="text-xs">Program Overview</Label>
+            <Textarea value={aboutOverview} onChange={(e) => setAboutOverview(e.target.value)} className="mt-1 bg-muted border-border" rows={4} placeholder="Write about your program..." />
+          </div>
+
+          {/* Mentor */}
+          <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
+            <Label className="text-sm font-medium">Mentor / Leader</Label>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Mentor Name</Label>
+                <Input value={mentorName} onChange={(e) => setMentorName(e.target.value)} className="mt-1 bg-muted border-border" />
+              </div>
+              <div>
+                <Label className="text-xs">Mentor Title</Label>
+                <Input value={mentorTitle} onChange={(e) => setMentorTitle(e.target.value)} className="mt-1 bg-muted border-border" placeholder="e.g. Founder & Coach" />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">Mentor Bio (max 300 chars)</Label>
+              <Textarea value={mentorBio} onChange={(e) => setMentorBio(e.target.value.slice(0, 300))} className="mt-1 bg-muted border-border" rows={2} />
+              <span className="text-xs text-muted-foreground">{mentorBio.length}/300</span>
+            </div>
+          </div>
+
+          {/* Benefits */}
+          <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Benefits List</Label>
+              {benefits.length < 10 && (
+                <Button size="sm" variant="outline" onClick={() => setBenefits([...benefits, ""])} className="gap-1">
+                  <Plus size={12} /> Add
+                </Button>
+              )}
+            </div>
+            {benefits.map((b, i) => (
+              <div key={i} className="flex gap-2">
+                <Input
+                  value={b}
+                  onChange={(e) => {
+                    const updated = [...benefits];
+                    updated[i] = e.target.value;
+                    setBenefits(updated);
+                  }}
+                  className="bg-muted border-border"
+                  placeholder="Benefit text..."
+                />
+                <Button size="icon" variant="ghost" onClick={() => setBenefits(benefits.filter((_, j) => j !== i))}>
+                  <Trash2 size={14} />
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          {/* FAQ */}
+          <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">FAQ Items</Label>
+              {faqItems.length < 10 && (
+                <Button size="sm" variant="outline" onClick={() => setFaqItems([...faqItems, { question: "", answer: "" }])} className="gap-1">
+                  <Plus size={12} /> Add
+                </Button>
+              )}
+            </div>
+            {faqItems.map((faq, i) => (
+              <div key={i} className="space-y-2 p-3 rounded border border-border bg-background">
+                <div className="flex gap-2">
+                  <Input
+                    value={faq.question}
+                    onChange={(e) => {
+                      const updated = [...faqItems];
+                      updated[i] = { ...faq, question: e.target.value };
+                      setFaqItems(updated);
+                    }}
+                    className="bg-muted border-border"
+                    placeholder="Question..."
+                  />
+                  <Button size="icon" variant="ghost" onClick={() => setFaqItems(faqItems.filter((_, j) => j !== i))}>
+                    <Trash2 size={14} />
+                  </Button>
+                </div>
+                <Textarea
+                  value={faq.answer}
+                  onChange={(e) => {
+                    const updated = [...faqItems];
+                    updated[i] = { ...faq, answer: e.target.value };
+                    setFaqItems(updated);
+                  }}
+                  className="bg-muted border-border"
+                  rows={2}
+                  placeholder="Answer..."
+                />
+              </div>
+            ))}
+          </div>
+
+          <Button variant="hero" size="sm" onClick={saveAboutTabBuilder} disabled={updateSettings.isPending}>
+            {updateSettings.isPending ? <Loader2 size={14} className="animate-spin" /> : null}
+            Save About Tab
+          </Button>
+        </section>
+
+        {/* Preview */}
+        <section className="glass-card p-6 space-y-4">
+          <div>
+            <h2 className="text-lg font-heading font-semibold flex items-center gap-2">
+              <Eye size={18} /> Member View Preview
+            </h2>
+            <p className="text-xs text-muted-foreground mt-1">This is exactly what your members see when they log in.</p>
+          </div>
+          <div className="flex gap-2">
+            {[
+              { key: "mobile" as const, icon: Smartphone, label: "Mobile", w: 375 },
+              { key: "tablet" as const, icon: Tablet, label: "Tablet", w: 768 },
+              { key: "desktop" as const, icon: Monitor, label: "Desktop", w: 0 },
+            ].map((d) => (
+              <Button
+                key={d.key}
+                size="sm"
+                variant={previewDevice === d.key ? "hero" : "outline"}
+                onClick={() => setPreviewDevice(d.key)}
+                className="gap-1"
+              >
+                <d.icon size={14} /> {d.label}
+              </Button>
+            ))}
+          </div>
+          <div className="flex justify-center">
+            <div
+              className="rounded-2xl overflow-hidden border border-border shadow-lg"
+              style={{
+                width: previewDevice === "desktop" ? "100%" : previewDevice === "tablet" ? 768 : 375,
+                maxWidth: "100%",
+              }}
+            >
+              <iframe
+                src="/home?preview=true"
+                width="100%"
+                height={previewDevice === "desktop" ? 700 : previewDevice === "tablet" ? 800 : 700}
+                style={{ border: "none" }}
+                title="Member Preview"
+              />
+            </div>
+          </div>
+          <div className="text-center">
+            <a href="/home" target="_blank" rel="noopener" className="text-xs text-primary hover:underline">
+              Open in new tab ↗
+            </a>
+          </div>
+        </section>
       </div>
     </AdminLayout>
   );
