@@ -188,6 +188,13 @@ export const StreamingVideo = forwardRef<HTMLVideoElement, StreamingVideoProps>(
       try {
         if (video.buffered && video.buffered.length > 0 && video.readyState >= 2) {
           setIsBuffering(false);
+          // Auto-resume: if paused due to buffer underrun (not user), resume when enough data buffered
+          if (video.paused && !userPausedRef.current && video.currentTime > 0) {
+            const buffEnd = video.buffered.end(video.buffered.length - 1);
+            if (buffEnd > video.currentTime + 1) {
+              video.play().catch(() => {});
+            }
+          }
         }
       } catch {
         // SafeGuard: ignore DOMException from buffered access
