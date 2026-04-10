@@ -445,8 +445,8 @@ const PublicLandingPage = () => {
             </div>
 
             {/* ── DESKTOP LAYOUT (lg+) ── */}
-            <div className="hidden lg:grid lg:grid-cols-5 gap-8 items-start" style={{ minHeight: 'calc(100vh - 120px)' }}>
-              <div className="lg:col-span-3 space-y-8 overflow-y-auto max-h-[calc(100vh-120px)] pr-2 scrollbar-hide">
+            <div className="hidden lg:grid lg:grid-cols-5 gap-8 items-start">
+              <div className="lg:col-span-3 space-y-8">
                 {sections.map(renderSection)}
                 {sections.length === 0 && (
                   <div className="space-y-4">
@@ -478,8 +478,8 @@ const PublicLandingPage = () => {
                 )}
               </div>
 
-              <div className="lg:col-span-2 lg:sticky lg:top-8">
-                <div className="sip-card p-6 space-y-5">
+              <div className="lg:col-span-2 lg:sticky lg:top-4" style={{ maxHeight: 'calc(100vh - 2rem)', overflowY: 'auto' }}>
+                <div className="sip-card p-6 space-y-5" style={{ position: 'sticky', top: '1rem' }}>
                   <div>
                     <h3 className="text-lg font-bold" style={{ color: '#F5F0E8' }}>{page.form_title}</h3>
                     <p className="text-sm" style={{ color: '#E8B830' }}>{page.form_subtitle}</p>
