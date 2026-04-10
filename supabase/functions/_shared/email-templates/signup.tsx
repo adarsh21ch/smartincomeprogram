@@ -4,14 +4,13 @@ import * as React from 'npm:react@18.3.1'
 
 import {
   Body,
-  Button,
   Container,
   Head,
   Heading,
   Html,
-  Link,
   Preview,
   Text,
+  Section,
 } from 'npm:@react-email/components@0.0.22'
 
 interface SignupEmailProps {
@@ -19,6 +18,7 @@ interface SignupEmailProps {
   siteUrl: string
   recipient: string
   confirmationUrl: string
+  token: string
 }
 
 export const SignupEmail = ({
@@ -26,32 +26,26 @@ export const SignupEmail = ({
   siteUrl,
   recipient,
   confirmationUrl,
+  token,
 }: SignupEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Confirm your email for {siteName}</Preview>
+    <Preview>Your verification code for Smart Income Program</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Confirm your email</Heading>
+        <Section style={logoSection}>
+          <Text style={logoText}>Smart Income <span style={logoAccent}>Program</span></Text>
+        </Section>
+        <Heading style={h1}>Verify your email</Heading>
         <Text style={text}>
-          Thanks for signing up for{' '}
-          <Link href={siteUrl} style={link}>
-            <strong>{siteName}</strong>
-          </Link>
-          !
+          Use the code below to verify your email address ({recipient}).
         </Text>
-        <Text style={text}>
-          Please confirm your email address (
-          <Link href={`mailto:${recipient}`} style={link}>
-            {recipient}
-          </Link>
-          ) by clicking the button below:
-        </Text>
-        <Button style={button} href={confirmationUrl}>
-          Verify Email
-        </Button>
+        <Section style={codeContainer}>
+          <Text style={codeStyle}>{token || '------'}</Text>
+        </Section>
+        <Text style={expiry}>This code expires in 15 minutes.</Text>
         <Text style={footer}>
-          If you didn't create an account, you can safely ignore this email.
+          If you didn't create an account on Smart Income Program, you can safely ignore this email.
         </Text>
       </Container>
     </Body>
@@ -60,27 +54,14 @@ export const SignupEmail = ({
 
 export default SignupEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
-const container = { padding: '20px 25px' }
-const h1 = {
-  fontSize: '22px',
-  fontWeight: 'bold' as const,
-  color: '#000000',
-  margin: '0 0 20px',
-}
-const text = {
-  fontSize: '14px',
-  color: '#55575d',
-  lineHeight: '1.5',
-  margin: '0 0 25px',
-}
-const link = { color: 'inherit', textDecoration: 'underline' }
-const button = {
-  backgroundColor: '#000000',
-  color: '#ffffff',
-  fontSize: '14px',
-  borderRadius: '8px',
-  padding: '12px 20px',
-  textDecoration: 'none',
-}
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+const main = { backgroundColor: '#ffffff', fontFamily: "'Plus Jakarta Sans', Arial, sans-serif" }
+const container = { padding: '40px 25px', maxWidth: '480px', margin: '0 auto' }
+const logoSection = { textAlign: 'center' as const, marginBottom: '24px' }
+const logoText = { fontSize: '20px', fontWeight: 'bold' as const, color: '#1a1a2e', margin: '0' }
+const logoAccent = { color: '#22c55e' }
+const h1 = { fontSize: '24px', fontWeight: 'bold' as const, color: '#1a1a2e', margin: '0 0 12px', textAlign: 'center' as const }
+const text = { fontSize: '14px', color: '#6b7280', lineHeight: '1.6', margin: '0 0 24px', textAlign: 'center' as const }
+const codeContainer = { background: '#f0fdf4', borderRadius: '12px', padding: '20px', textAlign: 'center' as const, margin: '0 0 16px', border: '2px dashed #22c55e' }
+const codeStyle = { fontFamily: "'SF Mono', Courier, monospace", fontSize: '36px', fontWeight: 'bold' as const, color: '#15803d', letterSpacing: '8px', margin: '0' }
+const expiry = { fontSize: '12px', color: '#9ca3af', textAlign: 'center' as const, margin: '0 0 32px' }
+const footer = { fontSize: '12px', color: '#9ca3af', margin: '24px 0 0', textAlign: 'center' as const, borderTop: '1px solid #f3f4f6', paddingTop: '16px' }
