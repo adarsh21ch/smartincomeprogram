@@ -60,7 +60,7 @@ export const SipHero = ({ getText }: Props) => {
             </h1>
 
             <p
-              className="text-base md:text-lg leading-relaxed mb-10 max-w-xl md:max-w-none"
+              className="text-sm md:text-base leading-relaxed mb-6 md:mb-8 max-w-xl md:max-w-none"
               style={{ color: "#F5F0E8", opacity: 0.8 }}
             >
               {subtitle}
