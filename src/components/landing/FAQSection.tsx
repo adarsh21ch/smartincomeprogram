@@ -9,7 +9,7 @@ import {
 const faqs = [
   {
     q: "What is Smart Income Program?",
-    a: "Smart Income Program is a smart video funnel platform for digital entrepreneurs, creators, and coaches. Upload a video, share a link, and automatically capture leads, track engagement, and guide your audience.",
+    a: "Smart Income Program is a smart income funnel platform for digital entrepreneurs, creators, and coaches. Upload a video, share a link, and automatically capture leads, track engagement, and guide your audience.",
   },
   {
     q: "Do I need any technical skills?",

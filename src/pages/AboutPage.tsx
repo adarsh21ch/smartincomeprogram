@@ -37,7 +37,7 @@ const AboutPage = () => {
                 <h2 className="text-xl font-heading font-semibold">What is Smart Income Program?</h2>
               </div>
               <p className="text-muted-foreground leading-relaxed">
-                Smart Income Program is a smart video funnel platform that helps creators and digital entrepreneurs turn random video sharing into structured journeys that generate leads, attention, and action. Instead of sending viewers to platforms full of distractions, you give them a focused, trackable experience.
+                Smart Income Program is a smart income funnel platform that helps creators and digital entrepreneurs turn random content sharing into structured journeys that generate leads, attention, and action. Instead of sending viewers to platforms full of distractions, you give them a focused, trackable experience.
               </p>
             </motion.div>
 

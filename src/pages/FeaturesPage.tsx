@@ -6,7 +6,7 @@ import { Video, ClipboardList, BarChart3, Route, MessageCircle, Eye, MousePointe
 const features = [
   {
     icon: Video,
-    title: "Video Funnels",
+    title: "Smart Funnels",
     description: "Controlled playback, timed CTAs, and structured viewer flow — your video, your rules.",
   },
   {

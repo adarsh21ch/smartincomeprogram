@@ -14,7 +14,7 @@ const PlaceholderPage = ({ title, description }: { title: string; description: s
   </DashboardLayout>
 );
 
-export const FunnelsPage = () => <PlaceholderPage title="My Funnels" description="Create, manage, and track your video funnels." />;
+export const FunnelsPage = () => <PlaceholderPage title="My Funnels" description="Create, manage, and track your funnels." />;
 export const VideosPage = () => <PlaceholderPage title="Video Gallery" description="Upload and manage your videos." />;
 export const LeadsPage = () => <PlaceholderPage title="All Leads" description="View and manage leads across all funnels." />;
 export const PaymentsPage = () => <PlaceholderPage title="Payments" description="Track and verify all payment submissions." />;

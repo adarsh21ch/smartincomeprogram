@@ -9,7 +9,7 @@ const sections = [
   },
   {
     title: "Use of the Platform",
-    content: "Smart Income Program provides video funnel creation, lead capture, and viewer tracking tools. You may use the platform for lawful business purposes in accordance with these terms.",
+    content: "Smart Income Program provides funnel creation, lead capture, and viewer tracking tools. You may use the platform for lawful business purposes in accordance with these terms.",
   },
   {
     title: "User Responsibilities",

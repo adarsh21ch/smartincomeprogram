@@ -78,7 +78,7 @@ const Dashboard = () => {
               <Layers size={28} className="text-primary" />
             </div>
             <h3 className="text-lg font-heading font-semibold mb-2">No funnels yet</h3>
-            <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">Create your first video funnel and start capturing leads on autopilot.</p>
+            <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">Create your first funnel and start capturing leads on autopilot.</p>
             <Link to="/funnels/create"><Button variant="hero" size="lg">Create Your First Funnel</Button></Link>
           </div>
         ) : (
