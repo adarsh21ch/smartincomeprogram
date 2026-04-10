@@ -16,7 +16,7 @@ import { LandingPagePreview } from "@/components/funnel/LandingPagePreview";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   FileText, Palette, ClipboardList, Mail, Video, Link2, Rocket, Mic,
-  Save, ArrowLeft, Check, X, Plus, Trash2, GripVertical, Eye, Edit3, Search, Star,
+  Save, ArrowLeft, Check, X, Plus, Trash2, GripVertical, Eye, Edit3, Star,
 } from "lucide-react";
 import { TestimonialsBuilderStep } from "@/components/funnel/TestimonialsBuilderStep";
 import { toast } from "sonner";
@@ -104,8 +104,7 @@ const WIZARD_STEPS = [
   { icon: Mic, label: "Speaker", num: "5" },
   { icon: Video, label: "Video", num: "6" },
   { icon: Star, label: "Testimonials", num: "7" },
-  { icon: Search, label: "SEO", num: "8" },
-  { icon: Rocket, label: "Publish", num: "9" },
+  { icon: Rocket, label: "Publish", num: "8" },
 ];
 
 const LandingPageEditor = () => {
@@ -183,6 +182,14 @@ const LandingPageEditor = () => {
   const saveMutation = useMutation({
     mutationFn: async () => {
       const payload = { ...form, owner_id: user!.id };
+      // Auto-generate slug from title if not manually set
+      if (!payload.slug && payload.title) {
+        payload.slug = generateSlug(payload.title);
+      }
+      // Add unique suffix for new pages to prevent conflicts
+      if (!isEdit && payload.slug) {
+        payload.slug = `${payload.slug}-${Date.now().toString(36).slice(-4)}`;
+      }
       if (isEdit) {
         const { error } = await supabase.from("landing_pages").update(payload as any).eq("id", id!);
         if (error) throw error;
@@ -249,13 +256,6 @@ const LandingPageEditor = () => {
         <div>
           <Label>Landing Page Title *</Label>
           <Input value={form.title} onChange={(e) => updateField("title", e.target.value)} placeholder="Join Our Exclusive Business Session" className="mt-1.5 bg-muted border-border" />
-        </div>
-        <div>
-          <Label>Slug *</Label>
-          <div className="flex items-center gap-2 mt-1.5">
-            <span className="text-sm text-muted-foreground whitespace-nowrap">/l/</span>
-            <Input value={form.slug} onChange={(e) => { setSlugEdited(true); updateField("slug", e.target.value); }} className="bg-muted border-border" />
-          </div>
         </div>
         <div>
           <Label>Short Description</Label>
@@ -710,85 +710,74 @@ const LandingPageEditor = () => {
     </>
   );
 
-  const renderSeoStep = () => (
-    <>
-      <h2 className="text-lg font-heading font-semibold">SEO & Social</h2>
-      <p className="text-sm text-muted-foreground">Optimize how your page appears in search and social shares.</p>
-      <div className="space-y-4 mt-4">
-        <div className="p-4 bg-muted/50 rounded-xl space-y-3">
-          <Label className="font-semibold">Landing Page URL</Label>
-          <div className="flex items-center gap-2">
-            <Input readOnly value={`${window.location.origin}/l/${form.slug}`} className="bg-muted border-border" />
-            <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/l/${form.slug}`); toast.success("Copied!"); }}>
-              <Link2 size={14} />
-            </Button>
-          </div>
-        </div>
 
-        <div className="p-4 bg-muted/50 rounded-xl space-y-3">
-          <h3 className="font-semibold">SEO / Social Preview</h3>
-          <div><Label>OG Title</Label><Input value={form.og_title || ""} onChange={(e) => updateField("og_title", e.target.value)} placeholder={form.title} className="mt-1.5 bg-muted border-border" /></div>
-          <div><Label>OG Description</Label><Textarea value={form.og_description || ""} onChange={(e) => updateField("og_description", e.target.value)} rows={2} className="mt-1.5 bg-muted border-border" /></div>
-          <ImageUploadField
-            label="Social Preview Image"
-            helperText="This image appears when your page is shared on social media"
-            value={form.og_image_url || ""}
-            onChange={(url) => updateField("og_image_url", url)}
-            folder="og-images"
-          />
-        </div>
-      </div>
-    </>
-  );
-
-  const renderPublishStep = () => (
-    <>
-      <h2 className="text-lg font-heading font-semibold">Publish</h2>
-      <p className="text-sm text-muted-foreground">Review and publish your landing page.</p>
-      <div className="space-y-4 mt-4">
-        <div className="p-4 bg-muted/50 rounded-xl space-y-3">
-          <Label className="font-semibold">Status</Label>
-          <Select value={form.status} onValueChange={(v) => updateField("status", v)}>
-            <SelectTrigger className="bg-muted border-border"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="published">Published</SelectItem>
-              <SelectItem value="archived">Archived</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="border border-border rounded-xl p-4 space-y-2.5">
-          <h3 className="font-semibold mb-2">Publish Checklist</h3>
-          {[
-            { ok: !!form.title, label: "Title added" },
-            { ok: form.sections.length > 0, label: "At least one section added" },
-            { ok: form.field_email_enabled, label: "Email field enabled" },
-            { ok: form.send_confirmation_email, label: "Confirmation email configured" },
-            { ok: !!form.speaker_name, label: "Speaker info added (optional)" },
-            { ok: !!form.post_submit_video_asset_id, label: "Post-submit video (optional)" },
-          ].map((item, i) => (
-            <div key={i} className="flex items-center gap-2 text-sm">
-              {item.ok ? <Check size={16} className="text-primary" /> : <X size={16} className="text-muted-foreground" />}
-              <span className={item.ok ? "" : "text-muted-foreground"}>{item.label}</span>
+  const renderPublishStep = () => {
+    const isPublished = form.status === "published";
+    const pageUrl = `${window.location.origin}/l/${form.slug}`;
+    return (
+      <>
+        <h2 className="text-lg font-heading font-semibold">Publish</h2>
+        <p className="text-sm text-muted-foreground">Review and publish your landing page.</p>
+        <div className="space-y-4 mt-4">
+          {/* Publish toggle */}
+          <div className="p-4 bg-muted/50 rounded-xl flex items-center justify-between">
+            <div>
+              <Label className="font-semibold">Published</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isPublished ? "Your page is live and accessible" : "Toggle on to make your page live"}
+              </p>
             </div>
-          ))}
-        </div>
+            <Switch
+              checked={isPublished}
+              onCheckedChange={(checked) => updateField("status", checked ? "published" : "draft")}
+            />
+          </div>
 
-        <Button
-          className="w-full"
-          variant="hero"
-          onClick={() => {
-            updateField("status", "published");
-            setTimeout(() => saveMutation.mutate(), 100);
-          }}
-          disabled={!form.title || saveMutation.isPending}
-        >
-          <Rocket size={16} className="mr-2" /> Publish Landing Page
-        </Button>
-      </div>
-    </>
-  );
+          {/* Landing Page URL */}
+          {isPublished && (
+            <div className="p-4 bg-muted/50 rounded-xl space-y-3">
+              <Label className="font-semibold">Landing Page URL</Label>
+              <div className="flex items-center gap-2">
+                <Input readOnly value={pageUrl} className="bg-muted border-border" />
+                <Button variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(pageUrl); toast.success("Link copied!"); }}>
+                  <Link2 size={14} />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <div className="border border-border rounded-xl p-4 space-y-2.5">
+            <h3 className="font-semibold mb-2">Publish Checklist</h3>
+            {[
+              { ok: !!form.title, label: "Title added" },
+              { ok: form.sections.length > 0, label: "At least one section added" },
+              { ok: form.field_email_enabled, label: "Email field enabled" },
+              { ok: form.send_confirmation_email, label: "Confirmation email configured" },
+              { ok: !!form.speaker_name, label: "Speaker info added (optional)" },
+              { ok: !!form.post_submit_video_asset_id, label: "Post-submit video (optional)" },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm">
+                {item.ok ? <Check size={16} className="text-primary" /> : <X size={16} className="text-muted-foreground" />}
+                <span className={item.ok ? "" : "text-muted-foreground"}>{item.label}</span>
+              </div>
+            ))}
+          </div>
+
+          <Button
+            className="w-full"
+            variant="hero"
+            onClick={() => {
+              updateField("status", "published");
+              setTimeout(() => saveMutation.mutate(), 100);
+            }}
+            disabled={!form.title || saveMutation.isPending}
+          >
+            <Rocket size={16} className="mr-2" /> {isPublished ? "Save & Publish" : "Publish Landing Page"}
+          </Button>
+        </div>
+      </>
+    );
+  };
 
   const renderTestimonialsStep = () => (
     <TestimonialsBuilderStep
@@ -810,8 +799,7 @@ const LandingPageEditor = () => {
       case 4: return renderSpeakerStep();
       case 5: return renderVideoStep();
       case 6: return renderTestimonialsStep();
-      case 7: return renderSeoStep();
-      case 8: return renderPublishStep();
+      case 7: return renderPublishStep();
       default: return null;
     }
   };
