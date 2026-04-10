@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -12,10 +12,9 @@ import { Logo } from "@/components/landing/Logo";
 import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Loader2, Check, Lock, ChevronRight } from "lucide-react";
+import { Loader2, Check, Lock, ChevronRight, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { TestimonialsViewer } from "@/components/funnel/TestimonialsViewer";
-import { PostSubmitVideoPlayer } from "@/components/landing/PostSubmitVideoPlayer";
 
 const PublicLandingPage = () => {
   const { slug } = useParams();
