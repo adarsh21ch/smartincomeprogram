@@ -445,8 +445,8 @@ const PublicLandingPage = () => {
             </div>
 
             {/* ── DESKTOP LAYOUT (lg+) ── */}
-            <div className="hidden lg:grid lg:grid-cols-5 gap-8 items-start">
-              <div className="lg:col-span-3 space-y-8">
+            <div className="hidden lg:grid lg:grid-cols-5 gap-8 items-start" style={{ minHeight: 'calc(100vh - 120px)' }}>
+              <div className="lg:col-span-3 space-y-8 overflow-y-auto max-h-[calc(100vh-120px)] pr-2 scrollbar-hide">
                 {sections.map(renderSection)}
                 {sections.length === 0 && (
                   <div className="space-y-4">
