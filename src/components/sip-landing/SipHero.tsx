@@ -48,7 +48,7 @@ export const SipHero = ({ getText }: Props) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.15 }}
           >
-            <span className="sip-gold-badge mb-8 inline-block">{badge}</span>
+            <span className="sip-gold-badge mb-4 md:mb-6 inline-block">{badge}</span>
 
             <h1
               className="text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
