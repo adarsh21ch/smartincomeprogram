@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured')
     }
 
-    const senderDomain = 'notify.smartincomeprogram.com'
+    const senderDomain = 'notify.mail.smartincomeprogram.in'
     const fromName = senderDisplayName
 
     const plainText = `${page.email_heading || 'You are registered!'}\n\n${emailBody}\n\n${page.email_footer_text || ''}\n\n${trustBadgeText}`
