@@ -183,6 +183,28 @@ const AdminProgramPage = () => {
     });
   };
 
+  const saveMemberExperience = () => {
+    updateSettings.mutate({
+      welcome_message: welcomeMessage,
+      welcome_tagline: welcomeTagline,
+      program_tab_title: programTabTitle,
+      courses_tab_title: coursesTabTitle,
+      completion_message: completionMessage,
+      certificate_signatory: certificateSignatory,
+    } as any);
+  };
+
+  const saveAboutTabBuilder = () => {
+    updateSettings.mutate({
+      about_overview_text: aboutOverview,
+      mentor_name: mentorName,
+      mentor_title: mentorTitle,
+      mentor_bio: mentorBio,
+      benefits: benefits,
+      faq_items: faqItems,
+    } as any);
+  };
+
   const saveRegisterPage = () => {
     updateSettings.mutate({
       active_register_landing_page_id: registerPageId === "__none__" ? null : registerPageId,
