@@ -52,6 +52,16 @@ import TermsPage from "./pages/TermsPage";
 import RefundPolicyPage from "./pages/RefundPolicyPage";
 import InstallApp from "./pages/InstallApp";
 
+/** Redirects old paths like /funnels/:id/edit → /admin/funnels/:id/edit */
+const LegacyRedirect = ({ prefix }: { prefix: string }) => {
+  const location = useLocation();
+  // Extract the wildcard part after the matched path segment
+  const segments = location.pathname.split("/").filter(Boolean);
+  const rest = segments.slice(1).join("/"); // drop the first segment (e.g. "funnels")
+  const target = rest ? `${prefix}/${rest}` : prefix;
+  return <Navigate to={target + location.search + location.hash} replace />;
+};
+
 const queryClient = new QueryClient();
 
 const App = () => (
