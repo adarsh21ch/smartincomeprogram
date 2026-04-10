@@ -32,7 +32,7 @@ export const Logo = ({ size = "default" }: { size?: "sm" | "default" | "lg" }) =
           style={{
             fontFamily: "'Plus Jakarta Sans', 'Sora', system-ui, sans-serif",
             fontWeight: 700,
-            color: "#D4A017",
+            color: "#C5930E",
             letterSpacing: "-0.025em",
             lineHeight: 1,
           }}

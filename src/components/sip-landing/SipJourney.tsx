@@ -41,10 +41,10 @@ export const SipJourney = ({ getText, steps }: Props) => {
                 <div
                   className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold"
                   style={{
-                    background: "linear-gradient(135deg, #D4A017, #A07810)",
+                    background: "linear-gradient(135deg, #C5930E, #8B6914)",
                     color: "#000",
                     fontFamily: "'Playfair Display', serif",
-                    boxShadow: "0 0 20px rgba(212,160,23,0.3)",
+                    boxShadow: "0 0 20px rgba(197,147,14,0.3)",
                   }}
                 >
                   {step.step_number}
@@ -54,7 +54,7 @@ export const SipJourney = ({ getText, steps }: Props) => {
                     className="absolute top-1/2 left-full w-full"
                     style={{
                       height: "1px",
-                      borderTop: "2px dashed rgba(212,160,23,0.3)",
+                      borderTop: "2px dashed rgba(197,147,14,0.3)",
                       transform: "translateY(-50%)",
                     }}
                   />
@@ -81,16 +81,16 @@ export const SipJourney = ({ getText, steps }: Props) => {
                 <div
                   className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
                   style={{
-                    background: "linear-gradient(135deg, #D4A017, #A07810)",
+                    background: "linear-gradient(135deg, #C5930E, #8B6914)",
                     color: "#000",
                     fontFamily: "'Playfair Display', serif",
-                    boxShadow: "0 0 16px rgba(212,160,23,0.25)",
+                    boxShadow: "0 0 16px rgba(197,147,14,0.25)",
                   }}
                 >
                   {step.step_number}
                 </div>
                 {i < steps.length - 1 && (
-                  <div className="w-px flex-1 my-2" style={{ borderLeft: "2px dashed rgba(212,160,23,0.25)" }} />
+                  <div className="w-px flex-1 my-2" style={{ borderLeft: "2px dashed rgba(197,147,14,0.25)" }} />
                 )}
               </div>
               <div className="pb-8">

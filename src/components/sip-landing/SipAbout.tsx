@@ -53,7 +53,7 @@ export const SipAbout = ({ getText }: Props) => {
                 src={imageUrl}
                 alt="Smart Income Program"
                 className="rounded-2xl mb-8 w-full object-cover"
-                style={{ border: "1px solid rgba(212,160,23,0.15)" }}
+                style={{ border: "1px solid rgba(197,147,14,0.15)" }}
               />
             )}
             <div className="grid grid-cols-2 gap-4">

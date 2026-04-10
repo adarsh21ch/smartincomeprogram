@@ -37,7 +37,7 @@ export const SipFaq = ({ getText, faqItems }: Props) => {
                 key={item.id}
                 className="overflow-hidden transition-all"
                 style={{
-                  border: `1px solid ${isOpen ? "rgba(212,160,23,0.3)" : "rgba(212,160,23,0.1)"}`,
+                  border: `1px solid ${isOpen ? "rgba(197,147,14,0.3)" : "rgba(197,147,14,0.1)"}`,
                   borderRadius: "12px",
                 }}
                 initial={{ opacity: 0, y: 10 }}
@@ -54,7 +54,7 @@ export const SipFaq = ({ getText, faqItems }: Props) => {
                     size={20}
                     className="shrink-0 transition-transform duration-200"
                     style={{
-                      color: "#D4A017",
+                      color: "#C5930E",
                       transform: isOpen ? "rotate(45deg)" : "rotate(0deg)",
                     }}
                   />

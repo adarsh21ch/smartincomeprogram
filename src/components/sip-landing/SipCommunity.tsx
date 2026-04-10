@@ -41,11 +41,11 @@ export const SipCommunity = ({ getText }: Props) => {
     <section className="sip-community-bg py-20 md:py-28 relative">
       <div
         className="absolute inset-x-0 top-0 h-px"
-        style={{ background: "linear-gradient(90deg, transparent, rgba(212,160,23,0.3), transparent)" }}
+        style={{ background: "linear-gradient(90deg, transparent, rgba(197,147,14,0.3), transparent)" }}
       />
       <div
         className="absolute inset-x-0 bottom-0 h-px"
-        style={{ background: "linear-gradient(90deg, transparent, rgba(212,160,23,0.3), transparent)" }}
+        style={{ background: "linear-gradient(90deg, transparent, rgba(197,147,14,0.3), transparent)" }}
       />
 
       <div className="container text-center max-w-4xl">
@@ -85,7 +85,7 @@ export const SipCommunity = ({ getText }: Props) => {
         <Link to={registerUrl}>
           <button
             className="px-8 py-3.5 rounded-lg text-base font-semibold transition-all hover:brightness-110"
-            style={{ background: "linear-gradient(135deg, #D4A017, #A07810)", color: "#000" }}
+            style={{ background: "linear-gradient(135deg, #C5930E, #8B6914)", color: "#000" }}
           >
             {ctaText}
           </button>

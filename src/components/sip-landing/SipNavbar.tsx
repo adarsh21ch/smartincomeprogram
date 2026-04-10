@@ -19,7 +19,7 @@ export const SipNavbar = () => {
       style={{
         background: scrolled ? "rgba(5,5,5,0.98)" : "rgba(5,5,5,0.95)",
         backdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(212,160,23,0.15)",
+        borderBottom: "1px solid rgba(197,147,14,0.15)",
       }}
     >
       <div className="container flex items-center justify-between h-16">
@@ -45,7 +45,7 @@ export const SipNavbar = () => {
           className="md:hidden p-4 flex flex-col gap-3"
           style={{
             background: "rgba(5,5,5,0.98)",
-            borderTop: "1px solid rgba(212,160,23,0.1)",
+            borderTop: "1px solid rgba(197,147,14,0.1)",
           }}
         >
           <Link to="/auth" onClick={() => setOpen(false)}>
