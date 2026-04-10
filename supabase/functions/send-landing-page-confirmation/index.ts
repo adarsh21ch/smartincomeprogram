@@ -4,7 +4,7 @@ const corsHeaders = {
 };
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const RESEND_API_URL = 'https://api.resend.com/emails'
+const GATEWAY_URL = 'https://connector-gateway.lovable.dev/resend'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -16,6 +16,11 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
+
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY')
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY not configured')
+    }
 
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
     if (!RESEND_API_KEY) {
@@ -89,12 +94,13 @@ Deno.serve(async (req) => {
 
     const plainText = `${page.email_heading || 'You are registered!'}\n\n${emailBody}\n\n${page.email_footer_text || ''}\n\n${trustBadgeText}`
 
-    // Send via Resend
-    const response = await fetch(RESEND_API_URL, {
+    // Send via Resend connector gateway
+    const response = await fetch(`${GATEWAY_URL}/emails`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'X-Connection-Api-Key': RESEND_API_KEY,
       },
       body: JSON.stringify({
         from: `${senderDisplayName} <noreply@smartincomeprogram.in>`,
@@ -107,11 +113,11 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       const errBody = await response.text()
-      throw new Error(`Resend API error [${response.status}]: ${errBody}`)
+      throw new Error(`Resend gateway error [${response.status}]: ${errBody}`)
     }
 
     const result = await response.json()
-    console.log('Email sent via Resend:', JSON.stringify(result))
+    console.log('Email sent via Resend gateway:', JSON.stringify(result))
 
     // Update registration
     await supabase.from('landing_page_registrations').update({
