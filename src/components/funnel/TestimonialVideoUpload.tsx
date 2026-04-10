@@ -245,24 +245,41 @@ export const TestimonialVideoUpload = ({
         <div className="space-y-3">
           <div className="max-w-[220px] rounded-[1.5rem] border border-border bg-background/70 p-2">
             <div className="relative aspect-[9/16] overflow-hidden rounded-[1rem] bg-foreground/10">
-              {thumbnailUrl ? (
-                <img src={thumbnailUrl} alt="Student testimonial preview" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+              {playing ? (
+                <video
+                  src={value}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  controls
+                  autoPlay
+                  playsInline
+                  onEnded={() => setPlaying(false)}
+                />
               ) : (
-                <video src={value} className="absolute inset-0 h-full w-full object-cover" preload="metadata" muted playsInline />
-              )}
+                <>
+                  {thumbnailUrl ? (
+                    <img src={thumbnailUrl} alt="Student testimonial preview" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+                  ) : (
+                    <video src={value} className="absolute inset-0 h-full w-full object-cover" preload="metadata" muted playsInline />
+                  )}
 
-              <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/10 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/10 to-transparent" />
 
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-border bg-background/80 backdrop-blur-sm">
-                  <Play size={18} className="text-foreground" />
-                </div>
-              </div>
+                  <button
+                    type="button"
+                    className="absolute inset-0 flex items-center justify-center cursor-pointer"
+                    onClick={() => setPlaying(true)}
+                  >
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full border border-border bg-background/80 backdrop-blur-sm transition-transform hover:scale-110">
+                      <Play size={18} className="text-foreground" />
+                    </div>
+                  </button>
 
-              {durationLabel && (
-                <span className="absolute right-3 top-3 rounded-full border border-border bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground backdrop-blur-sm">
-                  {durationLabel}
-                </span>
+                  {durationLabel && (
+                    <span className="absolute right-3 top-3 rounded-full border border-border bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground backdrop-blur-sm">
+                      {durationLabel}
+                    </span>
+                  )}
+                </>
               )}
             </div>
           </div>
