@@ -250,6 +250,9 @@ const PublicLandingPage = () => {
                   <video
                     src={video.public_url}
                     controls
+                    playsInline
+                    preload="auto"
+                    controlsList="nodownload"
                     className="w-full h-full"
                     poster={video.thumbnail_url || undefined}
                   />
