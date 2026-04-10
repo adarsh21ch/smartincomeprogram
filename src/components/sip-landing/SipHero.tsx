@@ -51,7 +51,7 @@ export const SipHero = ({ getText }: Props) => {
             <span className="sip-gold-badge mb-4 md:mb-6 inline-block">{badge}</span>
 
             <h1
-              className="text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-4"
               style={{ fontFamily: "'Playfair Display', serif" }}
             >
               {line1}
