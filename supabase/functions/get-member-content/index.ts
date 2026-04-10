@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
     if (videoAssetIds.length > 0) {
       const { data: assets } = await supabase
         .from("video_assets")
-        .select("id, r2_key, public_url, thumbnail_url, duration_seconds")
+        .select("id, r2_object_key, thumbnail_url, duration_seconds")
         .in("id", videoAssetIds);
       if (assets) {
         for (const a of assets) videoAssets[a.id] = a;
@@ -174,8 +174,7 @@ Deno.serve(async (req) => {
       }
 
       const asset = step.video_asset_id ? videoAssets[step.video_asset_id] : null;
-      // Prefer stored public_url (CDN), fall back to constructing from r2_key
-      const videoUrl = asset?.public_url || (asset?.r2_key ? `${r2PublicUrl}/${asset.r2_key}` : null);
+      const videoUrl = asset?.r2_object_key ? `${r2PublicUrl}/${asset.r2_object_key}` : null;
 
       return {
         id: step.id,

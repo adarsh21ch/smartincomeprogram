@@ -10,8 +10,6 @@ import { Video, Search, Grid, List, Share2, Pencil, Rocket, Upload, Loader2, Tra
 import { VideoShareModal } from "@/components/VideoShareModal";
 import { VideoRenameModal } from "@/components/VideoRenameModal";
 import { useNavigate } from "react-router-dom";
-import { resolveVideoPlaybackUrl } from "@/lib/videoPlayback";
-import { StreamingVideo } from "@/components/StreamingVideo";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 
@@ -167,7 +165,7 @@ const VideosPage = () => {
               <div key={v.id} className="glass-card-hover p-4">
                 <div className="aspect-video bg-muted rounded-lg mb-3 flex items-center justify-center overflow-hidden">
                   {v.thumbnail_url ? <img src={v.thumbnail_url} alt={v.title} className="w-full h-full object-cover rounded-lg" /> :
-                    v.public_url ? <StreamingVideo src={resolveVideoPlaybackUrl(v.public_url)} className="w-full h-full rounded-lg" controls={false} showOverlays={false} /> :
+                    v.public_url ? <video src={v.public_url} className="w-full h-full object-cover rounded-lg" /> :
                     <Video size={24} className="text-muted-foreground" />}
                 </div>
                 <h3 className="font-medium text-sm truncate">{v.title}</h3>

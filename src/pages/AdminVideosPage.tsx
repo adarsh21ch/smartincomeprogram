@@ -7,13 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useState, useRef } from "react";
-import { Upload, Video, Trash2, Loader2, Link2, Share2, Pencil, Rocket, Play, X } from "lucide-react";
-import { StreamingVideo } from "@/components/StreamingVideo";
+import { Upload, Video, Trash2, Loader2, Link2, Share2, Pencil, Rocket } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { VideoShareModal } from "@/components/VideoShareModal";
 import { VideoRenameModal } from "@/components/VideoRenameModal";
 import { useNavigate } from "react-router-dom";
-import { uploadVideoToR2 } from "@/lib/r2VideoUpload";
 
 const AdminVideosPage = () => {
   const { user } = useAuth();
@@ -22,11 +20,9 @@ const AdminVideosPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadStage, setUploadStage] = useState("");
   const [title, setTitle] = useState("");
   const [shareVideo, setShareVideo] = useState<{ id: string; title: string } | null>(null);
   const [renameVideo, setRenameVideo] = useState<{ id: string; title: string } | null>(null);
-  const [previewVideo, setPreviewVideo] = useState<{ id: string; title: string; url: string } | null>(null);
 
   const { data: videos = [], isLoading } = useQuery({
     queryKey: ["admin-all-videos"],
@@ -40,15 +36,39 @@ const AdminVideosPage = () => {
     if (!user) return;
     setUploading(true);
     setUploadProgress(0);
-    setUploadStage("Starting…");
+
+    let videoId: string | null = null;
 
     try {
-      await uploadVideoToR2({
-        file,
-        title: title || file.name,
-        onProgress: setUploadProgress,
-        onStage: setUploadStage,
+      const { data, error } = await supabase.functions.invoke("get-r2-upload-url", {
+        body: { filename: file.name, contentType: file.type, title: title || file.name },
       });
+
+      if (error || !data?.uploadUrl) throw new Error(data?.error || "Failed to get upload URL");
+      videoId = data.videoId;
+
+      const xhr = new XMLHttpRequest();
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable) setUploadProgress(Math.round((e.loaded / e.total) * 100));
+      });
+
+      await new Promise<void>((resolve, reject) => {
+        xhr.open("PUT", data.uploadUrl);
+        xhr.setRequestHeader("Content-Type", file.type);
+        xhr.onload = () => {
+          if (xhr.status < 300) resolve();
+          else reject(new Error(`R2 rejected upload (HTTP ${xhr.status}): ${xhr.responseText?.slice(0, 200) || "unknown error"}`));
+        };
+        xhr.onerror = () => reject(new Error("Network error — check CORS config on R2 bucket"));
+        xhr.ontimeout = () => reject(new Error("Upload timed out"));
+        xhr.send(file);
+      });
+
+      const { error: confirmErr } = await supabase.functions.invoke("confirm-r2-upload", {
+        body: { videoId: data.videoId, fileSizeBytes: file.size },
+      });
+
+      if (confirmErr) throw new Error("Upload succeeded but confirmation failed");
 
       toast.success("Video uploaded successfully!");
       setTitle("");
@@ -56,10 +76,17 @@ const AdminVideosPage = () => {
     } catch (err: any) {
       console.error("Upload error:", err);
       toast.error(err.message || "Upload failed");
+
+      if (videoId) {
+        try {
+          await supabase.functions.invoke("confirm-r2-upload", {
+            body: { videoId, failed: true, errorMessage: err.message },
+          });
+        } catch (_) { /* best effort */ }
+      }
     } finally {
       setUploading(false);
       setUploadProgress(0);
-      setUploadStage("");
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -117,10 +144,7 @@ const AdminVideosPage = () => {
           {uploading && (
             <div className="space-y-2">
               <Progress value={uploadProgress} className="h-2 bg-muted [&>div]:bg-white" />
-              <p className="text-xs text-muted-foreground text-center">
-                {uploadStage && <span className="mr-2">{uploadStage}</span>}
-                {uploadProgress}%
-              </p>
+              <p className="text-xs text-muted-foreground text-center">{uploadProgress}%</p>
             </div>
           )}
         </div>
@@ -156,19 +180,9 @@ const AdminVideosPage = () => {
                     <tr key={v.id} className="border-b border-border hover:bg-muted/50 transition-colors">
                       <td className="p-4">
                         <div className="flex items-center gap-3">
-                          <button
-                            className="w-12 h-8 bg-muted rounded flex items-center justify-center flex-shrink-0 relative group cursor-pointer hover:ring-1 hover:ring-primary/50 transition-all"
-                            onClick={() => v.public_url && setPreviewVideo({ id: v.id, title: v.title, url: v.public_url })}
-                            title={v.public_url ? "Preview video" : "No URL available"}
-                            disabled={!v.public_url}
-                          >
+                          <div className="w-12 h-8 bg-muted rounded flex items-center justify-center flex-shrink-0">
                             {v.thumbnail_url ? <img src={v.thumbnail_url} className="w-full h-full object-cover rounded" /> : <Video size={14} className="text-muted-foreground" />}
-                            {v.public_url && (
-                              <div className="absolute inset-0 bg-black/40 rounded flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Play size={12} fill="white" className="text-white" />
-                              </div>
-                            )}
-                          </button>
+                          </div>
                           <div className="min-w-0">
                             <p className="font-medium truncate">{v.title}</p>
                             <p className="text-xs text-muted-foreground truncate">{v.original_filename}</p>
@@ -184,11 +198,6 @@ const AdminVideosPage = () => {
                       <td className="p-4 text-xs text-muted-foreground">{v.view_count || 0}</td>
                       <td className="p-4">
                         <div className="flex gap-1">
-                          {v.public_url && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setPreviewVideo({ id: v.id, title: v.title, url: v.public_url })} title="Preview">
-                              <Play size={14} />
-                            </Button>
-                          )}
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setRenameVideo({ id: v.id, title: v.title })} title="Rename">
                             <Pencil size={14} />
                           </Button>
@@ -232,28 +241,6 @@ const AdminVideosPage = () => {
           currentTitle={renameVideo.title}
           onSuccess={() => queryClient.invalidateQueries({ queryKey: ["admin-all-videos"] })}
         />
-      )}
-
-      {/* Video Preview Modal */}
-      {previewVideo && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setPreviewVideo(null)}>
-          <div className="relative w-full max-w-4xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-medium text-white truncate pr-4">{previewVideo.title}</h3>
-              <button onClick={() => setPreviewVideo(null)} className="text-white/70 hover:text-white p-1">
-                <X size={20} />
-              </button>
-            </div>
-            <div className="aspect-video rounded-xl overflow-hidden bg-black">
-              <StreamingVideo
-                src={previewVideo.url}
-                title={previewVideo.title}
-                className="w-full h-full"
-                controls
-              />
-            </div>
-          </div>
-        </div>
       )}
     </AdminLayout>
   );
