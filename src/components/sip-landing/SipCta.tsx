@@ -1,15 +1,34 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useProgramSettings } from "@/hooks/useProgramSettings";
 
 interface Props {
   getText: (section: string, key: string, fallback?: string) => string;
 }
 
 export const SipCta = ({ getText }: Props) => {
+  const { settings } = useProgramSettings();
   const heading = getText("cta", "heading", "Ready to Build Your Income?");
   const subtitle = getText("cta", "subtitle", "Join the Smart Income Program and start your journey today.");
-  const buttonText = getText("cta", "button_text", "Request Access →");
-  const buttonUrl = getText("cta", "button_url", "/auth?tab=signup");
+
+  const pageId = settings?.active_register_landing_page_id;
+  const { data: page } = useQuery({
+    queryKey: ["register-page-slug-cta", pageId],
+    queryFn: async () => {
+      if (!pageId) return null;
+      const { data } = await supabase
+        .from("landing_pages")
+        .select("slug")
+        .eq("id", pageId)
+        .single();
+      return data;
+    },
+    enabled: !!pageId,
+  });
+
+  const registerUrl = page?.slug ? `/l/${page.slug}` : "/auth?tab=signup";
 
   return (
     <section className="relative py-20 md:py-28 sip-gold-glow" style={{ background: "#050505" }}>
@@ -36,14 +55,24 @@ export const SipCta = ({ getText }: Props) => {
           <p className="text-base mb-10" style={{ color: "#F5F0E8", opacity: 0.7 }}>
             {subtitle}
           </p>
-          <a href="https://smartincomeprogram.in/l/smart-income-program">
-            <button
-              className="px-10 py-4 rounded-lg text-base font-semibold transition-all hover:brightness-110"
-              style={{ background: "linear-gradient(135deg, #D4A017, #A07810)", color: "#000" }}
-            >
-              {buttonText}
-            </button>
-          </a>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to={registerUrl}>
+              <button
+                className="px-10 py-4 rounded-lg text-base font-semibold transition-all hover:brightness-110"
+                style={{ background: "linear-gradient(135deg, #D4A017, #A07810)", color: "#000" }}
+              >
+                Register for Program →
+              </button>
+            </Link>
+            <Link to="/auth">
+              <button
+                className="px-10 py-4 rounded-lg text-base font-medium transition-all hover:bg-white/5"
+                style={{ border: "1px solid rgba(212,160,23,0.4)", color: "#F0C040" }}
+              >
+                Login / Sign Up
+              </button>
+            </Link>
+          </div>
         </motion.div>
       </div>
     </section>

@@ -1,21 +1,28 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { useProgramSettings } from "@/hooks/useProgramSettings";
 
 interface Props {
   getText: (section: string, key: string, fallback?: string) => string;
 }
 
 export const SipHero = ({ getText }: Props) => {
+  const { settings } = useProgramSettings();
   const badge = getText("hero", "badge_text", "Private Members Community");
   const line1 = getText("hero", "headline_line1", "Build Your Income.");
   const line2 = getText("hero", "headline_line2", "Build Your Future.");
   const subtitle = getText("hero", "subtitle", "A structured learning and growth platform for driven individuals.");
-  const primaryBtn = getText("hero", "primary_button_text", "Join the Program →");
-  const secondaryBtn = getText("hero", "secondary_button_text", "Watch Introduction ▶");
-  const secondaryUrl = getText("hero", "secondary_button_url", "");
   const trust1 = getText("hero", "trust_1", "🔒 Private Community");
   const trust2 = getText("hero", "trust_2", "📚 Structured Learning");
   const trust3 = getText("hero", "trust_3", "🏆 Proven System");
+
+  const registerPageId = settings?.active_register_landing_page_id;
+
+  const handleRegister = () => {
+    if (registerPageId) {
+      // Will be resolved via slug lookup
+    }
+  };
 
   return (
     <section className="sip-hero-bg min-h-screen flex items-center justify-center pt-16">
@@ -44,28 +51,15 @@ export const SipHero = ({ getText }: Props) => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <a href="https://smartincomeprogram.in/l/smart-income-program">
+            <RegisterButton settings={settings} />
+            <Link to="/auth">
               <button
-                className="px-8 py-3.5 rounded-lg text-base font-semibold transition-all hover:brightness-110"
-                style={{ background: "linear-gradient(135deg, #D4A017, #A07810)", color: "#000" }}
+                className="px-8 py-3.5 rounded-lg text-base font-medium transition-all hover:bg-white/5"
+                style={{ border: "1px solid rgba(212,160,23,0.4)", color: "#F0C040" }}
               >
-                {primaryBtn}
+                Login / Sign Up
               </button>
-            </a>
-            {secondaryBtn && (
-              <a
-                href={secondaryUrl || "#"}
-                target={secondaryUrl ? "_blank" : undefined}
-                rel="noopener noreferrer"
-              >
-                <button
-                  className="px-8 py-3.5 rounded-lg text-base font-medium transition-all hover:bg-white/5"
-                  style={{ border: "1px solid rgba(212,160,23,0.4)", color: "#F0C040" }}
-                >
-                  {secondaryBtn}
-                </button>
-              </a>
-            )}
+            </Link>
           </div>
 
           <div className="sip-gold-divider max-w-xs mx-auto mb-8" />
@@ -81,4 +75,40 @@ export const SipHero = ({ getText }: Props) => {
       </div>
     </section>
   );
+};
+
+const RegisterButton = ({ settings }: { settings: any }) => {
+  const { data: page } = useRegisterPage(settings?.active_register_landing_page_id);
+  
+  const url = page?.slug ? `/l/${page.slug}` : "/auth?tab=signup";
+
+  return (
+    <Link to={url}>
+      <button
+        className="px-8 py-3.5 rounded-lg text-base font-semibold transition-all hover:brightness-110"
+        style={{ background: "linear-gradient(135deg, #D4A017, #A07810)", color: "#000" }}
+      >
+        Register for Program →
+      </button>
+    </Link>
+  );
+};
+
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+const useRegisterPage = (pageId: string | null | undefined) => {
+  return useQuery({
+    queryKey: ["register-page-slug", pageId],
+    queryFn: async () => {
+      if (!pageId) return null;
+      const { data } = await supabase
+        .from("landing_pages")
+        .select("slug")
+        .eq("id", pageId)
+        .single();
+      return data;
+    },
+    enabled: !!pageId,
+  });
 };
