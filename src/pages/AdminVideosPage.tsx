@@ -23,6 +23,7 @@ const AdminVideosPage = () => {
   const [title, setTitle] = useState("");
   const [shareVideo, setShareVideo] = useState<{ id: string; title: string } | null>(null);
   const [renameVideo, setRenameVideo] = useState<{ id: string; title: string } | null>(null);
+  const [previewVideo, setPreviewVideo] = useState<{ id: string; title: string; url: string } | null>(null);
 
   const { data: videos = [], isLoading } = useQuery({
     queryKey: ["admin-all-videos"],
