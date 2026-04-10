@@ -29,7 +29,7 @@ const VideosPage = () => {
   const { data: videos = [], isLoading } = useQuery({
     queryKey: ["videos", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("video_assets").select("*").eq("owner_id", user!.id).order("created_at", { ascending: false });
+      const { data } = await supabase.from("video_assets").select("*").eq("owner_id", user!.id).not("status", "eq", "failed").order("created_at", { ascending: false });
       return data || [];
     },
     enabled: !!user,
