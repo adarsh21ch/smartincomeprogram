@@ -58,52 +58,35 @@ export const TestimonialsViewer = ({ testimonials, sectionTitle }: TestimonialsV
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <h2 className="text-[22px] font-semibold text-center" style={{ color: "#F5F0E8" }}>
         {sectionTitle}
       </h2>
 
-      {/* Portrait videos: 2-col grid on desktop, horizontal scroll on mobile */}
-      {portraitItems.length > 0 && (
-        <div className="hidden sm:grid sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-          {portraitItems.map((t) => (
-            <TestimonialCard key={t.id} testimonial={t} />
-          ))}
-        </div>
-      )}
-      {portraitItems.length > 0 && (
-        <div className="sm:hidden">
-          <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 px-1 scrollbar-hide"
-            style={{ WebkitOverflowScrolling: "touch" }}>
-            {portraitItems.map((t) => (
-              <div key={t.id} className="snap-center shrink-0" style={{ width: "calc(100vw - 48px)", maxWidth: "320px" }}>
+      {/* All testimonials in a single horizontal swipeable row */}
+      <div className="relative">
+        <div
+          className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 px-4 scrollbar-hide"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+          {activeItems.map((t) => {
+            const isLandscape = t.video_orientation === "landscape";
+            const hasVideo = (t.type === "video" || t.type === "both") && t.video_url;
+            return (
+              <div
+                key={t.id}
+                className="snap-center shrink-0"
+                style={{
+                  width: hasVideo && isLandscape ? "min(85vw, 420px)" : "min(72vw, 280px)",
+                }}
+              >
                 <TestimonialCard testimonial={t} />
               </div>
-            ))}
-          </div>
-          {portraitItems.length > 1 && (
-            <ScrollDots count={portraitItems.length} />
-          )}
+            );
+          })}
         </div>
-      )}
-
-      {/* Landscape videos: full width */}
-      {landscapeItems.length > 0 && (
-        <div className="space-y-4 max-w-2xl mx-auto">
-          {landscapeItems.map((t) => (
-            <TestimonialCard key={t.id} testimonial={t} />
-          ))}
-        </div>
-      )}
-
-      {/* Text-only testimonials */}
-      {textOnlyItems.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-          {textOnlyItems.map((t) => (
-            <TestimonialCard key={t.id} testimonial={t} />
-          ))}
-        </div>
-      )}
+        {activeItems.length > 1 && <ScrollDots count={activeItems.length} />}
+      </div>
     </div>
   );
 };
