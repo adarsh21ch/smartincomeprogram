@@ -16,6 +16,7 @@ import {
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/admin/dashboard" },
+  { icon: Settings, label: "Program", path: "/admin/program" },
   { icon: Layers, label: "Funnels", path: "/admin/funnels" },
   { icon: FileText, label: "Landing Pages", path: "/admin/landing-pages" },
   { icon: Radio, label: "Live", path: "/admin/live" },
@@ -83,7 +84,12 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
       {/* Desktop sidebar */}
       <aside className={cn("hidden md:flex flex-col border-r border-border bg-sidebar transition-all duration-200 sticky top-0 h-screen", collapsed ? "w-16" : "w-60")}>
         <div className="flex items-center justify-between h-16 px-4 border-b border-border shrink-0">
-          {!collapsed && <Logo size="sm" />}
+          {!collapsed && (
+            <div className="flex items-center gap-2">
+              <Shield size={18} className="text-primary" />
+              <span className="font-heading font-bold text-sm text-foreground">Admin Panel</span>
+            </div>
+          )}
           <div className="flex items-center gap-1">
             <button onClick={toggleTheme} className="text-muted-foreground hover:text-foreground p-1.5 rounded-md hover:bg-muted transition-colors">
               {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
