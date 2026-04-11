@@ -996,7 +996,35 @@ const FunnelEditor = () => {
         <h2 className="text-lg font-heading font-semibold">Video Topics</h2>
         <p className="text-sm text-muted-foreground">Add key points covered in your video. These will appear on your funnel page.</p>
         <div className="space-y-5 mt-4">
-          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
+          {/* Scope selector — only for multi-step */}
+          {isMulti && (
+            <div className="p-4 bg-muted/50 rounded-xl space-y-3">
+              <Label className="font-semibold">Topics Mode</Label>
+              <div className="flex rounded-xl border border-border overflow-hidden">
+                {(["global", "per_step"] as const).map((scope) => (
+                  <button
+                    key={scope}
+                    onClick={() => update("video_topics_scope", scope)}
+                    className={`flex-1 py-2.5 text-sm font-semibold transition-all ${
+                      funnel.video_topics_scope === scope
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {scope === "global" ? "🌍 Same for all steps" : "🎯 Different per step"}
+                  </button>
+                ))}
+              </div>
+              {funnel.video_topics_scope === "per_step" && (
+                <p className="text-sm text-muted-foreground">Video topics are now managed inside each step. Go to <strong>Build Journey → Edit any step → Key Points</strong> section.</p>
+              )}
+            </div>
+          )}
+
+          {/* Global topics — shown when scope is global (or single mode) */}
+          {(funnel.video_topics_scope === "global" || !isMulti) && (
+            <>
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
             <div>
               <Label className="font-semibold">Show Video Topics on funnel page</Label>
               <p className="text-xs text-muted-foreground mt-0.5">Display key points below the video</p>
