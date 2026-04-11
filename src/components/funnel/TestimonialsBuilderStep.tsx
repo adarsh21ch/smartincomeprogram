@@ -88,7 +88,7 @@ export const TestimonialsBuilderStep = ({
   landingPageId, userId, testimonialsEnabled, testimonialsSectionTitle, testimonialsDisplayPosition, onToggleEnabled, onTitleChange, onDisplayPositionChange,
 }: TestimonialsBuilderStepProps) => {
   const queryClient = useQueryClient();
-  const MAX_PER_PAGE = 4;
+  
 
   const { data: platformSettings = [] } = useQuery({
     queryKey: ["platform-settings-testimonials"],
@@ -121,7 +121,6 @@ export const TestimonialsBuilderStep = ({
   });
 
   const totalCount = testimonials.length;
-  const limitReached = totalCount >= MAX_PER_PAGE;
 
   const addMutation = useMutation({
     mutationFn: async () => {
@@ -237,15 +236,12 @@ export const TestimonialsBuilderStep = ({
 
                 <Button
                   variant="outline" size="sm"
-                  disabled={limitReached || addMutation.isPending}
+                  disabled={addMutation.isPending}
                   onClick={() => addMutation.mutate()}
                   className="flex items-center gap-1.5 w-full"
                 >
                   <Plus size={14} /> Add Testimonial
                 </Button>
-                {limitReached && (
-                  <p className="text-xs text-amber-500">Maximum {MAX_PER_PAGE} testimonials reached.</p>
-                )}
               </>
             )}
           </div>
