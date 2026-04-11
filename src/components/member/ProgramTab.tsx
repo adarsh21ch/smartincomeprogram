@@ -4,7 +4,8 @@ import {
   ChevronRight, Check, Circle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { VideoPlayer } from "./VideoPlayer";
+import { cn } from "@/lib/utils";
+import { VideoPlayer, type VideoPlayerProgress } from "./VideoPlayer";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -84,6 +85,22 @@ interface UnlockResult {
   unlockAt?: number;
   remainingMs?: number;
 }
+
+interface LocalStepProgress {
+  watch_percent: number;
+  is_completed: boolean;
+  condition_met_at?: string | null;
+  time_spent_seconds: number;
+  last_position_seconds: number;
+}
+
+const getInitialProgressState = (step: RichStepData): LocalStepProgress => ({
+  watch_percent: step.progress.watch_percent ?? 0,
+  is_completed: step.progress.is_completed ?? false,
+  condition_met_at: step.progress.condition_met_at ?? null,
+  time_spent_seconds: step.progress.time_spent_seconds ?? 0,
+  last_position_seconds: step.progress.last_position_seconds ?? 0,
+});
 
 const checkStepUnlock = (
   step: RichStepData,
@@ -196,63 +213,97 @@ const VideoTopics = ({ funnel, step }: { funnel: FunnelData; step: RichStepData 
   );
 };
 
-/* ─── Full-Width Step Bar ─── */
-const StepBar = ({ steps, activeIndex, countdownUnlocks, onStepClick }: {
+/* ─── Scrollable Step Strip ─── */
+const StepBar = ({
+  steps,
+  activeIndex,
+  countdownUnlocks,
+  stepStates,
+  onStepClick,
+}: {
   steps: RichStepData[];
   activeIndex: number;
   countdownUnlocks: Record<string, number>;
+  stepStates: Array<{
+    completed: boolean;
+    accessible: boolean;
+    hasCountdown: boolean;
+    watchPercent: number;
+  }>;
   onStepClick: (index: number) => void;
 }) => {
+  const shouldScroll = steps.length > 4;
+
   return (
-    <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${steps.length}, 1fr)` }}>
+    <div className="overflow-x-auto scrollbar-hide">
+      <div className={cn("flex gap-2 pb-1", shouldScroll ? "min-w-max snap-x snap-mandatory" : "w-full") }>
       {steps.map((step, i) => {
-        const isCompleted = step.progress.is_completed;
+        const state = stepStates[i];
+        const isCompleted = state.completed;
         const isActive = i === activeIndex;
-        const isLocked = step.is_locked && !isCompleted;
-        const hasCountdown = !!countdownUnlocks[step.id];
+        const isLocked = !state.accessible && !isCompleted;
+        const hasCountdown = state.hasCountdown || !!countdownUnlocks[step.id];
 
         return (
           <button
             key={step.id}
             onClick={() => onStepClick(i)}
-            className="flex flex-col items-center gap-1 py-2 px-1 rounded-xl transition-all text-center min-w-0"
-            style={{
-              background: isActive ? "rgba(212,175,55,0.1)" : isCompleted ? "rgba(212,175,55,0.04)" : "transparent",
-              border: isActive ? "1.5px solid rgba(212,175,55,0.35)" : isCompleted ? "1px solid rgba(212,175,55,0.15)" : "1px solid hsl(var(--border) / 0.3)",
-              cursor: isLocked && !hasCountdown ? "not-allowed" : "pointer",
-              opacity: isLocked && !hasCountdown ? 0.4 : 1,
-            }}
+            className={cn(
+              "snap-start rounded-2xl border px-3 py-3 text-left transition-all",
+              shouldScroll ? "w-[112px] flex-none sm:w-[128px]" : "min-w-0 flex-1",
+              isActive && "border-primary/40 bg-primary/10 shadow-sm shadow-primary/10",
+              !isActive && isCompleted && "border-primary/20 bg-primary/5",
+              !isActive && !isCompleted && hasCountdown && "border-warning/30 bg-warning/10",
+              !isActive && !isCompleted && !hasCountdown && state.accessible && "border-border/60 bg-card/70",
+              isLocked && "border-border/40 bg-muted/20 opacity-60",
+            )}
+            disabled={isLocked && !hasCountdown}
           >
-            {/* Icon */}
-            <div
-              className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-              style={{
-                background: isCompleted ? "hsl(var(--primary))" : isActive ? "rgba(212,175,55,0.15)" : hasCountdown ? "rgba(251,191,36,0.12)" : "hsl(var(--muted) / 0.5)",
-                border: isActive && !isCompleted ? "2px solid hsl(var(--primary))" : "none",
-              }}
-            >
-              {isCompleted ? (
-                <Check size={13} className="text-primary-foreground" strokeWidth={3} />
-              ) : hasCountdown ? (
-                <Timer size={11} style={{ color: "#fbbf24" }} />
-              ) : isLocked ? (
-                <Lock size={10} className="text-muted-foreground/50" />
-              ) : (
-                <span className={`text-[10px] font-bold ${isActive ? "text-primary" : "text-muted-foreground"}`}>
-                  {i + 1}
-                </span>
-              )}
-            </div>
+            <div className="flex items-start gap-2">
+              <div
+                className={cn(
+                  "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold",
+                  isCompleted && "border-primary bg-primary text-primary-foreground",
+                  !isCompleted && isActive && "border-primary bg-primary/10 text-primary",
+                  !isCompleted && !isActive && hasCountdown && "border-warning/40 bg-warning/10 text-warning",
+                  !isCompleted && !isActive && !hasCountdown && state.accessible && "border-border bg-muted/40 text-foreground",
+                  isLocked && "border-border/50 bg-muted/30 text-muted-foreground",
+                )}
+              >
+                {isCompleted ? <Check size={14} strokeWidth={3} /> : hasCountdown ? <Timer size={13} /> : isLocked ? <Lock size={12} /> : i + 1}
+              </div>
 
-            {/* Label */}
-            <span className={`text-[10px] font-medium leading-tight truncate w-full ${
-              isActive ? "text-primary" : isCompleted ? "text-primary/80" : hasCountdown ? "text-yellow-400/80" : "text-muted-foreground/60"
-            }`}>
-              {step.title || `Step ${i + 1}`}
-            </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                  Step {i + 1}
+                </p>
+                <p className={cn(
+                  "mt-1 truncate text-sm font-semibold",
+                  isActive ? "text-foreground" : isLocked ? "text-muted-foreground" : "text-foreground/90",
+                )}>
+                  {step.title || `Step ${i + 1}`}
+                </p>
+                <p className={cn(
+                  "mt-1 text-[11px]",
+                  isCompleted && "text-primary",
+                  !isCompleted && hasCountdown && "text-warning",
+                  !isCompleted && !hasCountdown && state.accessible && "text-muted-foreground",
+                  isLocked && "text-muted-foreground/70",
+                )}>
+                  {isCompleted
+                    ? "Completed"
+                    : hasCountdown
+                      ? "Timer active"
+                      : state.accessible
+                        ? state.watchPercent > 0 ? `${Math.floor(state.watchPercent)}% watched` : "Ready to play"
+                        : "Locked"}
+                </p>
+              </div>
+            </div>
           </button>
         );
       })}
+      </div>
     </div>
   );
 };
@@ -471,95 +522,232 @@ const UpNextSection = ({
 export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onStepComplete }: ProgramTabProps) => {
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [countdownUnlocks, setCountdownUnlocks] = useState<Record<string, number>>({});
-  const [localProgress, setLocalProgress] = useState<Record<string, { watch_percent: number; condition_met_at?: string | null }>>({});
-  const completedSteps = steps.filter((s) => s.progress.is_completed).length;
-  const allComplete = steps.length > 0 && completedSteps === steps.length;
+  const [localProgress, setLocalProgress] = useState<Record<string, LocalStepProgress>>({});
+  const hasInitializedStepRef = useRef(false);
+  const pendingConditionPersistRef = useRef<Record<string, boolean>>({});
 
-  // Initialize local progress from server data
   useEffect(() => {
-    const lp: Record<string, { watch_percent: number; condition_met_at?: string | null }> = {};
-    for (const s of steps) {
-      lp[s.id] = { watch_percent: s.progress.watch_percent, condition_met_at: s.progress.condition_met_at };
-    }
-    setLocalProgress(lp);
+    setLocalProgress((previous) => {
+      const nextEntries = steps.map((step) => {
+        const incoming = getInitialProgressState(step);
+        const current = previous[step.id];
+
+        return [
+          step.id,
+          current
+            ? {
+                ...incoming,
+                watch_percent: Math.max(current.watch_percent, incoming.watch_percent),
+                is_completed: current.is_completed || incoming.is_completed,
+                condition_met_at: current.condition_met_at || incoming.condition_met_at,
+                time_spent_seconds: Math.max(current.time_spent_seconds, incoming.time_spent_seconds),
+                last_position_seconds: Math.max(current.last_position_seconds, incoming.last_position_seconds),
+              }
+            : incoming,
+        ] as const;
+      });
+
+      return Object.fromEntries(nextEntries);
+    });
   }, [steps]);
 
-  // Find the best starting step
-  useEffect(() => {
-    // Check for countdown steps first
-    for (let i = 0; i < steps.length; i++) {
-      if (countdownUnlocks[steps[i].id]) {
-        setActiveStepIndex(i);
-        return;
-      }
-    }
-    // Find first non-completed, non-locked step
-    for (let i = 0; i < steps.length; i++) {
-      if (!steps[i].progress.is_completed && !steps[i].is_locked) {
-        setActiveStepIndex(i);
-        return;
-      }
-    }
-    if (steps.length > 0) setActiveStepIndex(steps.length - 1);
-  }, [steps, countdownUnlocks]);
+  const getProgressSnapshot = useCallback(
+    (step: RichStepData): LocalStepProgress => localProgress[step.id] ?? getInitialProgressState(step),
+    [localProgress]
+  );
 
-  // Build countdowns using REAL unlock logic
-  useEffect(() => {
-    const countdowns: Record<string, number> = {};
-    for (let i = 1; i < steps.length; i++) {
-      const step = steps[i];
-      const prevStep = steps[i - 1];
-      const prevProg = {
-        watch_percent: localProgress[prevStep.id]?.watch_percent ?? prevStep.progress.watch_percent,
-        is_completed: prevStep.progress.is_completed,
-        condition_met_at: localProgress[prevStep.id]?.condition_met_at ?? prevStep.progress.condition_met_at,
-        time_spent_seconds: prevStep.progress.time_spent_seconds,
-      };
-
-      const result = checkStepUnlock(step, i, prevProg);
-      if (result.reason === "delay_countdown" && result.unlockAt) {
-        countdowns[step.id] = result.unlockAt;
-      }
-    }
-    setCountdownUnlocks(countdowns);
-  }, [steps, localProgress]);
-
-  // Compute real-time step statuses
   const getStepUnlockStatus = useCallback((stepIndex: number): UnlockResult => {
     if (stepIndex === 0) return { unlocked: true };
     const step = steps[stepIndex];
     const prevStep = steps[stepIndex - 1];
-    const prevProg = {
-      watch_percent: localProgress[prevStep.id]?.watch_percent ?? prevStep.progress.watch_percent,
-      is_completed: prevStep.progress.is_completed,
-      condition_met_at: localProgress[prevStep.id]?.condition_met_at ?? prevStep.progress.condition_met_at,
-      time_spent_seconds: prevStep.progress.time_spent_seconds,
+    return checkStepUnlock(step, stepIndex, getProgressSnapshot(prevStep));
+  }, [steps, getProgressSnapshot]);
+
+  const stepStates = steps.map((step, index) => {
+    const progress = getProgressSnapshot(step);
+    const unlockResult = index === 0 ? { unlocked: true } : getStepUnlockStatus(index);
+    const hasCountdown = Boolean(countdownUnlocks[step.id]);
+
+    return {
+      completed: progress.is_completed,
+      accessible: index === 0 || progress.is_completed || unlockResult.unlocked || hasCountdown,
+      hasCountdown,
+      watchPercent: progress.watch_percent,
+      unlockResult,
     };
-    return checkStepUnlock(step, stepIndex, prevProg);
-  }, [steps, localProgress]);
+  });
+
+  useEffect(() => {
+    if (hasInitializedStepRef.current || steps.length === 0) return;
+
+    const countdownIndex = steps.findIndex((step) => countdownUnlocks[step.id]);
+    if (countdownIndex >= 0) {
+      setActiveStepIndex(countdownIndex);
+      hasInitializedStepRef.current = true;
+      return;
+    }
+
+    const firstAvailableIndex = steps.findIndex((step, index) => {
+      const progress = getProgressSnapshot(step);
+      return !progress.is_completed && (index === 0 || getStepUnlockStatus(index).unlocked);
+    });
+
+    setActiveStepIndex(firstAvailableIndex >= 0 ? firstAvailableIndex : steps.length - 1);
+    hasInitializedStepRef.current = true;
+  }, [steps, countdownUnlocks, getProgressSnapshot, getStepUnlockStatus]);
+
+  useEffect(() => {
+    if (steps.length === 0) return;
+    setActiveStepIndex((current) => Math.min(current, steps.length - 1));
+  }, [steps.length]);
+
+  useEffect(() => {
+    const countdowns: Record<string, number> = {};
+
+    for (let i = 1; i < steps.length; i++) {
+      const step = steps[i];
+      const prevStep = steps[i - 1];
+      const result = checkStepUnlock(step, i, getProgressSnapshot(prevStep));
+
+      if (result.reason === "delay_countdown" && result.unlockAt) {
+        countdowns[step.id] = result.unlockAt;
+      }
+    }
+
+    setCountdownUnlocks(countdowns);
+  }, [steps, getProgressSnapshot]);
 
   const isStepAccessible = useCallback((stepIndex: number): boolean => {
+    const state = stepStates[stepIndex];
+    return Boolean(state?.accessible);
+  }, [stepStates]);
+
+  const persistConditionMetAt = useCallback(async (
+    step: RichStepData,
+    progress: VideoPlayerProgress,
+    conditionMetAt: string,
+  ) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    await supabase.from("funnel_step_progress").upsert(
+      {
+        funnel_id: funnel.id,
+        funnel_step_id: step.id,
+        session_id: user.id,
+        watched_percentage: progress.watchedPercent,
+        last_position_seconds: Math.floor(progress.currentTime),
+        max_watched_seconds: progress.maxWatchedSeconds,
+        time_spent_seconds: progress.timeSpentSeconds,
+        condition_met_at: conditionMetAt,
+        status: progress.watchedPercent >= 95 ? "completed" : progress.watchedPercent > 0 ? "in_progress" : "unlocked",
+        completed_at: progress.watchedPercent >= 95 ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "funnel_id,funnel_step_id,session_id", ignoreDuplicates: false }
+    );
+  }, [funnel.id]);
+
+  const handleVideoProgress = useCallback((stepIndex: number, progress: VideoPlayerProgress) => {
     const step = steps[stepIndex];
-    if (step.progress.is_completed) return true;
-    if (stepIndex === 0) return true;
-    const result = getStepUnlockStatus(stepIndex);
-    return result.unlocked;
-  }, [steps, getStepUnlockStatus]);
+    if (!step) return;
+
+    const nextStep = steps[stepIndex + 1] ?? null;
+    const currentProgress = getProgressSnapshot(step);
+    let conditionMetAt = currentProgress.condition_met_at ?? null;
+    let shouldPersistCondition = false;
+
+    if (!conditionMetAt && nextStep && !pendingConditionPersistRef.current[step.id]) {
+      const unlockCondition = nextStep.unlock_condition || "full_watch";
+      const meetsUnlockCondition =
+        (unlockCondition === "full_watch" && progress.watchedPercent >= 95) ||
+        (unlockCondition === "percentage" && progress.watchedPercent >= (nextStep.unlock_percentage || 80)) ||
+        (unlockCondition === "time_spent" && progress.timeSpentSeconds >= ((nextStep.unlock_percentage || 10) * 60));
+
+      if (meetsUnlockCondition) {
+        conditionMetAt = new Date().toISOString();
+        shouldPersistCondition = true;
+      }
+    }
+
+    setLocalProgress((previous) => {
+      const snapshot = previous[step.id] ?? getInitialProgressState(step);
+
+      return {
+        ...previous,
+        [step.id]: {
+          ...snapshot,
+          watch_percent: Math.max(snapshot.watch_percent, progress.watchedPercent),
+          is_completed: snapshot.is_completed || progress.watchedPercent >= 95,
+          condition_met_at: snapshot.condition_met_at || conditionMetAt,
+          time_spent_seconds: Math.max(snapshot.time_spent_seconds, progress.timeSpentSeconds),
+          last_position_seconds: Math.max(snapshot.last_position_seconds, Math.floor(progress.currentTime)),
+        },
+      };
+    });
+
+    if (shouldPersistCondition && conditionMetAt) {
+      pendingConditionPersistRef.current[step.id] = true;
+      void persistConditionMetAt(step, progress, conditionMetAt).finally(() => {
+        pendingConditionPersistRef.current[step.id] = false;
+      });
+    }
+  }, [steps, getProgressSnapshot, persistConditionMetAt]);
+
+  const handleStepCompleted = useCallback((stepIndex: number) => {
+    const step = steps[stepIndex];
+    if (!step) return;
+
+    const completedAt = new Date().toISOString();
+    const currentProgress = getProgressSnapshot(step);
+    const completedProgress: LocalStepProgress = {
+      ...currentProgress,
+      watch_percent: Math.max(currentProgress.watch_percent, 95),
+      is_completed: true,
+      condition_met_at: currentProgress.condition_met_at ?? completedAt,
+    };
+
+    setLocalProgress((previous) => ({
+      ...previous,
+      [step.id]: completedProgress,
+    }));
+
+    onStepComplete();
+
+    const nextStep = steps[stepIndex + 1];
+    if (!nextStep) return;
+
+    const nextResult = checkStepUnlock(nextStep, stepIndex + 1, completedProgress);
+    if (nextResult.unlocked) {
+      setTimeout(() => setActiveStepIndex(stepIndex + 1), 900);
+    } else if (nextResult.reason === "delay_countdown" && nextResult.unlockAt) {
+      setCountdownUnlocks((previous) => ({ ...previous, [nextStep.id]: nextResult.unlockAt! }));
+      setTimeout(() => setActiveStepIndex(stepIndex + 1), 900);
+    }
+  }, [steps, getProgressSnapshot, onStepComplete]);
+
+  const completedSteps = stepStates.filter((state) => state.completed).length;
+  const allComplete = steps.length > 0 && completedSteps === steps.length;
 
   const handleStepClick = (index: number) => {
     const step = steps[index];
-    if (step.progress.is_completed) {
+    const state = stepStates[index];
+
+    if (state?.completed) {
       setActiveStepIndex(index);
       return;
     }
+
     if (countdownUnlocks[step.id]) {
-      setActiveStepIndex(index); // Let user see countdown
+      setActiveStepIndex(index);
       return;
     }
+
     if (!isStepAccessible(index)) {
       toast.error("Complete the previous step first", { duration: 2000 });
       return;
     }
+
     setActiveStepIndex(index);
   };
 
@@ -574,14 +762,14 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
   }, [onStepComplete]);
 
   const activeStep = steps[activeStepIndex];
+  const activeProgress = activeStep ? getProgressSnapshot(activeStep) : null;
   const nextStep = activeStepIndex + 1 < steps.length ? steps[activeStepIndex + 1] : null;
   const activeCountdown = activeStep ? countdownUnlocks[activeStep.id] : null;
   const isTimerBlurActive = !!(activeCountdown && activeStep?.step_type === "video");
 
-  // Next step unlock status (real-time)
-  const nextStepUnlock = nextStep ? getStepUnlockStatus(activeStepIndex + 1) : null;
+  const nextStepUnlock = nextStep ? stepStates[activeStepIndex + 1]?.unlockResult ?? getStepUnlockStatus(activeStepIndex + 1) : null;
   const nextCountdownAt = nextStep ? countdownUnlocks[nextStep.id] || null : null;
-  const currentWatchPct = localProgress[activeStep?.id]?.watch_percent ?? activeStep?.progress.watch_percent ?? 0;
+  const currentWatchPct = activeProgress?.watch_percent ?? 0;
 
   if (steps.length === 0) {
     return (
@@ -603,7 +791,13 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
             <div className="h-full rounded-full transition-all" style={{ width: "100%", background: "#22c55e" }} />
           </div>
         </div>
-        <StepBar steps={steps} activeIndex={activeStepIndex} countdownUnlocks={countdownUnlocks} onStepClick={handleStepClick} />
+        <StepBar
+          steps={steps}
+          activeIndex={activeStepIndex}
+          countdownUnlocks={countdownUnlocks}
+          stepStates={stepStates}
+          onStepClick={handleStepClick}
+        />
         <div className="rounded-2xl border border-primary/20 bg-gradient-to-b from-primary/5 to-transparent p-8 text-center space-y-3">
           <Trophy size={40} className="mx-auto text-primary" />
           <h2 className="text-xl font-bold text-foreground">Program Complete! 🎉</h2>
@@ -632,7 +826,13 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
       </div>
 
       {/* Full-width step bar */}
-      <StepBar steps={steps} activeIndex={activeStepIndex} countdownUnlocks={countdownUnlocks} onStepClick={handleStepClick} />
+      <StepBar
+        steps={steps}
+        activeIndex={activeStepIndex}
+        countdownUnlocks={countdownUnlocks}
+        stepStates={stepStates}
+        onStepClick={handleStepClick}
+      />
 
       {/* Active step content */}
       <AnimatePresence mode="wait">
@@ -650,12 +850,12 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
               <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                 Step {activeStepIndex + 1} of {steps.length}
               </span>
-              {activeStep.progress.is_completed && (
+              {activeProgress?.is_completed && (
                 <span className="text-[10px] font-bold uppercase tracking-widest flex items-center gap-1" style={{ color: "#D4AF37" }}>
                   <Check size={10} /> Completed
                 </span>
               )}
-              {!activeStep.progress.is_completed && currentWatchPct > 0 && !isTimerBlurActive && (
+              {!activeProgress?.is_completed && currentWatchPct > 0 && !isTimerBlurActive && (
                 <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                   In Progress · {Math.floor(currentWatchPct)}%
                 </span>
@@ -674,7 +874,7 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
               unlockAt={activeCountdown!}
               onUnlock={() => handleCountdownComplete(activeStep.id)}
             />
-          ) : !isStepAccessible(activeStepIndex) && !activeStep.progress.is_completed ? (
+          ) : !isStepAccessible(activeStepIndex) && !activeProgress?.is_completed ? (
             /* Locked step */
             <div className="flex items-start gap-3 p-4 rounded-xl" style={{ background: "rgba(212,175,55,0.06)", border: "1px solid rgba(212,175,55,0.15)" }}>
               <Lock size={16} className="text-primary shrink-0 mt-0.5" />
@@ -698,20 +898,12 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
                   stepTitle={activeStep.title}
                   stepId={activeStep.id}
                   funnelId={funnel.id}
-                  initialPosition={activeStep.progress.last_position_seconds}
+                  initialPosition={activeProgress?.last_position_seconds ?? 0}
                   durationSeconds={activeStep.duration_seconds}
-                  onComplete={() => {
-                    onStepComplete();
-                    if (nextStep) {
-                      const result = getStepUnlockStatus(activeStepIndex + 1);
-                      if (result.unlocked) {
-                        setTimeout(() => setActiveStepIndex(activeStepIndex + 1), 1500);
-                      } else if (result.reason === "delay_countdown" && result.unlockAt) {
-                        setCountdownUnlocks((prev) => ({ ...prev, [nextStep.id]: result.unlockAt! }));
-                        setTimeout(() => setActiveStepIndex(activeStepIndex + 1), 1500);
-                      }
-                    }
-                  }}
+                  initialTimeSpentSeconds={activeProgress?.time_spent_seconds ?? 0}
+                  completionThreshold={95}
+                  onProgress={(progress) => handleVideoProgress(activeStepIndex, progress)}
+                  onComplete={() => handleStepCompleted(activeStepIndex)}
                   onClose={() => {}}
                   hideHeader
                 />
@@ -724,7 +916,7 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
                 </div>
               ) : (activeStep.step_type === "cta" || activeStep.step_type === "booking") ? (
                 <div className="rounded-2xl p-6 text-center bg-card border border-border">
-                  {activeStep.progress.is_completed ? (
+                  {activeProgress?.is_completed ? (
                     <>
                       <CheckCircle2 size={40} className="mx-auto mb-3 text-primary" />
                       <h3 className="font-bold text-foreground">Step Completed</h3>
