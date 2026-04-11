@@ -445,104 +445,106 @@ const PublicLandingPage = () => {
             </div>
 
             {/* ── DESKTOP LAYOUT (lg+) ── */}
-            <div className="hidden lg:grid lg:grid-cols-5 gap-8 items-start">
-              <div className="lg:col-span-3 space-y-8">
-                {sections.map(renderSection)}
-                {sections.length === 0 && (
-                  <div className="space-y-4">
-                    <h1 className="text-3xl md:text-4xl font-bold" style={{ color: '#F5F0E8' }}>{page.title}</h1>
-                    {page.description && <p className="text-lg" style={{ color: '#888' }}>{page.description}</p>}
-                  </div>
-                )}
-
-                {/* Speaker */}
-                {(page.speaker_name || page.speaker_photo_url) && (
-                  <div className="sip-card p-6 flex gap-5 items-start">
-                    {page.speaker_photo_url && (
-                      <img src={page.speaker_photo_url} alt={page.speaker_name} className="w-20 h-20 rounded-full object-cover shrink-0" style={{ border: '2px solid rgba(197,147,14,0.3)' }} />
-                    )}
-                    <div className="min-w-0">
-                      <h3 className="text-lg font-bold" style={{ color: '#F5F0E8' }}>{page.speaker_name}</h3>
-                      {page.speaker_role && <p className="text-xs font-medium mt-0.5" style={{ color: '#888' }}>{page.speaker_role}</p>}
-                      {page.speaker_bio && <p className="mt-2 text-sm leading-relaxed" style={{ color: '#aaa' }}>{page.speaker_bio}</p>}
+            <div className="hidden lg:block space-y-8">
+              <div className="grid lg:grid-cols-5 gap-8 items-start">
+                <div className="lg:col-span-3 space-y-8">
+                  {sections.map(renderSection)}
+                  {sections.length === 0 && (
+                    <div className="space-y-4">
+                      <h1 className="text-3xl md:text-4xl font-bold" style={{ color: '#F5F0E8' }}>{page.title}</h1>
+                      {page.description && <p className="text-lg" style={{ color: '#888' }}>{page.description}</p>}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
 
-                {/* Testimonials — shown on left before form */}
-                {showTestimonialsOnRegistration && (
-                  <TestimonialsViewer
-                    testimonials={testimonials}
-                    sectionTitle={page.testimonials_section_title || "What our members say"}
-                  />
-                )}
-              </div>
-
-              <div className="lg:col-span-2 self-start" style={{ position: 'sticky', top: '1rem' }}>
-                <div className="sip-card p-6 space-y-5">
-                  <div>
-                    <h3 className="text-lg font-bold" style={{ color: '#F5F0E8' }}>{page.form_title}</h3>
-                    <p className="text-sm" style={{ color: '#E8B830' }}>{page.form_subtitle}</p>
-                  </div>
-
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <input
-                      type="text"
-                      name="website"
-                      value={honeypot}
-                      onChange={(e) => setHoneypot(e.target.value)}
-                      className="absolute opacity-0 h-0 w-0 pointer-events-none"
-                      tabIndex={-1}
-                      autoComplete="off"
-                    />
-
-                    {formFields.map((f) => (
-                      <div key={f.key} className="space-y-1.5">
-                        <Label style={{ color: '#F5F0E8' }}>{f.label} {f.required && <span style={{ color: '#E8B830' }}>*</span>}</Label>
-                        {(f as any).fieldType === "state_dropdown" ? (
-                          <Select
-                            value={formData[f.key] || "__none__"}
-                            onValueChange={(val) => setFormData((prev) => ({ ...prev, [f.key]: val === "__none__" ? "" : val }))}
-                          >
-                            <SelectTrigger className="bg-[#181818] border-[rgba(197,147,14,0.2)] text-white">
-                              <SelectValue placeholder="Select State" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="__none__" disabled>Select State</SelectItem>
-                              {INDIAN_STATES.map((s) => (
-                                <SelectItem key={s} value={s}>{s}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <Input
-                            type={(f as any).type || "text"}
-                            placeholder={(f as any).prefix ? `${(f as any).prefix} ` : ""}
-                            value={formData[f.key] || ""}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, [f.key]: e.target.value }))}
-                            required={f.required}
-                            className="bg-[#181818] border-[rgba(197,147,14,0.2)] text-white placeholder:text-[#555]"
-                          />
-                        )}
+                <div className="lg:col-span-2 lg:sticky lg:top-8 space-y-5">
+                  {/* Speaker above register form */}
+                  {(page.speaker_name || page.speaker_photo_url) && (
+                    <div className="sip-card p-5 flex gap-4 items-start">
+                      {page.speaker_photo_url && (
+                        <img src={page.speaker_photo_url} alt={page.speaker_name} className="w-16 h-16 rounded-full object-cover shrink-0" style={{ border: '2px solid rgba(197,147,14,0.3)' }} />
+                      )}
+                      <div className="min-w-0">
+                        <h3 className="text-base font-bold" style={{ color: '#F5F0E8' }}>{page.speaker_name}</h3>
+                        {page.speaker_role && <p className="text-xs font-medium mt-0.5" style={{ color: '#888' }}>{page.speaker_role}</p>}
+                        {page.speaker_bio && <p className="mt-1.5 text-xs leading-relaxed" style={{ color: '#aaa' }}>{page.speaker_bio}</p>}
                       </div>
-                    ))}
+                    </div>
+                  )}
 
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="w-full px-8 py-3.5 rounded-lg text-base font-semibold transition-all hover:brightness-110 disabled:opacity-50 flex items-center justify-center"
-                      style={{ background: 'linear-gradient(135deg, #E8B830, #C99A18)', color: '#000' }}
-                    >
-                      {submitting ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
-                      {page.form_button_text} →
-                    </button>
-                  </form>
+                  <div className="sip-card p-6 space-y-5">
+                    <div>
+                      <h3 className="text-lg font-bold" style={{ color: '#F5F0E8' }}>{page.form_title}</h3>
+                      <p className="text-sm" style={{ color: '#E8B830' }}>{page.form_subtitle}</p>
+                    </div>
 
-                  <p className="text-xs text-center flex items-center justify-center gap-1" style={{ color: '#888' }}>
-                    <Lock size={12} /> Your information is safe with us
-                  </p>
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                      <input
+                        type="text"
+                        name="website"
+                        value={honeypot}
+                        onChange={(e) => setHoneypot(e.target.value)}
+                        className="absolute opacity-0 h-0 w-0 pointer-events-none"
+                        tabIndex={-1}
+                        autoComplete="off"
+                      />
+
+                      {formFields.map((f) => (
+                        <div key={f.key} className="space-y-1.5">
+                          <Label style={{ color: '#F5F0E8' }}>{f.label} {f.required && <span style={{ color: '#E8B830' }}>*</span>}</Label>
+                          {(f as any).fieldType === "state_dropdown" ? (
+                            <Select
+                              value={formData[f.key] || "__none__"}
+                              onValueChange={(val) => setFormData((prev) => ({ ...prev, [f.key]: val === "__none__" ? "" : val }))}
+                            >
+                              <SelectTrigger className="bg-[#181818] border-[rgba(197,147,14,0.2)] text-white">
+                                <SelectValue placeholder="Select State" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="__none__" disabled>Select State</SelectItem>
+                                {INDIAN_STATES.map((s) => (
+                                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Input
+                              type={(f as any).type || "text"}
+                              placeholder={(f as any).prefix ? `${(f as any).prefix} ` : ""}
+                              value={formData[f.key] || ""}
+                              onChange={(e) => setFormData((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                              required={f.required}
+                              className="bg-[#181818] border-[rgba(197,147,14,0.2)] text-white placeholder:text-[#555]"
+                            />
+                          )}
+                        </div>
+                      ))}
+
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className="w-full px-8 py-3.5 rounded-lg text-base font-semibold transition-all hover:brightness-110 disabled:opacity-50 flex items-center justify-center"
+                        style={{ background: 'linear-gradient(135deg, #E8B830, #C99A18)', color: '#000' }}
+                      >
+                        {submitting ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
+                        {page.form_button_text} →
+                      </button>
+                    </form>
+
+                    <p className="text-xs text-center flex items-center justify-center gap-1" style={{ color: '#888' }}>
+                      <Lock size={12} /> Your information is safe with us
+                    </p>
+                  </div>
                 </div>
               </div>
+
+              {/* Testimonials — full-width row below hero + form */}
+              {showTestimonialsOnRegistration && (
+                <TestimonialsViewer
+                  testimonials={testimonials}
+                  sectionTitle={page.testimonials_section_title || "What our members say"}
+                />
+              )}
             </div>
           </>
         )}
