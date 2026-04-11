@@ -66,7 +66,7 @@ const ProfilePage = () => {
     ? <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">Free</span>
     : tier === "basic"
     ? <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 font-medium">Basic</span>
-    : <span className="text-xs px-2 py-0.5 rounded-full bg-gold/10 text-green-700 dark:bg-gold-dark/20 dark:text-gold font-medium">Pro</span>;
+    : <span className="text-xs px-2 py-0.5 rounded-full bg-gold/10 text-gold-dark dark:bg-gold-dark/20 dark:text-gold font-medium">Pro</span>;
 
   return (
     <DashboardLayout>

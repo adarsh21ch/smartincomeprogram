@@ -427,7 +427,7 @@ const AdminSubscriptionsPage = () => {
             <p className="text-sm text-muted-foreground">Edit pricing, limits, and features for each plan. Changes apply immediately to the pricing page.</p>
             <div className="grid md:grid-cols-2 gap-6">
               {renderPlanCard("basic", basicConfig, "blue", "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400")}
-              {renderPlanCard("pro", proConfig, "green", "bg-gold/10 text-green-700 dark:bg-gold-dark/20 dark:text-gold")}
+              {renderPlanCard("pro", proConfig, "green", "bg-gold/10 text-gold-dark dark:bg-gold-dark/20 dark:text-gold")}
             </div>
           </TabsContent>
 

@@ -362,7 +362,7 @@ const PricingFullPage = () => {
                   </div>
                 )}
                 <div className="mb-6">
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-gold/10 text-green-700 dark:bg-gold-dark/20 dark:text-gold font-medium">Pro</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-gold/10 text-gold-dark dark:bg-gold-dark/20 dark:text-gold font-medium">Pro</span>
                   <div className="flex items-baseline gap-1 mt-3">
                     <span className="text-3xl font-heading font-bold">₹{getPrice(proConfig).toLocaleString("en-IN")}</span>
                     <span className="text-sm text-muted-foreground">/{billing === "monthly" ? "mo" : "yr"}</span>
