@@ -13,7 +13,7 @@ export const brand = {
     whatsapp: "https://wa.me/919999999999",
   },
   footer: {
-    poweredBy: "Smart Income Program",
+    poweredBy: "Nevorai",
     madeIn: "",
     copyright: `© ${new Date().getFullYear()} Smart Income Program · All rights reserved`,
   },
