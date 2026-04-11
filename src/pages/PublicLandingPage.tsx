@@ -32,6 +32,7 @@ const PublicLandingPage = () => {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [honeypot, setHoneypot] = useState("");
   const [showUnmuteHint, setShowUnmuteHint] = useState(true);
+  const [showSpeakerBio, setShowSpeakerBio] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Auto-hide unmute hint after 5 seconds
@@ -311,28 +312,34 @@ const PublicLandingPage = () => {
               </div>
             )}
 
-            {/* About Speaker — YouTube-style channel section */}
+            {/* Speaker — compact row, bio in expandable popup */}
             {(page.speaker_name || page.speaker_photo_url) && (
-              <div className="rounded-xl p-5 md:p-6" style={{ background: '#111', border: '1px solid rgba(197,147,14,0.12)' }}>
-                <div className="flex items-start gap-4">
-                  {page.speaker_photo_url && (
-                    <img
-                      src={page.speaker_photo_url}
-                      alt={page.speaker_name}
-                      className="w-14 h-14 md:w-16 md:h-16 rounded-full object-cover shrink-0"
-                      style={{ border: '2px solid rgba(197,147,14,0.4)' }}
-                    />
+              <div
+                className="flex items-center gap-3 px-1 cursor-pointer group"
+                onClick={() => page.speaker_bio && setShowSpeakerBio((v: boolean) => !v)}
+              >
+                {page.speaker_photo_url && (
+                  <img
+                    src={page.speaker_photo_url}
+                    alt={page.speaker_name}
+                    className="w-11 h-11 rounded-full object-cover shrink-0"
+                    style={{ border: '2px solid rgba(197,147,14,0.35)' }}
+                  />
+                )}
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-sm font-bold uppercase tracking-wide" style={{ color: '#F5F0E8' }}>{page.speaker_name}</h3>
+                  {page.speaker_role && (
+                    <p className="text-[11px] font-medium" style={{ color: '#E8B830' }}>{page.speaker_role}</p>
                   )}
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-base md:text-lg font-bold uppercase tracking-wide" style={{ color: '#F5F0E8' }}>{page.speaker_name}</h3>
-                    {page.speaker_role && (
-                      <p className="text-xs font-medium mt-0.5" style={{ color: '#E8B830' }}>{page.speaker_role}</p>
-                    )}
-                    {page.speaker_bio && (
-                      <p className="mt-2 text-sm leading-relaxed line-clamp-3" style={{ color: '#999' }}>{page.speaker_bio}</p>
-                    )}
-                  </div>
                 </div>
+                {page.speaker_bio && (
+                  <ChevronDown size={16} className="text-[#666] shrink-0 transition-transform" style={{ transform: showSpeakerBio ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                )}
+              </div>
+            )}
+            {showSpeakerBio && page?.speaker_bio && (
+              <div className="rounded-lg px-4 py-3 animate-in slide-in-from-top-2 fade-in duration-200" style={{ background: '#111', border: '1px solid rgba(197,147,14,0.1)' }}>
+                <p className="text-sm leading-relaxed" style={{ color: '#999' }}>{page.speaker_bio}</p>
               </div>
             )}
 
