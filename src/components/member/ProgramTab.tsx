@@ -22,6 +22,7 @@ export interface RichStepData {
   is_locked: boolean;
   cta_text?: string | null;
   cta_url?: string | null;
+  booking_url?: string | null;
   unlock_condition?: string | null;
   unlock_percentage?: number | null;
   time_delay_enabled?: boolean;
