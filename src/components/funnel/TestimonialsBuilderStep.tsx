@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
-  Plus, Trash2, GripVertical, Star, Loader2, MessageSquare, Video, FileText,
+  Plus, Trash2, GripVertical, Star, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { TestimonialPhotoUpload } from "@/components/funnel/TestimonialPhotoUpload";
@@ -25,8 +25,8 @@ interface TestimonialsBuilderStepProps {
 }
 
 // Debounced input
-const DebouncedInput = memo(({ value: externalValue, onSave, placeholder, className }: {
-  value: string; onSave: (val: string) => void; placeholder?: string; className?: string;
+const DebouncedInput = memo(({ value: externalValue, onSave, placeholder, className, autoFocus }: {
+  value: string; onSave: (val: string) => void; placeholder?: string; className?: string; autoFocus?: boolean;
 }) => {
   const [localValue, setLocalValue] = useState(externalValue);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
@@ -44,7 +44,7 @@ const DebouncedInput = memo(({ value: externalValue, onSave, placeholder, classN
 
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
-  return <Input placeholder={placeholder} value={localValue} onChange={handleChange} className={className} />;
+  return <Input placeholder={placeholder} value={localValue} onChange={handleChange} className={className} autoFocus={autoFocus} />;
 });
 DebouncedInput.displayName = "DebouncedInput";
 
@@ -78,7 +78,11 @@ const DebouncedTextarea = memo(({ value: externalValue, onSave, placeholder, cla
 });
 DebouncedTextarea.displayName = "DebouncedTextarea";
 
-type TestimonialContentType = "text" | "video" | "both";
+const getTestimonialType = (textEnabled: boolean, videoEnabled: boolean): string => {
+  if (textEnabled && videoEnabled) return "both";
+  if (videoEnabled) return "video";
+  return "text";
+};
 
 export const TestimonialsBuilderStep = ({
   landingPageId, userId, testimonialsEnabled, testimonialsSectionTitle, testimonialsDisplayPosition, onToggleEnabled, onTitleChange, onDisplayPositionChange,
@@ -120,16 +124,17 @@ export const TestimonialsBuilderStep = ({
   const limitReached = totalCount >= MAX_PER_PAGE;
 
   const addMutation = useMutation({
-    mutationFn: async (contentType: TestimonialContentType) => {
+    mutationFn: async () => {
       if (!landingPageId) throw new Error("Please save the landing page first.");
-      // For "both", we store as "both" type; for text/video store that type
       const { error } = await supabase.from("landing_page_testimonials").insert({
         landing_page_id: landingPageId,
         owner_id: userId,
-        type: contentType,
+        type: "video",
         student_name: "",
         display_order: totalCount,
-      });
+        placement: "registration",
+        rating: 5,
+      } as any);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -187,40 +192,13 @@ export const TestimonialsBuilderStep = ({
         <div className="p-4 bg-muted/50 rounded-xl flex items-center justify-between">
           <div>
             <Label className="font-semibold">Enable Testimonials Section</Label>
-            <p className="text-xs text-muted-foreground mt-0.5">Show testimonials on the post-registration page</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Show testimonials on landing & post-registration pages</p>
           </div>
           <Switch checked={testimonialsEnabled} onCheckedChange={onToggleEnabled} />
         </div>
 
         <div className={!testimonialsEnabled ? "opacity-50 pointer-events-none" : ""}>
-          {/* Display Position */}
-          <div className="p-4 bg-muted/50 rounded-xl space-y-3">
-            <Label className="font-semibold">Show Testimonials On</Label>
-            <p className="text-xs text-muted-foreground">Choose where testimonials appear for visitors.</p>
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { value: "registration", label: "Registration Page", desc: "Before form submission" },
-                { value: "post_registration", label: "After Registration", desc: "With intro video / confirmation" },
-                { value: "both", label: "Both Pages", desc: "Show on both views" },
-              ].map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => onDisplayPositionChange(opt.value)}
-                  className={`p-3 rounded-lg border text-left transition-all ${
-                    testimonialsDisplayPosition === opt.value
-                      ? "border-primary bg-primary/10"
-                      : "border-border bg-muted/30 hover:border-muted-foreground/30"
-                  }`}
-                >
-                  <span className="text-xs font-semibold block">{opt.label}</span>
-                  <span className="text-[10px] text-muted-foreground">{opt.desc}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="p-4 bg-muted/50 rounded-xl space-y-2 mt-4">
+          <div className="p-4 bg-muted/50 rounded-xl space-y-2">
             <Label>Section Title</Label>
             <Input
               value={testimonialsSectionTitle}
@@ -228,6 +206,9 @@ export const TestimonialsBuilderStep = ({
               placeholder="What our members say"
               className="bg-muted border-border"
             />
+            <p className="text-[10px] text-muted-foreground mt-1">
+              Each testimonial can be placed on the Registration Page (before the form) or After Registration (on the thank you / post-signup page). Set the placement inside each individual testimonial below.
+            </p>
           </div>
 
           <div className="mt-4 space-y-3">
@@ -241,10 +222,11 @@ export const TestimonialsBuilderStep = ({
               </div>
             ) : (
               <>
-                {testimonials.map((t: any) => (
+                {testimonials.map((t: any, idx: number) => (
                   <TestimonialCard
                     key={t.id}
                     testimonial={t}
+                    isNew={idx === testimonials.length - 1 && !t.student_name}
                     onUpdateField={updateField}
                     onUpdateAndRefresh={updateAndRefresh}
                     onDelete={handleDelete}
@@ -253,33 +235,14 @@ export const TestimonialsBuilderStep = ({
                   />
                 ))}
 
-                {/* Add testimonial buttons */}
-                <div className="grid grid-cols-3 gap-2">
-                  <Button
-                    variant="outline" size="sm"
-                    disabled={limitReached || addMutation.isPending}
-                    onClick={() => addMutation.mutate("text")}
-                    className="flex items-center gap-1.5"
-                  >
-                    <MessageSquare size={13} /> Text
-                  </Button>
-                  <Button
-                    variant="outline" size="sm"
-                    disabled={limitReached || addMutation.isPending}
-                    onClick={() => addMutation.mutate("video")}
-                    className="flex items-center gap-1.5"
-                  >
-                    <Video size={13} /> Video
-                  </Button>
-                  <Button
-                    variant="outline" size="sm"
-                    disabled={limitReached || addMutation.isPending}
-                    onClick={() => addMutation.mutate("both")}
-                    className="flex items-center gap-1.5"
-                  >
-                    <FileText size={13} /> Both
-                  </Button>
-                </div>
+                <Button
+                  variant="outline" size="sm"
+                  disabled={limitReached || addMutation.isPending}
+                  onClick={() => addMutation.mutate()}
+                  className="flex items-center gap-1.5 w-full"
+                >
+                  <Plus size={14} /> Add Testimonial
+                </Button>
                 {limitReached && (
                   <p className="text-xs text-amber-500">Maximum {MAX_PER_PAGE} testimonials reached.</p>
                 )}
@@ -294,134 +257,198 @@ export const TestimonialsBuilderStep = ({
 
 // ── Testimonial Card ──
 const TestimonialCard = memo(({
-  testimonial: t, onUpdateField, onUpdateAndRefresh, onDelete, landingPageId, maxVideoSeconds,
+  testimonial: t, isNew, onUpdateField, onUpdateAndRefresh, onDelete, landingPageId, maxVideoSeconds,
 }: {
   testimonial: any;
+  isNew: boolean;
   onUpdateField: (id: string, updates: Record<string, any>) => void;
   onUpdateAndRefresh: (id: string, updates: Record<string, any>) => void;
   onDelete: (id: string) => void;
   landingPageId: string;
   maxVideoSeconds: number;
 }) => {
-  const contentType: TestimonialContentType = t.type || "text";
-  const showText = contentType === "text" || contentType === "both";
-  const showVideo = contentType === "video" || contentType === "both";
+  const currentType: string = t.type || "text";
+  const [textEnabled, setTextEnabled] = useState(currentType === "text" || currentType === "both");
+  const [videoEnabled, setVideoEnabled] = useState(currentType === "video" || currentType === "both");
+  const rating: number = (t as any).rating ?? 5;
+  const placement: string = (t as any).placement || "registration";
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  const typeLabel = contentType === "both" ? "Text + Video" : contentType === "video" ? "Video" : "Text";
+  // Scroll new card into view
+  useEffect(() => {
+    if (isNew && cardRef.current) {
+      cardRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [isNew]);
+
+  const handleToggleText = (on: boolean) => {
+    setTextEnabled(on);
+    const newType = getTestimonialType(on, videoEnabled);
+    onUpdateField(t.id, { type: newType });
+  };
+
+  const handleToggleVideo = (on: boolean) => {
+    setVideoEnabled(on);
+    const newType = getTestimonialType(textEnabled, on);
+    onUpdateField(t.id, { type: newType });
+  };
+
+  const handleRating = (n: number) => {
+    onUpdateField(t.id, { rating: n });
+  };
+
+  const handlePlacement = (val: string) => {
+    onUpdateField(t.id, { placement: val });
+  };
+
+  const badgeLabel = textEnabled && videoEnabled ? "Text + Video" : videoEnabled ? "Video" : "Text";
 
   return (
-    <div className="p-4 bg-muted/50 rounded-xl space-y-3 border border-border">
-      <div className="flex items-start gap-3">
-        <div className="mt-1 cursor-grab text-muted-foreground">
+    <div ref={cardRef} className="p-4 bg-muted/50 rounded-xl space-y-3 border border-border">
+      {/* Row 1 — Header: drag | badge | visible | delete */}
+      <div className="flex items-center gap-2">
+        <div className="cursor-grab text-muted-foreground">
           <GripVertical size={16} />
         </div>
-        <div className="flex-1 space-y-3">
-          {/* Type badge */}
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-              {typeLabel}
-            </span>
-          </div>
+        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+          {badgeLabel}
+        </span>
+        <div className="flex-1" />
+        <div className="flex items-center gap-1.5">
+          <Switch
+            checked={t.is_active}
+            onCheckedChange={(v) => onUpdateAndRefresh(t.id, { is_active: v })}
+          />
+          <span className="text-[10px] text-muted-foreground">{t.is_active ? "Visible" : "Hidden"}</span>
+        </div>
+        <Button
+          variant="ghost" size="sm"
+          className="text-destructive hover:text-destructive h-7 w-7 p-0"
+          onClick={() => onDelete(t.id)}
+        >
+          <Trash2 size={14} />
+        </Button>
+      </div>
 
-          {/* Photo + name + location */}
-          <div className="flex items-start gap-4">
-            <TestimonialPhotoUpload
-              value={t.student_photo_url || ""}
-              onChange={(url) => onUpdateAndRefresh(t.id, { student_photo_url: url })}
-              landingPageId={landingPageId}
-              testimonialId={t.id}
-              studentName={t.student_name || "Student"}
-            />
-            <div className="min-w-0 flex-1 space-y-3">
-              <DebouncedInput
-                value={t.student_name || ""}
-                onSave={(val) => onUpdateField(t.id, { student_name: val })}
-                placeholder="Student name *"
-                className="bg-muted border-border h-8 text-sm"
-              />
-              <DebouncedInput
-                value={t.student_location || ""}
-                onSave={(val) => onUpdateField(t.id, { student_location: val })}
-                placeholder="Location (e.g. Mumbai, India)"
-                className="bg-muted border-border h-8 text-sm"
-              />
-            </div>
-          </div>
-
-          {/* Star rating — always 5 stars */}
-          <div className="flex items-center gap-1">
-            <span className="text-xs text-muted-foreground mr-1">Rating:</span>
-            {[1, 2, 3, 4, 5].map((s) => (
-              <Star key={s} size={16} className="fill-amber-400 text-amber-400" />
-            ))}
-          </div>
-
-          {/* Text section */}
-          {showText && (
-            <DebouncedTextarea
-              value={t.review_text || ""}
-              onSave={(val) => onUpdateField(t.id, { review_text: val })}
-              placeholder="Write the review text... (max 300 chars)"
-              maxLength={300}
-              rows={3}
-              className="bg-muted border-border text-sm"
-            />
-          )}
-
-          {/* Video section */}
-          {showVideo && (
-            <>
-              <TestimonialVideoUpload
-                testimonialId={t.id}
-                landingPageId={landingPageId}
-                value={t.video_url || ""}
-                thumbnailUrl={t.thumbnail_url || null}
-                durationSeconds={t.video_duration_seconds}
-                orientation={t.video_orientation || null}
-                maxSeconds={maxVideoSeconds}
-                onUploaded={({ videoUrl, thumbnailUrl, durationSeconds, videoOrientation, videoWidth, videoHeight }) => {
-                  onUpdateAndRefresh(t.id, {
-                    video_url: videoUrl,
-                    thumbnail_url: thumbnailUrl,
-                    video_duration_seconds: durationSeconds,
-                    video_orientation: videoOrientation || 'portrait',
-                    video_width: videoWidth || null,
-                    video_height: videoHeight || null,
-                  });
-                }}
-                onClear={() => {
-                  onUpdateAndRefresh(t.id, { video_url: null, thumbnail_url: null, video_duration_seconds: null, video_orientation: 'portrait', video_width: null, video_height: null });
-                }}
-              />
-              {t.video_url && t.video_orientation && (
-                <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                  t.video_orientation === 'landscape' ? 'bg-blue-500/10 text-blue-400' : 'bg-purple-500/10 text-purple-400'
-                }`}>
-                  {t.video_orientation === 'landscape' ? '🖥 Landscape (16:9)' : '📱 Portrait (9:16)'}
-                </span>
-              )}
-            </>
-          )}
-
-          {/* Bottom: active toggle + delete */}
-          <div className="flex items-center justify-between pt-1">
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={t.is_active}
-                onCheckedChange={(v) => onUpdateAndRefresh(t.id, { is_active: v })}
-              />
-              <span className="text-xs text-muted-foreground">{t.is_active ? "Visible" : "Hidden"}</span>
-            </div>
-            <Button
-              variant="ghost" size="sm"
-              className="text-destructive hover:text-destructive h-7"
-              onClick={() => onDelete(t.id)}
-            >
-              <Trash2 size={14} />
-            </Button>
-          </div>
+      {/* Row 2 — Photo + Name + Location */}
+      <div className="flex items-start gap-3">
+        <TestimonialPhotoUpload
+          value={t.student_photo_url || ""}
+          onChange={(url) => onUpdateAndRefresh(t.id, { student_photo_url: url })}
+          landingPageId={landingPageId}
+          testimonialId={t.id}
+          studentName={t.student_name || "Student"}
+        />
+        <div className="min-w-0 flex-1 space-y-2">
+          <DebouncedInput
+            value={t.student_name || ""}
+            onSave={(val) => onUpdateField(t.id, { student_name: val })}
+            placeholder="Full Name *"
+            className="bg-muted border-border h-8 text-sm"
+            autoFocus={isNew}
+          />
+          <DebouncedInput
+            value={t.student_location || ""}
+            onSave={(val) => onUpdateField(t.id, { student_location: val })}
+            placeholder="City, Country"
+            className="bg-muted border-border h-8 text-sm"
+          />
         </div>
       </div>
+
+      {/* Row 3 — Star Rating */}
+      <div className="flex items-center gap-1">
+        <span className="text-xs text-muted-foreground mr-1">Rating:</span>
+        {[1, 2, 3, 4, 5].map((s) => (
+          <button key={s} type="button" onClick={() => handleRating(s)} className="focus:outline-none">
+            <Star size={16} className={s <= rating ? "fill-amber-400 text-amber-400" : "text-muted-foreground/40"} />
+          </button>
+        ))}
+      </div>
+
+      {/* Row 4 — Placement Selector */}
+      <div className="space-y-1.5">
+        <span className="text-xs text-muted-foreground">Show this testimonial on:</span>
+        <div className="flex gap-2">
+          {[
+            { value: "registration", label: "📋 Registration Page" },
+            { value: "after_registration", label: "✅ After Registration" },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => handlePlacement(opt.value)}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                placement === opt.value
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border text-muted-foreground hover:border-muted-foreground/30"
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Row 5 — Content Toggles */}
+      <div className="flex items-center gap-6">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <Switch checked={textEnabled} onCheckedChange={handleToggleText} />
+          <span className="text-xs text-muted-foreground">Include Text Review</span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <Switch checked={videoEnabled} onCheckedChange={handleToggleVideo} />
+          <span className="text-xs text-muted-foreground">Include Video</span>
+        </label>
+      </div>
+
+      {/* Row 6 — Text Area (animated) */}
+      <div className={`overflow-hidden transition-all duration-300 ${textEnabled ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"}`}>
+        <DebouncedTextarea
+          value={t.review_text || ""}
+          onSave={(val) => onUpdateField(t.id, { review_text: val })}
+          placeholder="Their review in their own words..."
+          maxLength={300}
+          rows={3}
+          className="bg-muted border-border text-sm"
+        />
+      </div>
+
+      {/* Row 7 — Video Upload (animated) */}
+      <div className={`overflow-hidden transition-all duration-300 ${videoEnabled ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"}`}>
+        <TestimonialVideoUpload
+          testimonialId={t.id}
+          landingPageId={landingPageId}
+          value={t.video_url || ""}
+          thumbnailUrl={t.thumbnail_url || null}
+          durationSeconds={t.video_duration_seconds}
+          orientation={t.video_orientation || null}
+          maxSeconds={maxVideoSeconds}
+          onUploaded={({ videoUrl, thumbnailUrl, durationSeconds, videoOrientation, videoWidth, videoHeight }) => {
+            onUpdateAndRefresh(t.id, {
+              video_url: videoUrl,
+              thumbnail_url: thumbnailUrl,
+              video_duration_seconds: durationSeconds,
+              video_orientation: videoOrientation || 'portrait',
+              video_width: videoWidth || null,
+              video_height: videoHeight || null,
+            });
+          }}
+          onClear={() => {
+            onUpdateAndRefresh(t.id, { video_url: null, thumbnail_url: null, video_duration_seconds: null, video_orientation: 'portrait', video_width: null, video_height: null });
+          }}
+        />
+        {t.video_url && t.video_orientation && (
+          <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full mt-2 ${
+            t.video_orientation === 'landscape' ? 'bg-blue-500/10 text-blue-400' : 'bg-purple-500/10 text-purple-400'
+          }`}>
+            {t.video_orientation === 'landscape' ? '🖥 Landscape (16:9)' : '📱 Portrait (9:16)'}
+          </span>
+        )}
+      </div>
+
+      {/* Row 8 — Footer divider */}
+      <div className="border-t border-border/50" />
     </div>
   );
 });
