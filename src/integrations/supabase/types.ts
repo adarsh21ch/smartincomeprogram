@@ -841,6 +841,39 @@ export type Database = {
           },
         ]
       }
+      gmail_oauth_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          gmail_email: string
+          id: string
+          refresh_token: string
+          token_expiry: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          gmail_email: string
+          id?: string
+          refresh_token: string
+          token_expiry: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          gmail_email?: string
+          id?: string
+          refresh_token?: string
+          token_expiry?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       invite_code_uses: {
         Row: {
           code: string
