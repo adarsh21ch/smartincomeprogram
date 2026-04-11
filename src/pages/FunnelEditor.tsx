@@ -47,6 +47,18 @@ interface FlowStep {
   between_step_message?: string;
   between_step_message_enabled?: boolean;
   unlock_after_percent?: number;
+  // New per-step fields
+  unlock_condition?: string;
+  unlock_percentage?: number;
+  time_delay_enabled?: boolean;
+  time_delay_minutes?: number;
+  speaker_mode_step?: string;
+  speaker_name_custom?: string;
+  speaker_title?: string;
+  speaker_bio?: string;
+  speaker_photo_url_custom?: string;
+  video_topics_step_enabled?: boolean;
+  video_topics_step?: Array<{ icon: string; text: string }>;
 }
 
 const createEmptyStep = (order: number, type: string = "video"): FlowStep => ({
@@ -89,9 +101,8 @@ const MULTI_STEPS = [
   { icon: User, label: "Speaker", num: "4" },
   { icon: ListChecks, label: "Video Topics", num: "5" },
   { icon: MessageCircle, label: "Contact Info", num: "6" },
-  { icon: IndianRupee, label: "Payment", num: "7" },
-  { icon: Lock, label: "Privacy", num: "8" },
-  { icon: Rocket, label: "Publish", num: "9" },
+  { icon: Lock, label: "Privacy", num: "7" },
+  { icon: Rocket, label: "Publish", num: "8" },
 ];
 
 const UNLOCK_LABELS: Record<string, string> = {
