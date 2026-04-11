@@ -167,7 +167,7 @@ const PublicLandingPage = () => {
           <div key={i} className="space-y-4">
             <h1 className="text-3xl md:text-4xl font-bold leading-tight">{section.headline}</h1>
             {section.subheadline && <p className="text-lg text-muted-foreground">{section.subheadline}</p>}
-            {section.image_url && <img src={section.image_url} alt="" className="rounded-xl w-full object-contain" />}
+            {section.image_url && <img src={section.image_url} alt="" className="rounded-xl w-full object-contain max-h-[70vh]" />}
             {section.cta_text && <p className="text-primary font-semibold text-lg">{section.cta_text}</p>}
           </div>
         );
@@ -439,8 +439,8 @@ const PublicLandingPage = () => {
             </div>
 
             {/* ── DESKTOP LAYOUT (lg+) ── */}
-            <div className="hidden lg:flex lg:h-full lg:items-stretch lg:gap-8">
-              <section className="flex-1 min-w-0 h-full overflow-y-auto overscroll-contain pr-3">
+            <div className="hidden lg:flex lg:h-full lg:items-stretch lg:gap-10">
+              <section className="flex-1 min-w-0 h-full overflow-y-auto overscroll-contain pr-4">
                 <div className="space-y-8 pb-6">
                   {sections.map(renderSection)}
                   {sections.length === 0 && (
