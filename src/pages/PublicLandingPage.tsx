@@ -73,23 +73,15 @@ const PublicLandingPage = () => {
         supabase.rpc("increment_landing_page_views", { _landing_page_id: data.id });
         // Fetch testimonials if enabled
         if (data.testimonials_enabled) {
-          const { data: regData } = await supabase
+          const { data: tData } = await supabase
             .from("landing_page_testimonials")
             .select("*")
             .eq("landing_page_id", data.id)
             .eq("is_active", true)
-            .eq("placement" as any, "registration")
             .order("display_order", { ascending: true });
-          setRegTestimonials(regData || []);
-
-          const { data: postData } = await supabase
-            .from("landing_page_testimonials")
-            .select("*")
-            .eq("landing_page_id", data.id)
-            .eq("is_active", true)
-            .eq("placement" as any, "after_registration")
-            .order("display_order", { ascending: true });
-          setPostRegTestimonials(postData || []);
+          const all = (tData || []) as any[];
+          setRegTestimonials(all.filter((t) => (t.placement || "registration") === "registration"));
+          setPostRegTestimonials(all.filter((t) => t.placement === "after_registration"));
         }
       }
       setLoading(false);
