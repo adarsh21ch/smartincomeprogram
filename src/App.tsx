@@ -11,7 +11,7 @@ import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
 import ResetPassword from "./pages/ResetPassword";
 import MemberHome from "./pages/MemberHome";
-import MemberProfile from "./pages/MemberProfile";
+// MemberProfile is now integrated into MemberHome profile tab
 import Dashboard from "./pages/Dashboard";
 import FunnelsPage from "./pages/FunnelsPage";
 import FunnelEditor from "./pages/FunnelEditor";
@@ -92,10 +92,11 @@ const App = () => (
               <Route path="/s/:slug" element={<PublicLivePage />} />
 
               {/* Member Routes */}
-              <Route path="/home" element={<MemberRoute><MemberHome tab="program" /></MemberRoute>} />
-              <Route path="/home/about" element={<MemberRoute><MemberHome tab="about" /></MemberRoute>} />
+              <Route path="/home" element={<MemberRoute><MemberHome tab="about" /></MemberRoute>} />
+              <Route path="/home/program" element={<MemberRoute><MemberHome tab="program" /></MemberRoute>} />
               <Route path="/home/courses" element={<MemberRoute><MemberHome tab="courses" /></MemberRoute>} />
-              <Route path="/profile" element={<MemberRoute><MemberProfile /></MemberRoute>} />
+              <Route path="/home/profile" element={<MemberRoute><MemberHome tab="profile" /></MemberRoute>} />
+              <Route path="/profile" element={<Navigate to="/home/profile" replace />} />
 
               {/* Legacy redirects — preserve sub-paths */}
               <Route path="/dashboard" element={<Navigate to="/home" replace />} />

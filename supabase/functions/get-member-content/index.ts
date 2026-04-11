@@ -23,7 +23,6 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Use service role to verify user from JWT token
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
@@ -41,7 +40,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch program settings
     const { data: settings } = await supabase
       .from("program_settings")
       .select("active_member_funnel_id, active_courses_funnel_id")
@@ -64,10 +62,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch funnel
     const { data: funnel } = await supabase
       .from("funnels")
-      .select("id, title, description")
+      .select("id, title, description, speaker_name, speaker_photo_url")
       .eq("id", funnelId)
       .single();
 
@@ -85,13 +82,13 @@ Deno.serve(async (req) => {
       .eq("is_active", true)
       .order("step_order");
 
-    // Fetch video assets
+    // Fetch video assets — use correct column names: r2_key, public_url
     const videoAssetIds = (steps || []).map((s: any) => s.video_asset_id).filter(Boolean);
     let videoAssets: Record<string, any> = {};
     if (videoAssetIds.length > 0) {
       const { data: assets } = await supabase
         .from("video_assets")
-        .select("id, r2_object_key, thumbnail_url, duration_seconds")
+        .select("id, r2_key, public_url, thumbnail_url, duration_seconds")
         .in("id", videoAssetIds);
       if (assets) {
         for (const a of assets) videoAssets[a.id] = a;
@@ -175,7 +172,8 @@ Deno.serve(async (req) => {
       }
 
       const asset = step.video_asset_id ? videoAssets[step.video_asset_id] : null;
-      const videoUrl = asset?.r2_object_key ? `${r2PublicUrl}/${asset.r2_object_key}` : null;
+      // Use public_url directly if available, otherwise construct from r2_key
+      const videoUrl = asset?.public_url || (asset?.r2_key && r2PublicUrl ? `${r2PublicUrl}/${asset.r2_key}` : null);
 
       return {
         id: step.id,
@@ -199,7 +197,13 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({
-        funnel: { id: funnel.id, name: funnel.title, description: funnel.description },
+        funnel: {
+          id: funnel.id,
+          name: funnel.title,
+          description: funnel.description,
+          speaker_name: funnel.speaker_name,
+          speaker_photo_url: funnel.speaker_photo_url,
+        },
         steps: responseSteps,
         overall_completion_percent: overallPercent,
         streak,
