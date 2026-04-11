@@ -489,6 +489,7 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
                 }
               }}
               onClose={() => {}}
+              hideHeader
             />
           ) : activeStep.step_type === "cta" ? (
             <div className="rounded-2xl border border-primary/20 bg-card p-6 text-center space-y-3">
