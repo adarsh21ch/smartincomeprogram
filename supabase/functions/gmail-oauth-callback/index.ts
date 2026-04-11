@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
 })
 
 function renderHtml(title: string, message: string, success: boolean): string {
-  const color = success ? '#22c55e' : '#ef4444'
+  const color = success ? '#D4AF37' : '#ef4444'
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title></head>
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#0a0a0f;color:#fff;margin:0;">
 <div style="text-align:center;max-width:400px;padding:40px;">
