@@ -241,24 +241,36 @@ const VideoPlayer = ({ videoUrl, thumbnailUrl, durationSeconds, orientation }: {
     }
   }, [videoUrl]);
 
-  // IntersectionObserver: auto-pause when scrolled out of view
+  // IntersectionObserver: auto-play when scrolled into view, auto-pause when out
   useEffect(() => {
     const card = cardRef.current;
-    if (!card) return;
+    const v = videoRef.current;
+    if (!card || !v) return;
     const obs = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (!entry.isIntersecting && videoRef.current && !videoRef.current.paused) {
-            videoRef.current.pause();
-            setPlaying(false);
+          if (entry.isIntersecting) {
+            // Auto-play muted when visible
+            if (v.paused) {
+              if (!hasStarted) setHasStarted(true);
+              setGlobalPlaying(v);
+              v.muted = true;
+              setMuted(true);
+              v.play().then(() => setPlaying(true)).catch(() => {});
+            }
+          } else {
+            if (!v.paused) {
+              v.pause();
+              setPlaying(false);
+            }
           }
         });
       },
-      { threshold: 0.3 }
+      { threshold: 0.5 }
     );
     obs.observe(card);
     return () => obs.disconnect();
-  }, []);
+  }, [hasStarted]);
 
   // Progress tracking
   useEffect(() => {
