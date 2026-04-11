@@ -1059,6 +1059,14 @@ export const MultiStepViewer = ({
   const hasContact = funnel.show_contact_buttons && (funnel.contact_whatsapp || funnel.contact_phone);
   const activeCountdown = activeStep ? countdownUnlocks[activeStep.id] : null;
 
+  // Pre-compute: is the blurred timer overlay active? Used to hide video player + UpNext duplicate
+  const nextStepForTimerCheck = activeStepIndex + 1 < steps.length ? steps[activeStepIndex + 1] : null;
+  const nextCountdownForTimerCheck = nextStepForTimerCheck ? countdownUnlocks[nextStepForTimerCheck.id] : null;
+  const isTimerBlurActive = !!(
+    (activeProgress?.status === "completed" && nextCountdownForTimerCheck && nextStepForTimerCheck?.step_type === "video") ||
+    (activeCountdown && activeStep?.step_type === "video")
+  );
+
   return (
     <div className="flex min-h-[calc(100vh-52px)]">
       <JourneySidebar />
@@ -1273,7 +1281,7 @@ export const MultiStepViewer = ({
               )}
 
               {/* Step content */}
-              {!activeCountdown && getStepStatus(activeStep.id) !== "locked" && (
+              {!activeCountdown && !isTimerBlurActive && getStepStatus(activeStep.id) !== "locked" && (
                 <>
                   {activeStep.step_type === "video" && activeStep.video_url && (
                     <div className="space-y-4">
@@ -1434,18 +1442,20 @@ export const MultiStepViewer = ({
                 </>
               )}
 
-              {/* ═══ UP NEXT SECTION (always visible below content) ═══ */}
-              <UpNextSection
-                nextStep={nextStep}
-                nextStepIndex={activeStepIndex + 1}
-                totalSteps={steps.length}
-                unlockResult={nextStepUnlockResult}
-                countdownUnlockAt={nextCountdownAt}
-                currentWatchPct={currentWatchPct}
-                onPlayNext={() => switchToStep(activeStepIndex + 1)}
-                onCountdownComplete={() => nextStep && handleCountdownComplete(nextStep.id)}
-                isDark={isDark}
-              />
+              {/* ═══ UP NEXT SECTION (hidden when blurred timer overlay is active) ═══ */}
+              {!isTimerBlurActive && (
+                <UpNextSection
+                  nextStep={nextStep}
+                  nextStepIndex={activeStepIndex + 1}
+                  totalSteps={steps.length}
+                  unlockResult={nextStepUnlockResult}
+                  countdownUnlockAt={nextCountdownAt}
+                  currentWatchPct={currentWatchPct}
+                  onPlayNext={() => switchToStep(activeStepIndex + 1)}
+                  onCountdownComplete={() => nextStep && handleCountdownComplete(nextStep.id)}
+                  isDark={isDark}
+                />
+              )}
             </div>
           )}
 
