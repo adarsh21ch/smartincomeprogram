@@ -1184,9 +1184,9 @@ export const MultiStepViewer = ({
 
                         {/* Step label */}
                         <div className="text-center">
-                          <p className="text-[10px] font-bold tracking-[0.12em] uppercase" style={{ color: "rgba(255,255,255,0.5)" }}>Next Step</p>
+                          <p className="text-[10px] font-bold tracking-[0.12em] uppercase" style={{ color: "rgba(255,255,255,0.5)" }}>Upcoming</p>
                           <p className="text-base font-bold text-white mt-0.5" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-                            {timerStep.title || `Step ${timerStepIndex + 1}`}
+                            {timerStep.title || `Step ${activeStepIndex + 1}`}
                           </p>
                         </div>
 
