@@ -12,6 +12,7 @@ interface VideoPlayerProps {
   durationSeconds: number | null;
   onComplete: () => void;
   onClose: () => void;
+  hideHeader?: boolean;
 }
 
 export const VideoPlayer = ({
