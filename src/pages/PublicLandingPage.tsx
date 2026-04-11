@@ -155,9 +155,8 @@ const PublicLandingPage = () => {
 
   const sections = (page.sections as any[]) || [];
   const themeColor = page.theme_color || "#E8B830";
-  const displayPos = page.testimonials_display_position || "post_registration";
-  const showTestimonialsOnRegistration = page.testimonials_enabled && testimonials.length > 0 && (displayPos === "registration" || displayPos === "both");
-  const showTestimonialsPostRegistration = page.testimonials_enabled && testimonials.length > 0 && (displayPos === "post_registration" || displayPos === "both");
+  const showTestimonialsOnRegistration = page.testimonials_enabled && regTestimonials.length > 0;
+  const showTestimonialsPostRegistration = page.testimonials_enabled && postRegTestimonials.length > 0;
 
   const formFields = [
     { key: "name", label: "Full Name", enabled: page.field_name_enabled, required: page.field_name_required },
@@ -322,7 +321,7 @@ const PublicLandingPage = () => {
             {showTestimonialsPostRegistration && (
               <div className="mt-8">
                 <TestimonialsViewer
-                  testimonials={testimonials}
+                  testimonials={postRegTestimonials}
                   sectionTitle={page.testimonials_section_title || "What our members say"}
                 />
               </div>
@@ -367,7 +366,7 @@ const PublicLandingPage = () => {
               {showTestimonialsOnRegistration && (
                 <div>
                   <TestimonialsViewer
-                    testimonials={testimonials}
+                    testimonials={regTestimonials}
                     sectionTitle={page.testimonials_section_title || "What our members say"}
                   />
                 </div>
@@ -476,7 +475,7 @@ const PublicLandingPage = () => {
 
                   {showTestimonialsOnRegistration && (
                     <TestimonialsViewer
-                      testimonials={testimonials}
+                      testimonials={regTestimonials}
                       sectionTitle={page.testimonials_section_title || "What our members say"}
                     />
                   )}
