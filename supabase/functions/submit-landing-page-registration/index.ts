@@ -4,6 +4,15 @@ const corsHeaders = {
 };
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+const generateFingerprint = async (ip: string, userAgent: string): Promise<string> => {
+  const normalized = userAgent.replace(/\d+\.\d+\.\d+/g, '').toLowerCase().trim();
+  const combined = `${ip}::${normalized}`;
+  const data = new TextEncoder().encode(combined);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -72,21 +81,67 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Rate limit: check recent submissions from same IP
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+
+    // Rate limit: check recent submissions from same IP
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-    const { count } = await supabase
+    const { count: recentCount } = await supabase
       .from('landing_page_registrations')
       .select('*', { count: 'exact', head: true })
       .eq('landing_page_id', landing_page_id)
       .eq('ip_address', ip)
       .gte('submitted_at', oneHourAgo)
 
-    if ((count || 0) >= 5) {
-      // Fake success to not reveal rate limiting
+    if ((recentCount || 0) >= 10) {
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
+    }
+
+    // Submission limit enforcement
+    const maxSubmissions = page.max_submissions_per_user ?? 1;
+    const cooldownHours = page.submission_cooldown_hours ?? 0;
+    const userFingerprint = await generateFingerprint(ip, user_agent || '');
+
+    const { data: existingSubmissions } = await supabase
+      .from('landing_page_registrations')
+      .select('id, submitted_at, submission_number')
+      .eq('landing_page_id', landing_page_id)
+      .eq('user_fingerprint', userFingerprint)
+      .order('submitted_at', { ascending: false });
+
+    const submissionCount = existingSubmissions?.length || 0;
+
+    if (maxSubmissions > 0 && submissionCount >= maxSubmissions) {
+      if (cooldownHours === 0) {
+        return new Response(JSON.stringify({
+          success: false,
+          reason: 'limit_reached',
+          message: 'You have already registered for this session.',
+        }), {
+          status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const lastSubmission = existingSubmissions?.[0];
+      if (lastSubmission) {
+        const lastSubmittedAt = new Date(lastSubmission.submitted_at);
+        const cooldownMs = cooldownHours * 60 * 60 * 1000;
+        const canSubmitAt = new Date(lastSubmittedAt.getTime() + cooldownMs);
+
+        if (Date.now() < canSubmitAt.getTime()) {
+          const hoursLeft = Math.ceil((canSubmitAt.getTime() - Date.now()) / (1000 * 60 * 60));
+          return new Response(JSON.stringify({
+            success: false,
+            reason: 'cooldown_active',
+            cooldown_ends_at: canSubmitAt.toISOString(),
+            hours_remaining: hoursLeft,
+            message: `You can register again in ${hoursLeft} hour${hoursLeft === 1 ? '' : 's'}.`,
+          }), {
+            status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
     }
 
     const deviceType = user_agent && /Mobi/i.test(user_agent) ? 'mobile' : 'desktop'
@@ -109,6 +164,8 @@ Deno.serve(async (req) => {
         ip_address: ip,
         device_type: deviceType,
         user_agent: user_agent || null,
+        user_fingerprint: userFingerprint,
+        submission_number: submissionCount + 1,
       })
       .select('id')
       .single()
@@ -135,7 +192,6 @@ Deno.serve(async (req) => {
 
         const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#ffffff;color:#1a1a1a;padding:40px 20px;"><div style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:12px;padding:32px;border:1px solid #e5e5e5;"><div style="text-align:center;margin-bottom:24px;"><h1 style="color:#22c55e;font-size:20px;margin:0;">Smart Income Program</h1></div><h2 style="font-size:22px;margin:0 0 16px;color:#1a1a1a;">${page.email_heading || 'You are registered!'}</h2><div style="font-size:15px;line-height:1.7;color:#555555;white-space:pre-line;">${emailBody}</div>${page.email_footer_text ? `<div style="margin-top:24px;padding-top:16px;border-top:1px solid #e5e5e5;font-size:13px;color:#999999;">${page.email_footer_text}</div>` : ''}<div style="margin-top:28px;padding-top:20px;border-top:1px solid #f0f0f0;text-align:center;"><span style="display:inline-block;font-size:11px;color:#b0b0b0;letter-spacing:0.5px;font-weight:500;"><span style="display:inline-block;width:16px;height:16px;line-height:16px;text-align:center;background:#f5f5f5;border-radius:50%;font-size:9px;color:#22c55e;margin-right:5px;vertical-align:middle;">${trustBadgeIcon}</span>${trustBadgeText}</span></div></div></body></html>`
 
-        // Call send-gmail-email edge function internally
         const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
         const gmailRes = await fetch(`${SUPABASE_URL}/functions/v1/send-gmail-email`, {
           method: 'POST',
@@ -163,7 +219,6 @@ Deno.serve(async (req) => {
         }
       } catch (emailErr) {
         console.error('Email send failed (non-blocking):', emailErr)
-        // Don't break the funnel
       }
     }
 

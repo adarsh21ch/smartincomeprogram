@@ -59,6 +59,10 @@ interface FlowStep {
   speaker_photo_url_custom?: string;
   video_topics_step_enabled?: boolean;
   video_topics_step?: Array<{ icon: string; text: string }>;
+  timer_cta_enabled?: boolean;
+  timer_cta_text?: string;
+  timer_cta_url?: string;
+  timer_cta_style?: string;
 }
 
 const createEmptyStep = (order: number, type: string = "video"): FlowStep => ({

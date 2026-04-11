@@ -40,6 +40,10 @@ interface FlowStep {
   speaker_photo_url_custom?: string;
   video_topics_step_enabled?: boolean;
   video_topics_step?: Array<{ icon: string; text: string }>;
+  timer_cta_enabled?: boolean;
+  timer_cta_text?: string;
+  timer_cta_url?: string;
+  timer_cta_style?: string;
 }
 
 interface StepConfigPanelProps {
@@ -247,6 +251,60 @@ export const StepConfigPanel = ({ open, onClose, step, stepIndex, onUpdate, onOp
                       <span className="text-xs text-muted-foreground">minutes before revealing this step</span>
                     </div>
                     <p className="text-xs text-muted-foreground">Viewer will see a countdown timer. After the countdown ends, the step unlocks automatically.</p>
+
+                    {/* Timer CTA */}
+                    <div className="mt-3 pt-3 border-t border-border space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <Label className="text-sm font-medium">Call to Action during wait</Label>
+                          <p className="text-xs text-muted-foreground">Show a button while the viewer waits</p>
+                        </div>
+                        <Switch
+                          checked={step.timer_cta_enabled ?? false}
+                          onCheckedChange={(v) => onUpdate("timer_cta_enabled" as keyof FlowStep, v)}
+                        />
+                      </div>
+                      {step.timer_cta_enabled && (
+                        <div className="space-y-3">
+                          <div>
+                            <Label className="text-xs">Button Text</Label>
+                            <Input
+                              value={step.timer_cta_text || ""}
+                              onChange={(e) => onUpdate("timer_cta_text" as keyof FlowStep, e.target.value)}
+                              placeholder="e.g. Contact your mentor on WhatsApp →"
+                              className="mt-1 bg-muted border-border"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Button URL</Label>
+                            <Input
+                              value={step.timer_cta_url || ""}
+                              onChange={(e) => onUpdate("timer_cta_url" as keyof FlowStep, e.target.value)}
+                              placeholder="https://wa.me/91..."
+                              className="mt-1 bg-muted border-border"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs mb-1.5 block">Button Style</Label>
+                            <div className="flex rounded-xl border border-border overflow-hidden">
+                              {(["gold", "white", "outline"] as const).map((s) => (
+                                <button
+                                  key={s}
+                                  onClick={() => onUpdate("timer_cta_style" as keyof FlowStep, s)}
+                                  className={`flex-1 py-2 text-xs font-semibold transition-all ${
+                                    (step.timer_cta_style || "gold") === s
+                                      ? "bg-primary text-primary-foreground"
+                                      : "bg-muted text-muted-foreground hover:text-foreground"
+                                  }`}
+                                >
+                                  {s.charAt(0).toUpperCase() + s.slice(1)}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
