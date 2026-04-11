@@ -445,8 +445,9 @@ const PublicLandingPage = () => {
             </div>
 
             {/* ── DESKTOP LAYOUT (lg+) ── */}
-            <div className="hidden lg:grid lg:grid-cols-5 gap-8 items-start">
-              <div className="lg:col-span-3 space-y-8">
+            <div className="hidden lg:flex lg:gap-8 lg:items-start">
+              {/* Left scrollable column */}
+              <div className="flex-1 min-w-0 space-y-8">
                 {sections.map(renderSection)}
                 {sections.length === 0 && (
                   <div className="space-y-4">
@@ -469,7 +470,7 @@ const PublicLandingPage = () => {
                   </div>
                 )}
 
-                {/* Testimonials — shown on left before form */}
+                {/* Testimonials */}
                 {showTestimonialsOnRegistration && (
                   <TestimonialsViewer
                     testimonials={testimonials}
@@ -478,7 +479,8 @@ const PublicLandingPage = () => {
                 )}
               </div>
 
-              <div className="lg:col-span-2 self-start" style={{ position: 'sticky', top: '1rem' }}>
+              {/* Right sticky column */}
+              <div className="w-[380px] shrink-0 sticky top-4" style={{ alignSelf: 'flex-start' }}>
                 <div className="sip-card p-6 space-y-5">
                   <div>
                     <h3 className="text-lg font-bold" style={{ color: '#F5F0E8' }}>{page.form_title}</h3>
