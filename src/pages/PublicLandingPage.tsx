@@ -254,7 +254,7 @@ const PublicLandingPage = () => {
       </header>
 
       {/* Main Content */}
-      <main className={`flex-1 min-h-0 px-4 md:px-6 lg:px-8 py-6 md:py-8 max-w-7xl mx-auto w-full ${!submitted ? "lg:max-w-none lg:overflow-hidden" : ""}`}>
+      <main className={`flex-1 min-h-0 px-4 md:px-6 lg:px-10 xl:px-16 py-6 md:py-8 max-w-7xl mx-auto w-full ${!submitted ? "lg:max-w-none lg:overflow-hidden" : ""}`}>
         {/* Preload video in background while user fills form */}
         {video?.public_url && !submitted && (
           <video src={video.public_url} preload="auto" muted className="hidden" aria-hidden="true" />
