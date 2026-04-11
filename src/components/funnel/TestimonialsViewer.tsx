@@ -234,31 +234,43 @@ const VideoPlayer = ({ videoUrl, thumbnailUrl, durationSeconds, orientation }: {
 
   const posterSrc = thumbnailUrl || generatedPoster || undefined;
 
-  // Preload metadata
+  // Preload auto to show first frame as preview
   useEffect(() => {
     if (videoRef.current && videoUrl) {
-      videoRef.current.preload = "metadata";
+      videoRef.current.preload = "auto";
     }
   }, [videoUrl]);
 
-  // IntersectionObserver: auto-pause when scrolled out of view
+  // IntersectionObserver: auto-play when scrolled into view, auto-pause when out
   useEffect(() => {
     const card = cardRef.current;
-    if (!card) return;
+    const v = videoRef.current;
+    if (!card || !v) return;
     const obs = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (!entry.isIntersecting && videoRef.current && !videoRef.current.paused) {
-            videoRef.current.pause();
-            setPlaying(false);
+          if (entry.isIntersecting) {
+            // Auto-play muted when visible
+            if (v.paused) {
+              if (!hasStarted) setHasStarted(true);
+              setGlobalPlaying(v);
+              v.muted = true;
+              setMuted(true);
+              v.play().then(() => setPlaying(true)).catch(() => {});
+            }
+          } else {
+            if (!v.paused) {
+              v.pause();
+              setPlaying(false);
+            }
           }
         });
       },
-      { threshold: 0.3 }
+      { threshold: 0.5 }
     );
     obs.observe(card);
     return () => obs.disconnect();
-  }, []);
+  }, [hasStarted]);
 
   // Progress tracking
   useEffect(() => {
@@ -329,7 +341,7 @@ const VideoPlayer = ({ videoUrl, thumbnailUrl, durationSeconds, orientation }: {
       <video
         ref={videoRef}
         className="testimonial-video-el w-full h-full block"
-        preload="metadata"
+        preload="auto"
         playsInline
         poster={posterSrc}
         muted={muted}
