@@ -152,4 +152,128 @@ const AdminSettingsPage = () => {
   );
 };
 
+const GmailConnectionSection = () => {
+  const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+
+  const { data: gmailToken, isLoading, refetch } = useQuery({
+    queryKey: ["gmail-oauth-status"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("gmail_oauth_tokens")
+        .select("gmail_email, created_at")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const handleConnect = async () => {
+    setConnecting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("gmail-oauth-init");
+      if (error) throw error;
+      if (data?.auth_url) {
+        window.open(data.auth_url, "_blank", "width=600,height=700");
+        // Poll for connection
+        const poll = setInterval(async () => {
+          const { data: token } = await supabase
+            .from("gmail_oauth_tokens")
+            .select("gmail_email")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (token) {
+            clearInterval(poll);
+            refetch();
+            toast.success("Gmail connected successfully!");
+            setConnecting(false);
+          }
+        }, 2000);
+        setTimeout(() => {
+          clearInterval(poll);
+          setConnecting(false);
+        }, 120000);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to initiate Gmail connection");
+      setConnecting(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    setDisconnecting(true);
+    try {
+      const { error } = await supabase
+        .from("gmail_oauth_tokens")
+        .delete()
+        .neq("id", "00000000-0000-0000-0000-000000000000"); // delete all
+      if (error) throw error;
+      refetch();
+      toast.success("Gmail disconnected");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to disconnect");
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
+  return (
+    <div className="border-t border-border pt-6">
+      <h2 className="text-base font-heading font-semibold mb-4 flex items-center gap-2">
+        <Mail size={16} className="text-primary" /> Gmail Email Integration
+      </h2>
+      <p className="text-xs text-muted-foreground mb-4">
+        Connect your Gmail account to send confirmation emails from your own address.
+      </p>
+
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 size={14} className="animate-spin" /> Checking connection...
+        </div>
+      ) : gmailToken ? (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm">
+            <CheckCircle size={16} className="text-green-500" />
+            <span className="text-foreground font-medium">Connected:</span>
+            <span className="text-muted-foreground">{gmailToken.gmail_email}</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDisconnect}
+            disabled={disconnecting}
+            className="text-destructive border-destructive/30 hover:bg-destructive/10"
+          >
+            {disconnecting ? <><Loader2 size={14} className="animate-spin mr-1" /> Disconnecting...</> : <><XCircle size={14} className="mr-1" /> Disconnect Gmail</>}
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <XCircle size={14} className="text-yellow-500" /> Not connected
+          </div>
+          <Button
+            variant="hero"
+            size="sm"
+            onClick={handleConnect}
+            disabled={connecting}
+          >
+            {connecting ? <><Loader2 size={14} className="animate-spin mr-1" /> Connecting...</> : <><ExternalLink size={14} className="mr-1" /> Connect Gmail Account</>}
+          </Button>
+        </div>
+      )}
+
+      <p className="text-[11px] text-muted-foreground mt-3">
+        OAuth redirect URI for Google Cloud Console:<br />
+        <code className="text-[10px] bg-muted px-1.5 py-0.5 rounded select-all">
+          {`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gmail-oauth-callback`}
+        </code>
+      </p>
+    </div>
+  );
+};
+
 export default AdminSettingsPage;
