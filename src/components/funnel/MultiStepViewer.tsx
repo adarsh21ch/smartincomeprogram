@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import {
   Play, Lock, Check, CheckCircle2, Circle, ExternalLink,
   Calendar, CreditCard, ClipboardList, UserCheck, ChevronRight,
-  Loader2, MessageCircle, Phone as PhoneIcon, BadgeCheck, Info, Sparkles
+  Loader2, MessageCircle, Phone as PhoneIcon, BadgeCheck, Info, Sparkles,
+  Timer
 } from "lucide-react";
 
 interface FunnelStep {
@@ -24,6 +25,18 @@ interface FunnelStep {
   booking_url: string | null;
   video_url?: string | null;
   video_thumbnail?: string | null;
+  // New per-step fields
+  unlock_condition?: string;
+  unlock_percentage?: number;
+  time_delay_enabled?: boolean;
+  time_delay_minutes?: number;
+  speaker_mode_step?: string;
+  speaker_name_custom?: string;
+  speaker_title?: string;
+  speaker_bio?: string;
+  speaker_photo_url_custom?: string;
+  video_topics_step_enabled?: boolean;
+  video_topics_step?: Array<{ icon: string; text: string }>;
 }
 
 interface StepProgress {
@@ -34,6 +47,8 @@ interface StepProgress {
   last_position_seconds: number;
   completed_at: string | null;
   manually_unlocked?: boolean;
+  condition_met_at?: string | null;
+  time_spent_seconds?: number;
 }
 
 interface MultiStepViewerProps {
@@ -86,6 +101,222 @@ const getSessionId = (funnelId: string): string => {
   return sid;
 };
 
+/* ─── Unlock check with new conditions + time delay ─── */
+interface UnlockResult {
+  unlocked: boolean;
+  reason?: string;
+  unlockAt?: number;
+  remainingMs?: number;
+}
+
+const checkStepUnlock = (
+  step: FunnelStep,
+  stepIndex: number,
+  prevProgress: StepProgress | null
+): UnlockResult => {
+  if (stepIndex === 0) return { unlocked: true };
+  if (!prevProgress) return { unlocked: false, reason: "previous_not_started" };
+
+  // Use new unlock_condition if set, otherwise fall back to unlock_rule_type
+  const condition = step.unlock_condition || "full_watch";
+  const watchPct = prevProgress.watched_percentage || 0;
+  const timeSpent = prevProgress.time_spent_seconds || 0;
+
+  let conditionMet = false;
+  if (condition === "full_watch") {
+    conditionMet = watchPct >= 95 || prevProgress.status === "completed";
+  } else if (condition === "percentage") {
+    conditionMet = watchPct >= (step.unlock_percentage || 80);
+  } else if (condition === "time_spent") {
+    const requiredSeconds = (step.unlock_percentage || 10) * 60;
+    conditionMet = timeSpent >= requiredSeconds;
+  } else {
+    // Fall back to old unlock_rule_type logic
+    const rule = step.unlock_rule_type;
+    if (rule === "auto") return { unlocked: true };
+    if (rule === "manual") return { unlocked: false, reason: "manual" };
+    if (rule === "watch_complete") conditionMet = prevProgress.status === "completed";
+    else if (rule === "watch_seconds") conditionMet = prevProgress.max_watched_seconds >= parseInt(step.unlock_rule_value || "0");
+    else if (rule === "watch_percent") conditionMet = watchPct >= parseInt(step.unlock_rule_value || "0");
+    else conditionMet = prevProgress.status === "completed";
+  }
+
+  if (!conditionMet) return { unlocked: false, reason: "condition_not_met" };
+
+  // Check time delay
+  if (step.time_delay_enabled && (step.time_delay_minutes || 0) > 0) {
+    const conditionMetAt = prevProgress.condition_met_at || prevProgress.completed_at;
+    if (!conditionMetAt) return { unlocked: false, reason: "delay_waiting" };
+
+    const delayMs = (step.time_delay_minutes || 0) * 60 * 1000;
+    const unlockAt = new Date(conditionMetAt).getTime() + delayMs;
+    const now = Date.now();
+
+    if (now < unlockAt) {
+      return {
+        unlocked: false,
+        reason: "delay_countdown",
+        unlockAt,
+        remainingMs: unlockAt - now,
+      };
+    }
+  }
+
+  return { unlocked: true };
+};
+
+/* ─── Countdown Timer Component ─── */
+const CountdownTimer = ({ unlockAt, onUnlock, isDark }: { unlockAt: number; onUnlock: () => void; isDark: boolean }) => {
+  const [remaining, setRemaining] = useState(Math.max(0, unlockAt - Date.now()));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const r = unlockAt - Date.now();
+      if (r <= 0) {
+        clearInterval(interval);
+        setRemaining(0);
+        onUnlock();
+      } else {
+        setRemaining(r);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [unlockAt, onUnlock]);
+
+  const totalMs = unlockAt - Date.now() + remaining; // rough for progress
+  const hours = Math.floor(remaining / 3600000);
+  const minutes = Math.floor((remaining % 3600000) / 60000);
+  const seconds = Math.floor((remaining % 60000) / 1000);
+  const progressPct = remaining > 0 ? Math.max(0, 100 - (remaining / Math.max(remaining + 1000, 1)) * 100) : 100;
+
+  const sc = {
+    bg: isDark ? "rgba(251,146,60,0.08)" : "rgba(251,146,60,0.06)",
+    border: isDark ? "rgba(251,146,60,0.2)" : "rgba(251,146,60,0.15)",
+    text: isDark ? "#fbbf24" : "#d97706",
+    textMuted: isDark ? "rgba(251,191,36,0.7)" : "rgba(217,119,6,0.7)",
+    boxBg: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+  };
+
+  return (
+    <div className="rounded-2xl p-6 text-center space-y-4" style={{ background: sc.bg, border: `1px solid ${sc.border}` }}>
+      <div className="flex items-center justify-center gap-2 mb-2">
+        <Timer size={18} style={{ color: sc.text }} />
+        <p className="text-sm font-semibold" style={{ color: sc.text }}>Step unlocks in</p>
+      </div>
+
+      <div className="flex items-center justify-center gap-3">
+        {hours > 0 && (
+          <div className="flex flex-col items-center rounded-xl px-4 py-3 min-w-[60px]" style={{ background: sc.boxBg }}>
+            <span className="text-2xl font-bold font-mono" style={{ color: sc.text }}>{hours}</span>
+            <span className="text-[10px] uppercase tracking-wider mt-0.5" style={{ color: sc.textMuted }}>hr</span>
+          </div>
+        )}
+        <div className="flex flex-col items-center rounded-xl px-4 py-3 min-w-[60px]" style={{ background: sc.boxBg }}>
+          <span className="text-2xl font-bold font-mono" style={{ color: sc.text }}>{minutes.toString().padStart(2, "0")}</span>
+          <span className="text-[10px] uppercase tracking-wider mt-0.5" style={{ color: sc.textMuted }}>min</span>
+        </div>
+        <div className="flex flex-col items-center rounded-xl px-4 py-3 min-w-[60px]" style={{ background: sc.boxBg }}>
+          <span className="text-2xl font-bold font-mono" style={{ color: sc.text }}>{seconds.toString().padStart(2, "0")}</span>
+          <span className="text-[10px] uppercase tracking-wider mt-0.5" style={{ color: sc.textMuted }}>sec</span>
+        </div>
+      </div>
+
+      <p className="text-xs" style={{ color: sc.textMuted }}>
+        Great job on the previous step! This step will unlock automatically.
+      </p>
+    </div>
+  );
+};
+
+/* ─── Per-step Speaker Card ─── */
+const StepSpeakerCard = ({ funnel, step, creatorProfile, isDark }: { funnel: any; step: FunnelStep; creatorProfile: any; isDark: boolean }) => {
+  const sc = {
+    cardBg: isDark ? "#1a1a22" : "#ffffff",
+    cardBorder: isDark ? "#3f3f46" : "#e5e7eb",
+    text: isDark ? "#ffffff" : "#0f172a",
+    textMuted: isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)",
+  };
+
+  let speaker: { name: string; title?: string; bio?: string; photo?: string } | null = null;
+
+  if (funnel.speaker_scope === "per_step") {
+    const mode = step.speaker_mode_step || "none";
+    if (mode === "none") return null;
+    if (mode === "account" && creatorProfile) {
+      speaker = { name: creatorProfile.full_name, photo: creatorProfile.avatar_url, bio: creatorProfile.bio };
+    } else if (mode === "custom") {
+      speaker = {
+        name: step.speaker_name_custom || "",
+        title: step.speaker_title || "",
+        bio: step.speaker_bio || "",
+        photo: step.speaker_photo_url_custom || "",
+      };
+    }
+  } else {
+    // Global speaker
+    if (funnel.speaker_mode === "none") return null;
+    if (funnel.speaker_mode === "account" && creatorProfile) {
+      speaker = { name: creatorProfile.full_name, photo: creatorProfile.avatar_url, bio: creatorProfile.bio };
+    } else if (funnel.speaker_mode === "custom") {
+      speaker = { name: funnel.speaker_name, bio: funnel.speaker_about, photo: funnel.speaker_photo_url };
+    }
+  }
+
+  if (!speaker || !speaker.name) return null;
+
+  return (
+    <div className="flex items-start gap-3 rounded-xl p-4" style={{ background: sc.cardBg, border: `1px solid ${sc.cardBorder}` }}>
+      {speaker.photo && (
+        <img src={speaker.photo} alt="" className="w-12 h-12 rounded-full object-cover shrink-0" />
+      )}
+      <div className="min-w-0">
+        <p className="font-semibold text-sm" style={{ color: sc.text }}>{speaker.name}</p>
+        {speaker.title && <p className="text-xs mt-0.5" style={{ color: sc.textMuted }}>{speaker.title}</p>}
+        {speaker.bio && <p className="text-xs mt-1" style={{ color: sc.textMuted }}>{speaker.bio}</p>}
+      </div>
+    </div>
+  );
+};
+
+/* ─── Per-step Video Topics ─── */
+const StepVideoTopics = ({ funnel, step, isDark }: { funnel: any; step: FunnelStep; isDark: boolean }) => {
+  const sc = {
+    cardBg: isDark ? "#1a1a22" : "#ffffff",
+    cardBorder: isDark ? "#3f3f46" : "#e5e7eb",
+    text: isDark ? "#ffffff" : "#0f172a",
+    textMuted: isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)",
+  };
+
+  let topics: Array<{ icon: string; text: string }> = [];
+
+  if (funnel.video_topics_scope === "per_step") {
+    if (step.video_topics_step_enabled && step.video_topics_step && step.video_topics_step.length > 0) {
+      topics = step.video_topics_step;
+    }
+  } else {
+    // Global topics
+    if (funnel.video_topics_enabled && funnel.video_topics && funnel.video_topics.length > 0) {
+      topics = funnel.video_topics;
+    }
+  }
+
+  if (topics.length === 0) return null;
+
+  return (
+    <div className="rounded-xl p-4 space-y-2" style={{ background: sc.cardBg, border: `1px solid ${sc.cardBorder}` }}>
+      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: sc.textMuted }}>Key Points</p>
+      <ul className="space-y-1.5">
+        {topics.map((t, i) => (
+          <li key={i} className="flex items-start gap-2 text-sm" style={{ color: sc.text }}>
+            <span className="shrink-0">{t.icon || "✅"}</span>
+            <span>{t.text}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
 export const MultiStepViewer = ({
   funnel,
   steps,
@@ -102,6 +333,7 @@ export const MultiStepViewer = ({
   const [paymentSubmitted, setPaymentSubmitted] = useState(false);
   const [paymentProof, setPaymentProof] = useState({ upi_transaction_id: "", amount: 0 });
   const [loading, setLoading] = useState(true);
+  const [countdownUnlocks, setCountdownUnlocks] = useState<Record<string, number>>({}); // stepId -> unlockAt timestamp
   const sessionId = useRef(getSessionId(funnel.id));
   const progressSaveTimer = useRef<ReturnType<typeof setInterval>>();
 
@@ -109,17 +341,19 @@ export const MultiStepViewer = ({
     const loadProgress = async () => {
       const { data } = await supabase
         .from("funnel_step_progress")
-        .select("funnel_step_id, status, max_watched_seconds, watched_percentage, last_position_seconds, completed_at")
+        .select("funnel_step_id, status, max_watched_seconds, watched_percentage, last_position_seconds, completed_at, condition_met_at, time_spent_seconds")
         .eq("funnel_id", funnel.id)
         .eq("session_id", sessionId.current);
 
       const map: Record<string, StepProgress> = {};
       if (data) {
         for (const p of data) {
-          map[p.funnel_step_id] = p;
+          map[p.funnel_step_id] = p as any;
         }
       }
 
+      // Initialize missing progress + compute unlock states
+      const countdowns: Record<string, number> = {};
       for (let i = 0; i < steps.length; i++) {
         const step = steps[i];
         if (!map[step.id]) {
@@ -131,6 +365,8 @@ export const MultiStepViewer = ({
             watched_percentage: 0,
             last_position_seconds: 0,
             completed_at: null,
+            condition_met_at: null,
+            time_spent_seconds: 0,
           };
           await supabase.from("funnel_step_progress").insert({
             funnel_id: funnel.id,
@@ -139,9 +375,24 @@ export const MultiStepViewer = ({
             status,
           });
         }
+
+        // Re-evaluate unlock for steps > 0
+        if (i > 0) {
+          const prevProgress = map[steps[i - 1].id];
+          const result = checkStepUnlock(step, i, prevProgress);
+          if (result.unlocked && map[step.id].status === "locked") {
+            map[step.id].status = "unlocked";
+            supabase.from("funnel_step_progress").update({ status: "unlocked" })
+              .eq("funnel_id", funnel.id).eq("funnel_step_id", step.id).eq("session_id", sessionId.current).then(() => {});
+          }
+          if (!result.unlocked && result.reason === "delay_countdown" && result.unlockAt) {
+            countdowns[step.id] = result.unlockAt;
+          }
+        }
       }
 
       setProgressMap(map);
+      setCountdownUnlocks(countdowns);
 
       let furthest = 0;
       for (let i = 0; i < steps.length; i++) {
@@ -183,68 +434,45 @@ export const MultiStepViewer = ({
       .eq("session_id", sessionId.current);
   }, [funnel.id]);
 
-  const completeStep = useCallback(async (stepIndex: number) => {
-    const step = steps[stepIndex];
-    const completedUpdate = {
-      status: "completed" as const,
-      completed_at: new Date().toISOString(),
-    };
-    await updateStepProgress(step.id, completedUpdate);
+  const tryUnlockNext = useCallback(async (completedStepIndex: number) => {
+    if (completedStepIndex + 1 >= steps.length) return;
+    const nextStep = steps[completedStepIndex + 1];
+    const currentProgress = progressMap[steps[completedStepIndex].id];
+    const result = checkStepUnlock(nextStep, completedStepIndex + 1, currentProgress);
 
-    if (stepIndex + 1 < steps.length) {
-      const nextStep = steps[stepIndex + 1];
-      // Always check unlock for the next step after completing current
-      const rule = nextStep.unlock_rule_type;
-      let shouldUnlock = false;
-      if (rule === "auto") shouldUnlock = true;
-      if (rule === "watch_complete") shouldUnlock = true; // current step just completed
-      if (rule === "cta_click" || rule === "lead_submitted" || rule === "payment_submitted" || rule === "booking_done") shouldUnlock = true;
-      // For manual, don't auto-unlock
-      if (rule === "manual") shouldUnlock = false;
-      // For watch_seconds / watch_percent, check the current progress
-      if (rule === "watch_seconds") {
-        const prev = progressMap[step.id];
-        shouldUnlock = prev && prev.max_watched_seconds >= parseInt(nextStep.unlock_rule_value || "0");
+    if (result.unlocked) {
+      const nextStatus = progressMap[nextStep.id]?.status;
+      if (nextStatus === "locked") {
+        await updateStepProgress(nextStep.id, { status: "unlocked" });
       }
-      if (rule === "watch_percent") {
-        const prev = progressMap[step.id];
-        shouldUnlock = prev && prev.watched_percentage >= parseInt(nextStep.unlock_rule_value || "0");
+      // Remove any countdown
+      setCountdownUnlocks((prev) => {
+        const n = { ...prev };
+        delete n[nextStep.id];
+        return n;
+      });
+    } else if (result.reason === "delay_countdown" && result.unlockAt) {
+      // Set condition_met_at on prev progress if not set
+      if (!currentProgress?.condition_met_at) {
+        await updateStepProgress(steps[completedStepIndex].id, { condition_met_at: new Date().toISOString() });
       }
-
-      if (shouldUnlock) {
-        const nextStatus = progressMap[nextStep.id]?.status;
-        if (nextStatus === "locked") {
-          await updateStepProgress(nextStep.id, { status: "unlocked" });
-        }
-      }
+      setCountdownUnlocks((prev) => ({ ...prev, [nextStep.id]: result.unlockAt! }));
     }
   }, [steps, progressMap, updateStepProgress]);
 
-  const checkUnlockCondition = (step: FunnelStep, prevIndex: number): boolean => {
-    const rule = step.unlock_rule_type;
-    if (rule === "auto") return true;
-    if (rule === "manual") return false;
-
-    const prevStep = steps[prevIndex];
-    const prevProgress = progressMap[prevStep.id];
-    if (!prevProgress) return false;
-
-    switch (rule) {
-      case "watch_complete":
-        return prevProgress.status === "completed";
-      case "watch_seconds":
-        return prevProgress.max_watched_seconds >= parseInt(step.unlock_rule_value || "0");
-      case "watch_percent":
-        return prevProgress.watched_percentage >= parseInt(step.unlock_rule_value || "0");
-      case "cta_click":
-      case "lead_submitted":
-      case "payment_submitted":
-      case "booking_done":
-        return prevProgress.status === "completed";
-      default:
-        return true;
+  const completeStep = useCallback(async (stepIndex: number) => {
+    const step = steps[stepIndex];
+    const completedUpdate: Partial<StepProgress> = {
+      status: "completed",
+      completed_at: new Date().toISOString(),
+    };
+    // Also set condition_met_at if not set
+    if (!progressMap[step.id]?.condition_met_at) {
+      completedUpdate.condition_met_at = new Date().toISOString();
     }
-  };
+    await updateStepProgress(step.id, completedUpdate);
+    await tryUnlockNext(stepIndex);
+  }, [steps, progressMap, updateStepProgress, tryUnlockNext]);
 
   const handleVideoTimeUpdate = useCallback((stepIndex: number, currentTime: number, duration: number) => {
     const step = steps[stepIndex];
@@ -254,35 +482,37 @@ export const MultiStepViewer = ({
     const maxWatched = Math.max(progress.max_watched_seconds, Math.floor(currentTime));
     const pct = duration > 0 ? Math.floor((maxWatched / duration) * 100) : 0;
 
+    const updates: Partial<StepProgress> = {
+      status: progress.status === "unlocked" ? "in_progress" : progress.status,
+      max_watched_seconds: maxWatched,
+      watched_percentage: pct,
+      last_position_seconds: Math.floor(currentTime),
+    };
+
+    // Check if condition just became met for the NEXT step
+    if (stepIndex + 1 < steps.length && !progress.condition_met_at) {
+      const nextStep = steps[stepIndex + 1];
+      const cond = nextStep.unlock_condition || "full_watch";
+      let justMet = false;
+      if (cond === "full_watch" && pct >= 95) justMet = true;
+      if (cond === "percentage" && pct >= (nextStep.unlock_percentage || 80)) justMet = true;
+      if (justMet) {
+        updates.condition_met_at = new Date().toISOString();
+      }
+    }
+
     setProgressMap((prev) => ({
       ...prev,
-      [step.id]: {
-        ...prev[step.id],
-        status: prev[step.id]?.status === "unlocked" ? "in_progress" : prev[step.id]?.status || "in_progress",
-        max_watched_seconds: maxWatched,
-        watched_percentage: pct,
-        last_position_seconds: Math.floor(currentTime),
-      },
+      [step.id]: { ...prev[step.id], ...updates },
     }));
 
     if (pct >= 95 && progress.status !== "completed") {
       completeStep(stepIndex);
+    } else {
+      // Try unlock next even before full completion (for percentage-based)
+      tryUnlockNext(stepIndex);
     }
-
-    if (stepIndex + 1 < steps.length) {
-      const nextStep = steps[stepIndex + 1];
-      const nextStatus = getStepStatus(nextStep.id);
-      if (nextStatus === "locked") {
-        const rule = nextStep.unlock_rule_type;
-        let shouldUnlock = false;
-        if (rule === "watch_seconds" && maxWatched >= parseInt(nextStep.unlock_rule_value || "0")) shouldUnlock = true;
-        if (rule === "watch_percent" && pct >= parseInt(nextStep.unlock_rule_value || "0")) shouldUnlock = true;
-        if (shouldUnlock) {
-          updateStepProgress(nextStep.id, { status: "unlocked" });
-        }
-      }
-    }
-  }, [steps, progressMap, completeStep, updateStepProgress]);
+  }, [steps, progressMap, completeStep, tryUnlockNext]);
 
   useEffect(() => {
     progressSaveTimer.current = setInterval(() => {
@@ -290,6 +520,14 @@ export const MultiStepViewer = ({
       if (!activeStep) return;
       const p = progressMap[activeStep.id];
       if (!p || p.status === "locked") return;
+
+      // Also increment time_spent_seconds
+      const newTimeSpent = (p.time_spent_seconds || 0) + 5;
+      setProgressMap((prev) => ({
+        ...prev,
+        [activeStep.id]: { ...prev[activeStep.id], time_spent_seconds: newTimeSpent },
+      }));
+
       supabase
         .from("funnel_step_progress")
         .update({
@@ -297,14 +535,45 @@ export const MultiStepViewer = ({
           watched_percentage: p.watched_percentage,
           last_position_seconds: p.last_position_seconds,
           status: p.status,
+          time_spent_seconds: newTimeSpent,
+          ...(p.condition_met_at ? { condition_met_at: p.condition_met_at } : {}),
         })
         .eq("funnel_id", funnel.id)
         .eq("funnel_step_id", activeStep.id)
         .eq("session_id", sessionId.current)
         .then(() => {});
+
+      // Check if time_spent unlock condition just met for next step
+      if (activeStepIndex + 1 < steps.length) {
+        const nextStep = steps[activeStepIndex + 1];
+        if (nextStep.unlock_condition === "time_spent") {
+          const requiredSec = (nextStep.unlock_percentage || 10) * 60;
+          if (newTimeSpent >= requiredSec && getStepStatus(nextStep.id) === "locked") {
+            tryUnlockNext(activeStepIndex);
+          }
+        }
+      }
     }, 5000);
     return () => { if (progressSaveTimer.current) clearInterval(progressSaveTimer.current); };
-  }, [activeStepIndex, progressMap, steps, funnel.id]);
+  }, [activeStepIndex, progressMap, steps, funnel.id, tryUnlockNext]);
+
+  const handleCountdownComplete = useCallback((stepId: string) => {
+    // Re-evaluate unlock
+    const idx = steps.findIndex((s) => s.id === stepId);
+    if (idx > 0) {
+      const prevProgress = progressMap[steps[idx - 1].id];
+      const result = checkStepUnlock(steps[idx], idx, prevProgress);
+      if (result.unlocked) {
+        updateStepProgress(stepId, { status: "unlocked" });
+        setCountdownUnlocks((prev) => {
+          const n = { ...prev };
+          delete n[stepId];
+          return n;
+        });
+        toast.success(`Step ${idx + 1} is now unlocked! 🎉`);
+      }
+    }
+  }, [steps, progressMap, updateStepProgress]);
 
   const handleCtaClick = async (stepIndex: number) => {
     const step = steps[stepIndex];
@@ -360,18 +629,23 @@ export const MultiStepViewer = ({
     if (idx === 0) return null;
     const status = getStepStatus(step.id);
     if (status === "completed") return null;
-    if (status === "locked") {
+    if (status === "locked" || countdownUnlocks[step.id]) {
+      // New condition-based hints
+      const cond = step.unlock_condition || "full_watch";
+      if (cond === "full_watch") return "Watch the previous video fully to unlock.";
+      if (cond === "percentage") return `Watch at least ${step.unlock_percentage || 80}% of the previous video.`;
+      if (cond === "time_spent") return `Spend at least ${step.unlock_percentage || 10} minutes on the previous step.`;
       const hintFn = UNLOCK_HINTS[step.unlock_rule_type];
       return hintFn ? hintFn(step.unlock_rule_value) : null;
     }
     return null;
   };
 
-  // Check if next step just got unlocked
   const nextStepUnlocked = activeStep &&
     activeProgress?.status === "completed" &&
     activeStepIndex + 1 < steps.length &&
-    getStepStatus(steps[activeStepIndex + 1].id) !== "locked";
+    getStepStatus(steps[activeStepIndex + 1].id) !== "locked" &&
+    !countdownUnlocks[steps[activeStepIndex + 1]?.id];
 
   /* ─── Theme colors for sidebar ─── */
   const sc = {
@@ -405,9 +679,7 @@ export const MultiStepViewer = ({
         className="hidden lg:flex flex-col w-[280px] min-w-[280px] shrink-0 h-screen sticky top-0 border-r"
         style={{ background: sc.bg, borderColor: sc.border }}
       >
-        {/* Scrollable content area */}
         <div className="flex-1 overflow-y-auto" style={{ padding: "20px 14px" }}>
-          {/* Creator badge */}
           {creatorProfile?.full_name && (
             <div className="flex items-center gap-3 pb-4 mb-4" style={{ borderBottom: `1px solid ${sc.border}` }}>
               <div className="w-[40px] h-[40px] rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden" style={{ border: "2px solid rgba(34,197,94,0.35)", boxShadow: "0 0 0 3px rgba(34,197,94,0.08)" }}>
@@ -432,7 +704,6 @@ export const MultiStepViewer = ({
             </div>
           )}
 
-          {/* Progress */}
           <div className="pb-4 mb-4" style={{ borderBottom: `1px solid ${sc.border}` }}>
             <p className="text-[10px] font-bold uppercase tracking-[0.1em] mb-2.5" style={{ color: sc.textDim }}>
               Journey Progress
@@ -448,7 +719,6 @@ export const MultiStepViewer = ({
             </p>
           </div>
 
-          {/* Steps */}
           <p className="text-[10px] font-bold uppercase tracking-[0.1em] mb-3 px-1" style={{ color: sc.textDimmer }}>
             Journey
           </p>
@@ -457,9 +727,10 @@ export const MultiStepViewer = ({
               const status = getStepStatus(step.id);
               const Icon = STEP_ICONS[step.step_type] || Circle;
               const isActive = idx === activeStepIndex;
-              const isLocked = status === "locked";
+              const isLocked = status === "locked" || !!countdownUnlocks[step.id];
               const isCompleted = status === "completed";
               const isInProgress = status === "in_progress";
+              const hasCountdown = !!countdownUnlocks[step.id];
 
               return (
                 <button
@@ -495,6 +766,8 @@ export const MultiStepViewer = ({
                   >
                     {isCompleted ? (
                       <Check size={13} className="text-green-400" />
+                    ) : hasCountdown ? (
+                      <Timer size={11} style={{ color: "#fbbf24" }} />
                     ) : isLocked ? (
                       <Lock size={11} style={{ color: sc.iconLocked }} />
                     ) : (
@@ -515,7 +788,7 @@ export const MultiStepViewer = ({
                     <p style={{ fontSize: "11px", color: sc.textMuted, marginTop: "2px" }}>
                       {STEP_TYPE_LABELS[step.step_type] || step.step_type}
                       {" · "}
-                      {isCompleted ? "Completed" : isInProgress ? "In Progress" : isActive ? "Available" : isLocked ? "Locked" : "Available"}
+                      {isCompleted ? "Completed" : hasCountdown ? "Countdown" : isInProgress ? "In Progress" : isActive ? "Available" : isLocked ? "Locked" : "Available"}
                     </p>
                   </div>
                 </button>
@@ -524,7 +797,6 @@ export const MultiStepViewer = ({
           </div>
         </div>
 
-        {/* Contact buttons — pinned at bottom, always visible */}
         {hasContact && (
           <div className="shrink-0 px-3 py-3" style={{ borderTop: `1px solid ${sc.border}`, background: sc.bg }}>
             <p className="text-[10px] font-bold uppercase tracking-[0.1em] mb-2.5 px-1" style={{ color: sc.textDim }}>
@@ -570,8 +842,9 @@ export const MultiStepViewer = ({
       {steps.map((step, idx) => {
         const status = getStepStatus(step.id);
         const isActive = idx === activeStepIndex;
-        const isLocked = status === "locked";
+        const isLocked = status === "locked" || !!countdownUnlocks[step.id];
         const isCompleted = status === "completed";
+        const hasCountdown = !!countdownUnlocks[step.id];
 
         return (
           <button
@@ -599,6 +872,8 @@ export const MultiStepViewer = ({
                 ? "#22c55e"
                 : isCompleted
                 ? "#4ade80"
+                : hasCountdown
+                ? "#fbbf24"
                 : isLocked
                 ? sc.textLocked
                 : sc.stepBarInactive,
@@ -606,7 +881,7 @@ export const MultiStepViewer = ({
               opacity: isLocked ? 0.5 : 1,
             }}
           >
-            {isCompleted ? <Check size={12} /> : isLocked ? <Lock size={10} /> : <Circle size={10} />}
+            {isCompleted ? <Check size={12} /> : hasCountdown ? <Timer size={10} /> : isLocked ? <Lock size={10} /> : <Circle size={10} />}
             {step.title || `Step ${idx + 1}`}
           </button>
         );
@@ -617,14 +892,14 @@ export const MultiStepViewer = ({
 
   const hasContact = funnel.show_contact_buttons && (funnel.contact_whatsapp || funnel.contact_phone);
 
+  // Check if active step has a countdown
+  const activeCountdown = activeStep ? countdownUnlocks[activeStep.id] : null;
+
   return (
     <div className="flex min-h-[calc(100vh-52px)]">
-      {/* LEFT sidebar — desktop */}
       <JourneySidebar />
 
-      {/* Mobile step bar + contact */}
       <div className="flex flex-col flex-1 min-w-0">
-        {/* Mobile: Funnel title */}
         <div className="lg:hidden text-center py-4 px-4" style={{ borderBottom: `1px solid ${sc.border}` }}>
           <h1 className="font-heading font-extrabold tracking-tight leading-tight" style={{ fontSize: "clamp(18px, 5vw, 28px)", letterSpacing: "-0.02em", color: sc.text }}>
             {funnel.title}
@@ -632,7 +907,6 @@ export const MultiStepViewer = ({
         </div>
         <MobileStepBar />
 
-        {/* Mobile contact bar */}
         {hasContact && (
           <div className="lg:hidden flex gap-2 px-4 py-2.5" style={{ borderBottom: `1px solid ${sc.border}`, background: sc.bg }}>
             {funnel.contact_whatsapp && (
@@ -658,7 +932,6 @@ export const MultiStepViewer = ({
 
         {/* Main content */}
         <div className="flex-1 px-4 lg:px-8 py-6 lg:py-8 max-w-[860px] mx-auto w-full">
-          {/* Funnel title — desktop only (mobile shows above step bar) */}
           <h1 className="hidden lg:block font-heading font-extrabold tracking-tight leading-tight mb-6" style={{ fontSize: "clamp(22px, 3vw, 34px)", letterSpacing: "-0.02em", color: sc.text }}>
             {funnel.title}
           </h1>
@@ -699,8 +972,17 @@ export const MultiStepViewer = ({
                 )}
               </div>
 
-              {/* Unlock hint for locked steps */}
-              {getStepStatus(activeStep.id) === "locked" && (
+              {/* Countdown timer for delayed steps */}
+              {activeCountdown && (
+                <CountdownTimer
+                  unlockAt={activeCountdown}
+                  onUnlock={() => handleCountdownComplete(activeStep.id)}
+                  isDark={isDark}
+                />
+              )}
+
+              {/* Unlock hint for locked steps (no countdown) */}
+              {getStepStatus(activeStep.id) === "locked" && !activeCountdown && (
                 <div className="flex items-start gap-3 p-4 rounded-xl" style={{ background: "rgba(251,146,60,0.1)", border: "1px solid rgba(251,146,60,0.2)" }}>
                   <Lock size={16} className="text-amber-400 shrink-0 mt-0.5" />
                   <div>
@@ -711,7 +993,7 @@ export const MultiStepViewer = ({
               )}
 
               {/* Inline hint about what unlocks next */}
-              {activeStepIndex + 1 < steps.length && getStepStatus(activeStep.id) !== "completed" && getStepStatus(steps[activeStepIndex + 1].id) === "locked" && (
+              {activeStepIndex + 1 < steps.length && getStepStatus(activeStep.id) !== "completed" && (getStepStatus(steps[activeStepIndex + 1].id) === "locked" || countdownUnlocks[steps[activeStepIndex + 1]?.id]) && (
                 <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl" style={{ background: sc.itemBg, border: `1px solid ${sc.border}` }}>
                   <Info size={13} className="shrink-0 mt-0.5" style={{ color: sc.textDimmer }} />
                   <p style={{ fontSize: "12px", color: sc.textMuted, lineHeight: "1.5" }}>
@@ -720,147 +1002,157 @@ export const MultiStepViewer = ({
                 </div>
               )}
 
-              {/* Step type content */}
-              {activeStep.step_type === "video" && activeStep.video_url && (
-                <div className="space-y-3">
-                  <VideoPlayer
-                    src={activeStep.video_url}
-                    poster={activeStep.video_thumbnail || undefined}
-                    allowSeek={funnel.allow_seek !== false}
-                    allowSpeed={funnel.allow_speed_change !== false}
-                    autoplay={true}
-                    initialTime={activeProgress?.last_position_seconds || 0}
-                    onTimeUpdate={(ct: number, dur: number) => handleVideoTimeUpdate(activeStepIndex, ct, dur)}
-                  />
-                </div>
-              )}
+              {/* Step type content - only show when not locked/countdown */}
+              {!activeCountdown && getStepStatus(activeStep.id) !== "locked" && (
+                <>
+                  {activeStep.step_type === "video" && activeStep.video_url && (
+                    <div className="space-y-3">
+                      <VideoPlayer
+                        src={activeStep.video_url}
+                        poster={activeStep.video_thumbnail || undefined}
+                        allowSeek={funnel.allow_seek !== false}
+                        allowSpeed={funnel.allow_speed_change !== false}
+                        autoplay={true}
+                        initialTime={activeProgress?.last_position_seconds || 0}
+                        onTimeUpdate={(ct: number, dur: number) => handleVideoTimeUpdate(activeStepIndex, ct, dur)}
+                      />
 
-              {activeStep.step_type === "video" && !activeStep.video_url && (
-                <div className="aspect-video rounded-2xl flex items-center justify-center" style={{ background: sc.cardBg, border: `1px solid ${sc.border}` }}>
-                  <div className="text-center">
-                    <Play size={40} style={{ color: sc.textDimmer }} className="mx-auto mb-2" />
-                    <p style={{ fontSize: "12px", color: sc.textDimmer }}>Video not available</p>
-                  </div>
-                </div>
-              )}
+                      {/* Per-step speaker */}
+                      <StepSpeakerCard funnel={funnel} step={activeStep} creatorProfile={creatorProfile} isDark={isDark} />
 
-              {activeStep.step_type === "lead_form" && (
-                <div className="rounded-2xl p-6" style={{ background: sc.cardBg, border: `1px solid ${sc.cardBorder}` }}>
-                  {leadSubmitted || activeProgress?.status === "completed" ? (
-                    <div className="text-center py-6">
-                      <CheckCircle2 size={40} className="text-green-400 mx-auto mb-3" />
-                      <h3 className="font-heading font-bold" style={{ color: sc.text }}>Details Submitted</h3>
-                      <p style={{ fontSize: "12px", color: sc.textMuted }} className="mt-1">Thank you for your information.</p>
+                      {/* Per-step video topics */}
+                      <StepVideoTopics funnel={funnel} step={activeStep} isDark={isDark} />
                     </div>
-                  ) : (
-                    <>
-                      <h3 className="text-lg font-heading font-bold mb-4" style={{ color: sc.text }}>Fill in your details</h3>
-                      <form onSubmit={(e) => { e.preventDefault(); handleLeadSubmit(activeStepIndex); }} className="space-y-3">
-                        <input type="text" name="website" value={leadForm.website} onChange={(e) => setLeadForm({ ...leadForm, website: e.target.value })} style={{ position: "absolute", left: "-9999px" }} tabIndex={-1} autoComplete="off" />
-                        {formConfig?.show_name && <Input placeholder="Full Name" value={leadForm.name} onChange={(e) => setLeadForm({ ...leadForm, name: e.target.value })} required={formConfig.name_required} style={{ background: sc.inputBg, borderColor: sc.cardBorder, color: sc.text }} className="h-12 rounded-xl" />}
-                        {formConfig?.show_phone && (
-                          <div className="flex gap-2">
-                            <div className="flex items-center px-3 rounded-xl text-sm shrink-0 h-12" style={{ background: sc.inputBg, border: `1px solid ${sc.cardBorder}`, color: sc.textMuted }}>+91</div>
-                            <Input placeholder="Phone number" value={leadForm.phone} onChange={(e) => setLeadForm({ ...leadForm, phone: e.target.value })} required={formConfig.phone_required} style={{ background: sc.inputBg, borderColor: sc.cardBorder, color: sc.text }} className="h-12 rounded-xl" />
-                          </div>
-                        )}
-                        {formConfig?.show_email && <Input type="email" placeholder="Email" value={leadForm.email} onChange={(e) => setLeadForm({ ...leadForm, email: e.target.value })} required={formConfig.email_required} style={{ background: sc.inputBg, borderColor: sc.cardBorder, color: sc.text }} className="h-12 rounded-xl" />}
-                        {formConfig?.show_city && <Input placeholder="City" value={leadForm.city} onChange={(e) => setLeadForm({ ...leadForm, city: e.target.value })} required={formConfig.city_required} style={{ background: sc.inputBg, borderColor: sc.cardBorder, color: sc.text }} className="h-12 rounded-xl" />}
-                        <Button type="submit" className="w-full h-14 text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">Submit →</Button>
-                      </form>
-                    </>
                   )}
-                </div>
-              )}
 
-              {(activeStep.step_type === "cta" || activeStep.step_type === "booking") && (
-                <div className="rounded-2xl p-6 text-center" style={{ background: sc.cardBg, border: `1px solid ${sc.cardBorder}` }}>
-                  {activeProgress?.status === "completed" ? (
-                    <>
-                      <CheckCircle2 size={40} className="text-green-400 mx-auto mb-3" />
-                      <h3 className="font-heading font-bold" style={{ color: sc.text }}>Step Completed</h3>
-                    </>
-                  ) : (
-                    <>
-                      <h3 className="text-lg font-heading font-bold mb-2" style={{ color: sc.text }}>{activeStep.cta_text || (activeStep.step_type === "booking" ? "Book Your Call" : "Continue")}</h3>
-                      {activeStep.description && <p style={{ fontSize: "14px", color: sc.textMuted }} className="mb-4">{activeStep.description}</p>}
-                      <Button
-                        className="h-14 px-8 text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg shadow-primary/20"
-                        onClick={() => handleCtaClick(activeStepIndex)}
-                      >
-                        {activeStep.cta_text || (activeStep.step_type === "booking" ? "Book Now" : "Continue")} →
-                      </Button>
-                    </>
-                  )}
-                </div>
-              )}
-
-              {activeStep.step_type === "payment" && (
-                <div className="rounded-2xl p-6" style={{ background: sc.cardBg, border: `1px solid ${sc.cardBorder}` }}>
-                  {paymentSubmitted || activeProgress?.status === "completed" ? (
-                    <div className="text-center py-6">
-                      <CheckCircle2 size={40} className="text-green-400 mx-auto mb-3" />
-                      <h3 className="font-heading font-bold" style={{ color: sc.text }}>Payment Submitted</h3>
-                      <p style={{ fontSize: "12px", color: sc.textMuted }} className="mt-1">Your payment is being reviewed.</p>
-                    </div>
-                  ) : (
-                    <>
-                      <h3 className="text-lg font-heading font-semibold mb-4" style={{ color: sc.text }}>Complete Payment</h3>
-                      {priceOptions.length > 0 && (
-                        <div className="space-y-2 mb-4">
-                          {priceOptions.map((opt: any) => (
-                            <button key={opt.id} onClick={() => setPaymentProof({ ...paymentProof, amount: opt.amount })}
-                              className={`w-full p-3 rounded-xl border text-left transition-all ${paymentProof.amount === opt.amount ? "border-primary bg-primary/10" : ""}`}
-                              style={paymentProof.amount !== opt.amount ? { borderColor: sc.cardBorder, background: sc.inputBg } : {}}>
-                              <div className="flex justify-between items-center">
-                                <span className="font-medium" style={{ color: sc.text }}>{opt.label}</span>
-                                <span className="font-heading font-bold" style={{ color: sc.text }}>₹{opt.amount.toLocaleString("en-IN")}</span>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      {funnel.upi_id && (
-                        <div className="p-3 rounded-xl mb-4" style={{ background: sc.inputBg }}>
-                          <span className="text-xs" style={{ color: sc.textMuted }}>Pay via UPI</span>
-                          <div className="flex items-center gap-2 mt-1">
-                            <code className="text-sm text-primary flex-1">{funnel.upi_id}</code>
-                            <Button variant="ghost" size="sm" style={{ color: sc.textMuted }} onClick={() => { navigator.clipboard.writeText(funnel.upi_id!); toast.success("UPI ID copied!"); }}>Copy</Button>
-                          </div>
-                        </div>
-                      )}
-                      <div className="space-y-3">
-                        <Input placeholder="UPI Transaction ID" value={paymentProof.upi_transaction_id} onChange={(e) => setPaymentProof({ ...paymentProof, upi_transaction_id: e.target.value })} style={{ background: sc.inputBg, borderColor: sc.cardBorder, color: sc.text }} className="h-12 rounded-xl" />
-                        <Button className="w-full h-14 text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl" onClick={() => handlePaymentSubmit(activeStepIndex)}>
-                          I've Made the Payment
-                        </Button>
+                  {activeStep.step_type === "video" && !activeStep.video_url && (
+                    <div className="aspect-video rounded-2xl flex items-center justify-center" style={{ background: sc.cardBg, border: `1px solid ${sc.border}` }}>
+                      <div className="text-center">
+                        <Play size={40} style={{ color: sc.textDimmer }} className="mx-auto mb-2" />
+                        <p style={{ fontSize: "12px", color: sc.textDimmer }}>Video not available</p>
                       </div>
-                    </>
+                    </div>
                   )}
-                </div>
-              )}
 
-              {activeStep.step_type === "manual_approval" && (
-                <div className="rounded-2xl p-8 text-center" style={{ background: sc.cardBg, border: `1px solid ${sc.cardBorder}` }}>
-                  {activeProgress?.status === "completed" || activeProgress?.manually_unlocked ? (
-                    <>
-                      <CheckCircle2 size={40} className="text-green-400 mx-auto mb-3" />
-                      <h3 className="font-heading font-bold" style={{ color: sc.text }}>Step Unlocked</h3>
-                      <p style={{ fontSize: "12px", color: sc.textMuted }} className="mt-1">You've been approved to continue.</p>
-                    </>
-                  ) : (
-                    <>
-                      <Lock size={40} style={{ color: sc.textDimmer }} className="mx-auto mb-3" />
-                      <h3 className="font-heading font-bold" style={{ color: sc.text }}>Awaiting Approval</h3>
-                      <p style={{ fontSize: "14px", color: sc.textMuted }} className="mt-2">{activeStep.description || "The creator will unlock this step for you after review."}</p>
-                      {funnel.contact_whatsapp && (
-                        <Button className="mt-4 bg-[#25d366] hover:bg-[#20b858] text-white" onClick={() => window.open(`https://wa.me/${funnel.contact_whatsapp?.replace(/\D/g, "")}`)}>
-                          <MessageCircle size={16} /> Contact on WhatsApp
-                        </Button>
+                  {activeStep.step_type === "lead_form" && (
+                    <div className="rounded-2xl p-6" style={{ background: sc.cardBg, border: `1px solid ${sc.cardBorder}` }}>
+                      {leadSubmitted || activeProgress?.status === "completed" ? (
+                        <div className="text-center py-6">
+                          <CheckCircle2 size={40} className="text-green-400 mx-auto mb-3" />
+                          <h3 className="font-heading font-bold" style={{ color: sc.text }}>Details Submitted</h3>
+                          <p style={{ fontSize: "12px", color: sc.textMuted }} className="mt-1">Thank you for your information.</p>
+                        </div>
+                      ) : (
+                        <>
+                          <h3 className="text-lg font-heading font-bold mb-4" style={{ color: sc.text }}>Fill in your details</h3>
+                          <form onSubmit={(e) => { e.preventDefault(); handleLeadSubmit(activeStepIndex); }} className="space-y-3">
+                            <input type="text" name="website" value={leadForm.website} onChange={(e) => setLeadForm({ ...leadForm, website: e.target.value })} style={{ position: "absolute", left: "-9999px" }} tabIndex={-1} autoComplete="off" />
+                            {formConfig?.show_name && <Input placeholder="Full Name" value={leadForm.name} onChange={(e) => setLeadForm({ ...leadForm, name: e.target.value })} required={formConfig.name_required} style={{ background: sc.inputBg, borderColor: sc.cardBorder, color: sc.text }} className="h-12 rounded-xl" />}
+                            {formConfig?.show_phone && (
+                              <div className="flex gap-2">
+                                <div className="flex items-center px-3 rounded-xl text-sm shrink-0 h-12" style={{ background: sc.inputBg, border: `1px solid ${sc.cardBorder}`, color: sc.textMuted }}>+91</div>
+                                <Input placeholder="Phone number" value={leadForm.phone} onChange={(e) => setLeadForm({ ...leadForm, phone: e.target.value })} required={formConfig.phone_required} style={{ background: sc.inputBg, borderColor: sc.cardBorder, color: sc.text }} className="h-12 rounded-xl" />
+                              </div>
+                            )}
+                            {formConfig?.show_email && <Input type="email" placeholder="Email" value={leadForm.email} onChange={(e) => setLeadForm({ ...leadForm, email: e.target.value })} required={formConfig.email_required} style={{ background: sc.inputBg, borderColor: sc.cardBorder, color: sc.text }} className="h-12 rounded-xl" />}
+                            {formConfig?.show_city && <Input placeholder="City" value={leadForm.city} onChange={(e) => setLeadForm({ ...leadForm, city: e.target.value })} required={formConfig.city_required} style={{ background: sc.inputBg, borderColor: sc.cardBorder, color: sc.text }} className="h-12 rounded-xl" />}
+                            <Button type="submit" className="w-full h-14 text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl">Submit →</Button>
+                          </form>
+                        </>
                       )}
-                    </>
+                    </div>
                   )}
-                </div>
+
+                  {(activeStep.step_type === "cta" || activeStep.step_type === "booking") && (
+                    <div className="rounded-2xl p-6 text-center" style={{ background: sc.cardBg, border: `1px solid ${sc.cardBorder}` }}>
+                      {activeProgress?.status === "completed" ? (
+                        <>
+                          <CheckCircle2 size={40} className="text-green-400 mx-auto mb-3" />
+                          <h3 className="font-heading font-bold" style={{ color: sc.text }}>Step Completed</h3>
+                        </>
+                      ) : (
+                        <>
+                          <h3 className="text-lg font-heading font-bold mb-2" style={{ color: sc.text }}>{activeStep.cta_text || (activeStep.step_type === "booking" ? "Book Your Call" : "Continue")}</h3>
+                          {activeStep.description && <p style={{ fontSize: "14px", color: sc.textMuted }} className="mb-4">{activeStep.description}</p>}
+                          <Button
+                            className="h-14 px-8 text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg shadow-primary/20"
+                            onClick={() => handleCtaClick(activeStepIndex)}
+                          >
+                            {activeStep.cta_text || (activeStep.step_type === "booking" ? "Book Now" : "Continue")} →
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {activeStep.step_type === "payment" && (
+                    <div className="rounded-2xl p-6" style={{ background: sc.cardBg, border: `1px solid ${sc.cardBorder}` }}>
+                      {paymentSubmitted || activeProgress?.status === "completed" ? (
+                        <div className="text-center py-6">
+                          <CheckCircle2 size={40} className="text-green-400 mx-auto mb-3" />
+                          <h3 className="font-heading font-bold" style={{ color: sc.text }}>Payment Submitted</h3>
+                          <p style={{ fontSize: "12px", color: sc.textMuted }} className="mt-1">Your payment is being reviewed.</p>
+                        </div>
+                      ) : (
+                        <>
+                          <h3 className="text-lg font-heading font-semibold mb-4" style={{ color: sc.text }}>Complete Payment</h3>
+                          {priceOptions.length > 0 && (
+                            <div className="space-y-2 mb-4">
+                              {priceOptions.map((opt: any) => (
+                                <button key={opt.id} onClick={() => setPaymentProof({ ...paymentProof, amount: opt.amount })}
+                                  className={`w-full p-3 rounded-xl border text-left transition-all ${paymentProof.amount === opt.amount ? "border-primary bg-primary/10" : ""}`}
+                                  style={paymentProof.amount !== opt.amount ? { borderColor: sc.cardBorder, background: sc.inputBg } : {}}>
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-medium" style={{ color: sc.text }}>{opt.label}</span>
+                                    <span className="font-heading font-bold" style={{ color: sc.text }}>₹{opt.amount.toLocaleString("en-IN")}</span>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {funnel.upi_id && (
+                            <div className="p-3 rounded-xl mb-4" style={{ background: sc.inputBg }}>
+                              <span className="text-xs" style={{ color: sc.textMuted }}>Pay via UPI</span>
+                              <div className="flex items-center gap-2 mt-1">
+                                <code className="text-sm text-primary flex-1">{funnel.upi_id}</code>
+                                <Button variant="ghost" size="sm" style={{ color: sc.textMuted }} onClick={() => { navigator.clipboard.writeText(funnel.upi_id!); toast.success("UPI ID copied!"); }}>Copy</Button>
+                              </div>
+                            </div>
+                          )}
+                          <div className="space-y-3">
+                            <Input placeholder="UPI Transaction ID" value={paymentProof.upi_transaction_id} onChange={(e) => setPaymentProof({ ...paymentProof, upi_transaction_id: e.target.value })} style={{ background: sc.inputBg, borderColor: sc.cardBorder, color: sc.text }} className="h-12 rounded-xl" />
+                            <Button className="w-full h-14 text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl" onClick={() => handlePaymentSubmit(activeStepIndex)}>
+                              I've Made the Payment
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {activeStep.step_type === "manual_approval" && (
+                    <div className="rounded-2xl p-8 text-center" style={{ background: sc.cardBg, border: `1px solid ${sc.cardBorder}` }}>
+                      {activeProgress?.status === "completed" || activeProgress?.manually_unlocked ? (
+                        <>
+                          <CheckCircle2 size={40} className="text-green-400 mx-auto mb-3" />
+                          <h3 className="font-heading font-bold" style={{ color: sc.text }}>Step Unlocked</h3>
+                          <p style={{ fontSize: "12px", color: sc.textMuted }} className="mt-1">You've been approved to continue.</p>
+                        </>
+                      ) : (
+                        <>
+                          <Lock size={40} style={{ color: sc.textDimmer }} className="mx-auto mb-3" />
+                          <h3 className="font-heading font-bold" style={{ color: sc.text }}>Awaiting Approval</h3>
+                          <p style={{ fontSize: "14px", color: sc.textMuted }} className="mt-2">{activeStep.description || "The creator will unlock this step for you after review."}</p>
+                          {funnel.contact_whatsapp && (
+                            <Button className="mt-4 bg-[#25d366] hover:bg-[#20b858] text-white" onClick={() => window.open(`https://wa.me/${funnel.contact_whatsapp?.replace(/\D/g, "")}`)}>
+                              <MessageCircle size={16} /> Contact on WhatsApp
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Next Step Banner */}
@@ -886,8 +1178,7 @@ export const MultiStepViewer = ({
                 </button>
               )}
 
-              {/* Completed step continue button (if next is available but not via banner) */}
-              {activeProgress?.status === "completed" && !nextStepUnlocked && activeStepIndex + 1 < steps.length && getStepStatus(steps[activeStepIndex + 1].id) !== "locked" && (
+              {activeProgress?.status === "completed" && !nextStepUnlocked && activeStepIndex + 1 < steps.length && getStepStatus(steps[activeStepIndex + 1].id) !== "locked" && !countdownUnlocks[steps[activeStepIndex + 1]?.id] && (
                 <Button
                   className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-bold"
                   onClick={() => setActiveStepIndex(activeStepIndex + 1)}
