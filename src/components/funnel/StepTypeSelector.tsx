@@ -15,8 +15,8 @@ const STEP_TYPES = [
     label: "Lead Form",
     icon: ClipboardList,
     description: "Collect their info before continuing",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10",
+    color: "text-gold",
+    bg: "bg-gold/10",
   },
   {
     value: "booking",

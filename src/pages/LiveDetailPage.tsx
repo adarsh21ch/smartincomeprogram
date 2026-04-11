@@ -121,7 +121,7 @@ const LiveDetailPage = () => {
         <div className="grid sm:grid-cols-3 gap-3">
           <div className="glass-card p-4 text-center">
             <p className="text-xs text-muted-foreground mb-1">Status</p>
-            <p className={`text-lg font-bold ${isLive ? "text-emerald-500" : isScheduled ? "text-blue-500" : "text-muted-foreground"}`}>
+            <p className={`text-lg font-bold ${isLive ? "text-gold" : isScheduled ? "text-blue-500" : "text-muted-foreground"}`}>
               {isLive ? "🔴 LIVE" : session.status.toUpperCase()}
             </p>
           </div>
@@ -217,7 +217,7 @@ const LiveDetailPage = () => {
                   <div className="flex items-center gap-2">
                     {session.access_type === "paid" && (
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                        r.payment_status === "verified" ? "bg-emerald-500/10 text-emerald-500" :
+                        r.payment_status === "verified" ? "bg-gold/10 text-gold" :
                         r.payment_status === "pending" ? "bg-yellow-500/10 text-yellow-500" :
                         "bg-muted text-muted-foreground"
                       }`}>
@@ -225,7 +225,7 @@ const LiveDetailPage = () => {
                       </span>
                     )}
                     {r.attended ? (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500">Attended</span>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gold/10 text-gold">Attended</span>
                     ) : isLive ? (
                       <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => updateReg.mutate({ regId: r.id, updates: { attended: true, attended_at: new Date().toISOString() } })}>
                         Mark Attended

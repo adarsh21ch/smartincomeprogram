@@ -26,7 +26,7 @@ const statusBadge = (status: string, scheduledAt: string | null) => {
   const cls: Record<string, string> = {
     draft: "bg-muted text-muted-foreground",
     scheduled: "bg-blue-500/10 text-blue-500",
-    live: "bg-emerald-500/10 text-emerald-500",
+    live: "bg-gold/10 text-gold",
     ended: "bg-muted text-muted-foreground",
     cancelled: "bg-destructive/10 text-destructive",
   };

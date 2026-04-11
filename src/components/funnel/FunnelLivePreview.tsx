@@ -98,7 +98,7 @@ export const FunnelLivePreview = ({ funnel, selectedVideo, flowSteps, leadForm }
                 }}
               >
                 {idx === 0 ? (
-                  <Play size={10} className="text-green-400 shrink-0" />
+                  <Play size={10} className="text-gold shrink-0" />
                 ) : (
                   <Lock size={10} className="text-white/30 shrink-0" />
                 )}

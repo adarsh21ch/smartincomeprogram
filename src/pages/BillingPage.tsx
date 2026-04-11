@@ -12,7 +12,7 @@ import {
 import { format } from "date-fns";
 
 const statusConfig: Record<string, { label: string; icon: any; color: string }> = {
-  active: { label: "Active", icon: CheckCircle2, color: "text-green-600" },
+  active: { label: "Active", icon: CheckCircle2, color: "text-gold" },
   expired: { label: "Expired", icon: XCircle, color: "text-destructive" },
   cancelled: { label: "Cancelled", icon: XCircle, color: "text-muted-foreground" },
   payment_failed: { label: "Payment Failed", icon: AlertTriangle, color: "text-amber-600" },

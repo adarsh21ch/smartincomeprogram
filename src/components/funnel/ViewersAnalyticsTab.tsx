@@ -164,7 +164,7 @@ export const ViewersAnalyticsTab = ({ funnelId, funnelSlug, accessCode, userId }
 
   const kpis = [
     { icon: Users, label: "Total Viewers", value: totalViewers, color: "text-primary" },
-    { icon: TrendingUp, label: "Avg Completion", value: `${avgCompletion}%`, color: "text-emerald-500" },
+    { icon: TrendingUp, label: "Avg Completion", value: `${avgCompletion}%`, color: "text-gold" },
     { icon: Activity, label: "Active (7d)", value: activeRecently, color: "text-blue-500" },
     { icon: AlertTriangle, label: "Failed Attempts", value: failedAttempts, color: "text-amber-500" },
   ];
