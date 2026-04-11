@@ -95,6 +95,9 @@ const AdminSettingsPage = () => {
             </div>
           </div>
 
+          {/* Gmail Integration */}
+          <GmailConnectionSection />
+
           {/* Testimonials Settings */}
           <div className="border-t border-border pt-6">
             <h2 className="text-base font-heading font-semibold mb-4 flex items-center gap-2">
