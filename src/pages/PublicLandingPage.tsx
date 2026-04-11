@@ -247,14 +247,14 @@ const PublicLandingPage = () => {
   };
 
   return (
-    <div className="sip-landing min-h-screen flex flex-col overflow-x-hidden">
+    <div className={`sip-landing min-h-screen flex flex-col overflow-x-hidden ${!submitted ? "lg:h-screen lg:overflow-hidden" : ""}`}>
       {/* Header */}
-      <header className="flex items-center justify-center px-4 py-3" style={{ borderBottom: '1px solid rgba(197,147,14,0.15)' }}>
+      <header className="shrink-0 flex items-center justify-center px-4 py-3" style={{ borderBottom: '1px solid rgba(197,147,14,0.15)' }}>
         <Logo size="sm" />
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 px-4 md:px-6 lg:px-8 py-6 md:py-8 max-w-7xl mx-auto w-full">
+      <main className={`flex-1 min-h-0 px-4 md:px-6 lg:px-8 py-6 md:py-8 max-w-7xl mx-auto w-full ${!submitted ? "lg:max-w-none lg:overflow-hidden" : ""}`}>
         {/* Preload video in background while user fills form */}
         {video?.public_url && !submitted && (
           <video src={video.public_url} preload="auto" muted className="hidden" aria-hidden="true" />
@@ -308,7 +308,6 @@ const PublicLandingPage = () => {
                 <p className="text-sm md:text-base" style={{ color: '#888' }}>Thank you for registering. We'll see you at the session!</p>
               </div>
             )}
-            {/* Testimonials after registration */}
             {showTestimonialsPostRegistration && (
               <div className="mt-8">
                 <TestimonialsViewer
@@ -331,7 +330,6 @@ const PublicLandingPage = () => {
           <>
             {/* ── MOBILE LAYOUT (< lg) ── */}
             <div className="lg:hidden space-y-6">
-              {/* Sections (hero, features etc.) */}
               <div className="space-y-6">
                 {sections.map(renderSection)}
                 {sections.length === 0 && (
@@ -342,7 +340,6 @@ const PublicLandingPage = () => {
                 )}
               </div>
 
-              {/* Speaker */}
               {(page.speaker_name || page.speaker_photo_url) && (
                 <div className="sip-card p-4 flex flex-col sm:flex-row gap-3 items-center">
                   {page.speaker_photo_url && (
@@ -356,7 +353,6 @@ const PublicLandingPage = () => {
                 </div>
               )}
 
-              {/* Testimonials BEFORE registration form on mobile */}
               {showTestimonialsOnRegistration && (
                 <div>
                   <TestimonialsViewer
@@ -366,7 +362,6 @@ const PublicLandingPage = () => {
                 </div>
               )}
 
-              {/* Register Now scroll button */}
               <button
                 type="button"
                 onClick={() => {
@@ -378,7 +373,6 @@ const PublicLandingPage = () => {
                 Register Now <ChevronDown size={18} />
               </button>
 
-              {/* Registration form */}
               <div id="mobile-register-form" className="sip-card p-5 space-y-4 scroll-mt-4">
                 <div>
                   <h3 className="text-lg font-bold" style={{ color: '#F5F0E8' }}>{page.form_title}</h3>
@@ -445,49 +439,51 @@ const PublicLandingPage = () => {
             </div>
 
             {/* ── DESKTOP LAYOUT (lg+) ── */}
-            <div className="hidden lg:flex lg:gap-8 lg:items-start">
-              {/* Left scrollable column */}
-              <div className="flex-1 min-w-0 space-y-8">
-                {sections.map(renderSection)}
-                {sections.length === 0 && (
-                  <div className="space-y-4">
-                    <h1 className="text-3xl md:text-4xl font-bold" style={{ color: '#F5F0E8' }}>{page.title}</h1>
-                    {page.description && <p className="text-lg" style={{ color: '#888' }}>{page.description}</p>}
-                  </div>
-                )}
-
-                {/* Speaker */}
-                {(page.speaker_name || page.speaker_photo_url) && (
-                  <div className="sip-card p-6 flex gap-5 items-start">
-                    {page.speaker_photo_url && (
-                      <img src={page.speaker_photo_url} alt={page.speaker_name} className="w-20 h-20 rounded-full object-cover shrink-0" style={{ border: '2px solid rgba(197,147,14,0.3)' }} />
-                    )}
-                    <div className="min-w-0">
-                      <h3 className="text-lg font-bold" style={{ color: '#F5F0E8' }}>{page.speaker_name}</h3>
-                      {page.speaker_role && <p className="text-xs font-medium mt-0.5" style={{ color: '#888' }}>{page.speaker_role}</p>}
-                      {page.speaker_bio && <p className="mt-2 text-sm leading-relaxed" style={{ color: '#aaa' }}>{page.speaker_bio}</p>}
+            <div className="hidden lg:flex lg:h-full lg:items-stretch lg:gap-8">
+              <section className="flex-1 min-w-0 h-full overflow-y-auto overscroll-contain pr-3">
+                <div className="space-y-8 pb-6">
+                  {sections.map(renderSection)}
+                  {sections.length === 0 && (
+                    <div className="space-y-4">
+                      <h1 className="text-3xl md:text-4xl font-bold" style={{ color: '#F5F0E8' }}>{page.title}</h1>
+                      {page.description && <p className="text-lg" style={{ color: '#888' }}>{page.description}</p>}
                     </div>
+                  )}
+
+                  {(page.speaker_name || page.speaker_photo_url) && (
+                    <div className="sip-card p-6 flex gap-5 items-start">
+                      {page.speaker_photo_url && (
+                        <img src={page.speaker_photo_url} alt={page.speaker_name} className="w-20 h-20 rounded-full object-cover shrink-0" style={{ border: '2px solid rgba(197,147,14,0.3)' }} />
+                      )}
+                      <div className="min-w-0">
+                        <h3 className="text-lg font-bold" style={{ color: '#F5F0E8' }}>{page.speaker_name}</h3>
+                        {page.speaker_role && <p className="text-xs font-medium mt-0.5" style={{ color: '#888' }}>{page.speaker_role}</p>}
+                        {page.speaker_bio && <p className="mt-2 text-sm leading-relaxed" style={{ color: '#aaa' }}>{page.speaker_bio}</p>}
+                      </div>
+                    </div>
+                  )}
+
+                  {showTestimonialsOnRegistration && (
+                    <TestimonialsViewer
+                      testimonials={testimonials}
+                      sectionTitle={page.testimonials_section_title || "What our members say"}
+                    />
+                  )}
+
+                  <div className="pt-2 text-xs" style={{ color: '#555' }}>
+                    © Smart Income Program · Powered by Smart Income
                   </div>
-                )}
+                </div>
+              </section>
 
-                {/* Testimonials */}
-                {showTestimonialsOnRegistration && (
-                  <TestimonialsViewer
-                    testimonials={testimonials}
-                    sectionTitle={page.testimonials_section_title || "What our members say"}
-                  />
-                )}
-              </div>
-
-              {/* Right sticky column */}
-              <div className="w-[380px] shrink-0 sticky top-4" style={{ alignSelf: 'flex-start' }}>
-                <div className="sip-card p-6 space-y-5">
+              <aside className="w-[400px] xl:w-[420px] shrink-0 h-full">
+                <div className="sip-card h-full p-6 xl:p-7 flex flex-col">
                   <div>
-                    <h3 className="text-lg font-bold" style={{ color: '#F5F0E8' }}>{page.form_title}</h3>
-                    <p className="text-sm" style={{ color: '#E8B830' }}>{page.form_subtitle}</p>
+                    <h3 className="text-lg xl:text-xl font-bold" style={{ color: '#F5F0E8' }}>{page.form_title}</h3>
+                    <p className="text-sm mt-1" style={{ color: '#E8B830' }}>{page.form_subtitle}</p>
                   </div>
 
-                  <form onSubmit={handleSubmit} className="space-y-4">
+                  <form onSubmit={handleSubmit} className="mt-6 flex-1 flex flex-col">
                     <input
                       type="text"
                       name="website"
@@ -498,59 +494,63 @@ const PublicLandingPage = () => {
                       autoComplete="off"
                     />
 
-                    {formFields.map((f) => (
-                      <div key={f.key} className="space-y-1.5">
-                        <Label style={{ color: '#F5F0E8' }}>{f.label} {f.required && <span style={{ color: '#E8B830' }}>*</span>}</Label>
-                        {(f as any).fieldType === "state_dropdown" ? (
-                          <Select
-                            value={formData[f.key] || "__none__"}
-                            onValueChange={(val) => setFormData((prev) => ({ ...prev, [f.key]: val === "__none__" ? "" : val }))}
-                          >
-                            <SelectTrigger className="bg-[#181818] border-[rgba(197,147,14,0.2)] text-white">
-                              <SelectValue placeholder="Select State" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="__none__" disabled>Select State</SelectItem>
-                              {INDIAN_STATES.map((s) => (
-                                <SelectItem key={s} value={s}>{s}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <Input
-                            type={(f as any).type || "text"}
-                            placeholder={(f as any).prefix ? `${(f as any).prefix} ` : ""}
-                            value={formData[f.key] || ""}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, [f.key]: e.target.value }))}
-                            required={f.required}
-                            className="bg-[#181818] border-[rgba(197,147,14,0.2)] text-white placeholder:text-[#555]"
-                          />
-                        )}
-                      </div>
-                    ))}
+                    <div className="space-y-4">
+                      {formFields.map((f) => (
+                        <div key={f.key} className="space-y-1.5">
+                          <Label style={{ color: '#F5F0E8' }}>{f.label} {f.required && <span style={{ color: '#E8B830' }}>*</span>}</Label>
+                          {(f as any).fieldType === "state_dropdown" ? (
+                            <Select
+                              value={formData[f.key] || "__none__"}
+                              onValueChange={(val) => setFormData((prev) => ({ ...prev, [f.key]: val === "__none__" ? "" : val }))}
+                            >
+                              <SelectTrigger className="bg-[#181818] border-[rgba(197,147,14,0.2)] text-white h-12">
+                                <SelectValue placeholder="Select State" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="__none__" disabled>Select State</SelectItem>
+                                {INDIAN_STATES.map((s) => (
+                                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Input
+                              type={(f as any).type || "text"}
+                              placeholder={(f as any).prefix ? `${(f as any).prefix} ` : ""}
+                              value={formData[f.key] || ""}
+                              onChange={(e) => setFormData((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                              required={f.required}
+                              className="bg-[#181818] border-[rgba(197,147,14,0.2)] text-white placeholder:text-[#555] h-12"
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
 
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="w-full px-8 py-3.5 rounded-lg text-base font-semibold transition-all hover:brightness-110 disabled:opacity-50 flex items-center justify-center"
-                      style={{ background: 'linear-gradient(135deg, #E8B830, #C99A18)', color: '#000' }}
-                    >
-                      {submitting ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
-                      {page.form_button_text} →
-                    </button>
+                    <div className="mt-auto pt-6 space-y-4">
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className="w-full px-8 py-4 rounded-lg text-lg font-semibold transition-all hover:brightness-110 disabled:opacity-50 flex items-center justify-center"
+                        style={{ background: 'linear-gradient(135deg, #E8B830, #C99A18)', color: '#000' }}
+                      >
+                        {submitting ? <Loader2 className="animate-spin mr-2" size={18} /> : null}
+                        {page.form_button_text} →
+                      </button>
+
+                      <p className="text-sm text-center flex items-center justify-center gap-1.5" style={{ color: '#888' }}>
+                        <Lock size={14} /> Your information is safe with us
+                      </p>
+                    </div>
                   </form>
-
-                  <p className="text-xs text-center flex items-center justify-center gap-1" style={{ color: '#888' }}>
-                    <Lock size={12} /> Your information is safe with us
-                  </p>
                 </div>
-              </div>
+              </aside>
             </div>
           </>
         )}
       </main>
 
-      <footer className="text-center py-4 text-xs" style={{ color: '#555', borderTop: '1px solid rgba(197,147,14,0.15)' }}>
+      <footer className={`text-center py-4 text-xs ${!submitted ? 'lg:hidden' : ''}`} style={{ color: '#555', borderTop: '1px solid rgba(197,147,14,0.15)' }}>
         © Smart Income Program · Powered by Smart Income
       </footer>
     </div>
