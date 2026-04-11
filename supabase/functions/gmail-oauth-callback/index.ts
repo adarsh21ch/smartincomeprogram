@@ -21,7 +21,10 @@ Deno.serve(async (req) => {
     }
 
     if (error) {
-      return new Response(renderHtml('Authorization denied', `Error: ${error}`, false, returnTo), {
+      const friendlyMessage = error === 'access_denied'
+        ? 'Google denied access. If your OAuth app is still in Testing mode, add this Gmail address as a Test User in Google Cloud and try again.'
+        : `Error: ${error}`
+      return new Response(renderHtml('Authorization denied', friendlyMessage, false, returnTo), {
         headers: { 'Content-Type': 'text/html' },
       })
     }
