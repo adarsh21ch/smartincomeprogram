@@ -341,7 +341,7 @@ const VideoPlayer = ({ videoUrl, thumbnailUrl, durationSeconds, orientation }: {
       <video
         ref={videoRef}
         className="testimonial-video-el w-full h-full block"
-        preload="metadata"
+        preload="auto"
         playsInline
         poster={posterSrc}
         muted={muted}
