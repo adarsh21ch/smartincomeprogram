@@ -1033,7 +1033,7 @@ export const MultiStepViewer = ({
       {steps.map((step, idx) => {
         const status = getStepStatus(step.id);
         const isActive = idx === activeStepIndex;
-        const isLocked = status === "locked" || !!countdownUnlocks[step.id];
+        const isLocked = status === "locked" && !countdownUnlocks[step.id];
         const isCompleted = status === "completed";
         const hasCountdown = !!countdownUnlocks[step.id];
 
