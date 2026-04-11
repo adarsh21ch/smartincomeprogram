@@ -3,6 +3,14 @@ import { Play, Pause, Volume2, VolumeX, Maximize, X, ChevronDown } from "lucide-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+export interface VideoPlayerProgress {
+  currentTime: number;
+  duration: number;
+  watchedPercent: number;
+  maxWatchedSeconds: number;
+  timeSpentSeconds: number;
+}
+
 interface VideoPlayerProps {
   videoUrl: string | null;
   stepTitle: string;
@@ -10,6 +18,9 @@ interface VideoPlayerProps {
   funnelId: string;
   initialPosition: number;
   durationSeconds: number | null;
+  initialTimeSpentSeconds?: number;
+  completionThreshold?: number;
+  onProgress?: (progress: VideoPlayerProgress) => void;
   onComplete: () => void;
   onClose: () => void;
   hideHeader?: boolean;
@@ -22,6 +33,9 @@ export const VideoPlayer = ({
   funnelId,
   initialPosition,
   durationSeconds,
+  initialTimeSpentSeconds = 0,
+  completionThreshold = 95,
+  onProgress,
   onComplete,
   onClose,
   hideHeader = false,
@@ -35,6 +49,8 @@ export const VideoPlayer = ({
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [hasCompleted, setHasCompleted] = useState(false);
   const progressSaveRef = useRef<NodeJS.Timeout>();
+  const maxWatchedSecondsRef = useRef(initialPosition);
+  const timeSpentSecondsRef = useRef(initialTimeSpentSeconds);
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
@@ -42,20 +58,40 @@ export const VideoPlayer = ({
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
+  const emitProgress = useCallback((time: number, dur: number) => {
+    const maxWatchedSeconds = Math.max(maxWatchedSecondsRef.current, Math.floor(time));
+    maxWatchedSecondsRef.current = maxWatchedSeconds;
+    const watchedPercent = dur > 0 ? Math.round((maxWatchedSeconds / dur) * 100) : 0;
+
+    onProgress?.({
+      currentTime: time,
+      duration: dur,
+      watchedPercent,
+      maxWatchedSeconds,
+      timeSpentSeconds: timeSpentSecondsRef.current,
+    });
+
+    return { maxWatchedSeconds, watchedPercent };
+  }, [onProgress]);
+
   const saveProgress = useCallback(async (time: number, dur: number) => {
     if (!dur || dur === 0) return;
-    const percent = Math.round((time / dur) * 100);
+
+    const { maxWatchedSeconds, watchedPercent } = emitProgress(time, dur);
+    const isCompleted = watchedPercent >= completionThreshold;
+
     try {
       await supabase.from("funnel_step_progress").upsert(
         {
           funnel_id: funnelId,
           funnel_step_id: stepId,
           session_id: (await supabase.auth.getUser()).data.user?.id || "",
-          watched_percentage: percent,
+          watched_percentage: watchedPercent,
           last_position_seconds: Math.floor(time),
-          max_watched_seconds: Math.floor(time),
-          status: percent >= 80 ? "completed" : "in_progress",
-          completed_at: percent >= 80 ? new Date().toISOString() : null,
+          max_watched_seconds: maxWatchedSeconds,
+          time_spent_seconds: timeSpentSecondsRef.current,
+          status: isCompleted ? "completed" : watchedPercent > 0 ? "in_progress" : "unlocked",
+          completed_at: isCompleted ? new Date().toISOString() : null,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "funnel_id,funnel_step_id,session_id", ignoreDuplicates: false }
@@ -74,7 +110,7 @@ export const VideoPlayer = ({
         );
       }
 
-      if (percent >= 80 && !hasCompleted) {
+      if (isCompleted && !hasCompleted) {
         setHasCompleted(true);
         onComplete();
         toast.success("Step completed! Next step unlocked 🎉");
@@ -82,21 +118,26 @@ export const VideoPlayer = ({
     } catch (e) {
       // silent fail on progress save
     }
-  }, [funnelId, stepId, hasCompleted, onComplete]);
+  }, [completionThreshold, emitProgress, funnelId, stepId, hasCompleted, onComplete]);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+
+    maxWatchedSecondsRef.current = initialPosition;
+    timeSpentSecondsRef.current = initialTimeSpentSeconds;
 
     const handleLoaded = () => {
       setDuration(video.duration);
       if (initialPosition > 0) {
         video.currentTime = initialPosition;
       }
+      emitProgress(video.currentTime, video.duration);
     };
 
     const handleTimeUpdate = () => {
       setCurrentTime(video.currentTime);
+      emitProgress(video.currentTime, video.duration);
     };
 
     video.addEventListener("loadedmetadata", handleLoaded);
@@ -106,15 +147,17 @@ export const VideoPlayer = ({
       video.removeEventListener("loadedmetadata", handleLoaded);
       video.removeEventListener("timeupdate", handleTimeUpdate);
     };
-  }, [initialPosition]);
+  }, [emitProgress, initialPosition, initialTimeSpentSeconds]);
 
-  // Save progress every 10 seconds
+  // Save progress and time spent every 5 seconds while playing
   useEffect(() => {
     if (isPlaying) {
       progressSaveRef.current = setInterval(() => {
         const video = videoRef.current;
-        if (video) saveProgress(video.currentTime, video.duration);
-      }, 10000);
+        if (!video) return;
+        timeSpentSecondsRef.current += 5;
+        saveProgress(video.currentTime, video.duration);
+      }, 5000);
     }
     return () => {
       if (progressSaveRef.current) clearInterval(progressSaveRef.current);
