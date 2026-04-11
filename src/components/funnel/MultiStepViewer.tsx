@@ -546,6 +546,14 @@ export const MultiStepViewer = ({
   const progressSaveTimer = useRef<ReturnType<typeof setInterval>>();
   const contentRef = useRef<HTMLDivElement>(null);
 
+  // Tick every second for countdown display
+  useEffect(() => {
+    const hasActive = Object.keys(countdownUnlocks).length > 0;
+    if (!hasActive) return;
+    const t = setInterval(() => setCountdownNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [countdownUnlocks]);
+
   useEffect(() => {
     const loadProgress = async () => {
       const { data } = await supabase
