@@ -234,10 +234,10 @@ const VideoPlayer = ({ videoUrl, thumbnailUrl, durationSeconds, orientation }: {
 
   const posterSrc = thumbnailUrl || generatedPoster || undefined;
 
-  // Preload metadata
+  // Preload auto to show first frame as preview
   useEffect(() => {
     if (videoRef.current && videoUrl) {
-      videoRef.current.preload = "metadata";
+      videoRef.current.preload = "auto";
     }
   }, [videoUrl]);
 
