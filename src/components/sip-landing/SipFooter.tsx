@@ -19,7 +19,7 @@ export const SipFooter = ({ getText }: Props) => {
         <div className="sip-gold-divider max-w-xs mx-auto mb-6" />
 
         <p className="text-xs mb-3" style={{ color: "#444" }}>
-          © {new Date().getFullYear()} Smart Income Program · Powered by Nevorai
+          © {new Date().getFullYear()} Smart Income Program
         </p>
         <div className="flex justify-center gap-4">
           <Link to="/privacy" className="text-xs hover:underline" style={{ color: "#555" }}>Privacy Policy</Link>
