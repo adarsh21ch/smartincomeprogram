@@ -172,11 +172,13 @@ const GmailConnectionSection = () => {
 
   const handleConnect = async () => {
     setConnecting(true);
+    // Open window immediately on user click to avoid popup blocker
+    const authWindow = window.open("about:blank", "_blank", "width=600,height=700");
     try {
       const { data, error } = await supabase.functions.invoke("gmail-oauth-init");
       if (error) throw error;
-      if (data?.auth_url) {
-        window.open(data.auth_url, "_blank", "width=600,height=700");
+      if (data?.auth_url && authWindow) {
+        authWindow.location.href = data.auth_url;
         // Poll for connection
         const poll = setInterval(async () => {
           const { data: token } = await supabase
@@ -196,6 +198,8 @@ const GmailConnectionSection = () => {
           clearInterval(poll);
           setConnecting(false);
         }, 120000);
+      } else if (authWindow) {
+        authWindow.close();
       }
     } catch (err: any) {
       toast.error(err.message || "Failed to initiate Gmail connection");
