@@ -644,15 +644,34 @@ const FunnelEditor = () => {
                       </Button>
                     </div>
 
-                    {/* Bottom row: type badge + unlock rule + actions */}
+                    {/* Bottom row: type badge + unlock rule + new badges + actions */}
                     <div className="flex items-center justify-between pl-[52px]">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">
                           {meta.label}
                         </span>
                         {idx > 0 && (
-                          <span className="text-[12px] text-muted-foreground flex items-center gap-1">
-                            <Lock size={9} /> {UNLOCK_LABELS[fs.unlock_rule_type] || "Auto"}
+                          <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-muted text-muted-foreground flex items-center gap-1">
+                            <Lock size={9} />
+                            {fs.unlock_condition === "full_watch" ? "Full watch" :
+                             fs.unlock_condition === "percentage" ? `${fs.unlock_percentage || 80}%` :
+                             fs.unlock_condition === "time_spent" ? `${fs.unlock_percentage || 10} min` :
+                             UNLOCK_LABELS[fs.unlock_rule_type] || "Auto"}
+                          </span>
+                        )}
+                        {fs.time_delay_enabled && (fs.time_delay_minutes || 0) > 0 && (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-amber-500/10 text-amber-600 flex items-center gap-1">
+                            ⏱ +{fs.time_delay_minutes} min delay
+                          </span>
+                        )}
+                        {fs.speaker_mode_step && fs.speaker_mode_step !== "none" && (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-blue-500/10 text-blue-400 flex items-center gap-1">
+                            👤 {fs.speaker_mode_step === "account" ? "Account" : "Custom"}
+                          </span>
+                        )}
+                        {fs.video_topics_step_enabled && (fs.video_topics_step?.length || 0) > 0 && (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-emerald-500/10 text-emerald-400 flex items-center gap-1">
+                            📋 {fs.video_topics_step?.length} topics
                           </span>
                         )}
                       </div>
