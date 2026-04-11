@@ -12,6 +12,7 @@ interface VideoPlayerProps {
   durationSeconds: number | null;
   onComplete: () => void;
   onClose: () => void;
+  hideHeader?: boolean;
 }
 
 export const VideoPlayer = ({
@@ -23,6 +24,7 @@ export const VideoPlayer = ({
   durationSeconds,
   onComplete,
   onClose,
+  hideHeader = false,
 }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -179,12 +181,14 @@ export const VideoPlayer = ({
   return (
     <div className="rounded-xl border border-primary/20 bg-card overflow-hidden animate-in slide-in-from-top-2 duration-300">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border">
-        <span className="text-sm font-medium text-foreground truncate">{stepTitle}</span>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
-          <X size={16} />
-        </button>
-      </div>
+      {!hideHeader && (
+        <div className="flex items-center justify-between px-4 py-2 border-b border-border">
+          <span className="text-sm font-medium text-foreground truncate">{stepTitle}</span>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       {/* Video */}
       <div className="relative aspect-video bg-black">

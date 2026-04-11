@@ -46,8 +46,10 @@ Deno.serve(async (req) => {
       .limit(1)
       .single();
 
+    const emptyResponse = { funnel: null, steps: [], overall_completion_percent: 0, streak: 0, last_active: null };
+
     if (!settings) {
-      return new Response(JSON.stringify({ funnel: null, steps: [], overall_completion_percent: 0, streak: 0, last_active: null }), {
+      return new Response(JSON.stringify(emptyResponse), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -57,32 +59,44 @@ Deno.serve(async (req) => {
       : settings.active_courses_funnel_id;
 
     if (!funnelId) {
-      return new Response(JSON.stringify({ funnel: null, steps: [], overall_completion_percent: 0, streak: 0, last_active: null }), {
+      return new Response(JSON.stringify(emptyResponse), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    // Fetch funnel with ALL relevant fields
     const { data: funnel } = await supabase
       .from("funnels")
-      .select("id, title, description, speaker_name, speaker_photo_url")
+      .select("id, title, description, speaker_name, speaker_photo_url, speaker_about, speaker_mode, speaker_scope, video_topics_enabled, video_topics, video_topics_scope, show_contact_buttons, contact_whatsapp, contact_phone, contact_instagram, owner_id")
       .eq("id", funnelId)
       .single();
 
     if (!funnel) {
-      return new Response(JSON.stringify({ funnel: null, steps: [], overall_completion_percent: 0, streak: 0, last_active: null }), {
+      return new Response(JSON.stringify(emptyResponse), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Fetch steps
+    // Fetch creator profile
+    let creatorProfile: any = null;
+    if (funnel.owner_id) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url, bio, kyc_status")
+        .eq("id", funnel.owner_id)
+        .single();
+      creatorProfile = profile;
+    }
+
+    // Fetch steps with ALL fields
     const { data: steps } = await supabase
       .from("funnel_steps")
-      .select("id, title, description, step_order, step_type, video_asset_id")
+      .select("id, title, description, step_order, step_type, video_asset_id, cta_text, cta_url, booking_url, unlock_rule_type, unlock_rule_value, unlock_condition, unlock_percentage, time_delay_enabled, time_delay_minutes, speaker_mode_step, speaker_name_custom, speaker_title, speaker_bio, speaker_photo_url_custom, video_topics_step_enabled, video_topics_step, timer_cta_enabled, timer_cta_text, timer_cta_url, timer_cta_style")
       .eq("funnel_id", funnelId)
       .eq("is_active", true)
       .order("step_order");
 
-    // Fetch video assets — use correct column names: r2_key, public_url
+    // Fetch video assets
     const videoAssetIds = (steps || []).map((s: any) => s.video_asset_id).filter(Boolean);
     let videoAssets: Record<string, any> = {};
     if (videoAssetIds.length > 0) {
@@ -100,7 +114,7 @@ Deno.serve(async (req) => {
     // Fetch progress
     const { data: progressData } = await supabase
       .from("funnel_step_progress")
-      .select("funnel_step_id, status, watched_percentage, completed_at, last_position_seconds")
+      .select("funnel_step_id, status, watched_percentage, completed_at, last_position_seconds, condition_met_at, max_watched_seconds, time_spent_seconds")
       .eq("funnel_id", funnelId)
       .eq("session_id", user.id);
 
@@ -124,7 +138,6 @@ Deno.serve(async (req) => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const dates = new Set(activityData.map((a: any) => a.activity_date));
-
       const checkDate = new Date(today);
       const todayStr = checkDate.toISOString().split("T")[0];
       const yesterdayDate = new Date(checkDate);
@@ -137,8 +150,6 @@ Deno.serve(async (req) => {
       } else if (dates.has(yesterdayStr)) {
         streak = 1;
         checkDate.setDate(checkDate.getDate() - 2);
-      } else {
-        streak = 0;
       }
 
       if (streak > 0) {
@@ -147,14 +158,12 @@ Deno.serve(async (req) => {
           if (dates.has(dateStr)) {
             streak++;
             checkDate.setDate(checkDate.getDate() - 1);
-          } else {
-            break;
-          }
+          } else break;
         }
       }
     }
 
-    // Build response
+    // Build response steps with full data
     const totalSteps = (steps || []).length;
     let completedCount = 0;
 
@@ -172,7 +181,6 @@ Deno.serve(async (req) => {
       }
 
       const asset = step.video_asset_id ? videoAssets[step.video_asset_id] : null;
-      // Use public_url directly if available, otherwise construct from r2_key
       const videoUrl = asset?.public_url || (asset?.r2_key && r2PublicUrl ? `${r2PublicUrl}/${asset.r2_key}` : null);
 
       return {
@@ -185,10 +193,32 @@ Deno.serve(async (req) => {
         thumbnail_url: asset?.thumbnail_url || null,
         duration_seconds: asset?.duration_seconds || null,
         is_locked: isLocked,
+        // Rich fields
+        cta_text: step.cta_text,
+        cta_url: step.cta_url,
+        booking_url: step.booking_url,
+        unlock_condition: step.unlock_condition,
+        unlock_percentage: step.unlock_percentage,
+        time_delay_enabled: step.time_delay_enabled,
+        time_delay_minutes: step.time_delay_minutes,
+        speaker_mode_step: step.speaker_mode_step,
+        speaker_name_custom: step.speaker_name_custom,
+        speaker_title: step.speaker_title,
+        speaker_bio: step.speaker_bio,
+        speaker_photo_url_custom: step.speaker_photo_url_custom,
+        video_topics_step_enabled: step.video_topics_step_enabled,
+        video_topics_step: step.video_topics_step,
+        timer_cta_enabled: step.timer_cta_enabled,
+        timer_cta_text: step.timer_cta_text,
+        timer_cta_url: step.timer_cta_url,
+        timer_cta_style: step.timer_cta_style,
         progress: {
           watch_percent: progress?.watched_percentage || 0,
           is_completed: isCompleted,
           last_position_seconds: progress?.last_position_seconds || 0,
+          condition_met_at: progress?.condition_met_at || null,
+          max_watched_seconds: progress?.max_watched_seconds || 0,
+          time_spent_seconds: progress?.time_spent_seconds || 0,
         },
       };
     });
@@ -203,7 +233,22 @@ Deno.serve(async (req) => {
           description: funnel.description,
           speaker_name: funnel.speaker_name,
           speaker_photo_url: funnel.speaker_photo_url,
+          speaker_about: funnel.speaker_about,
+          speaker_mode: funnel.speaker_mode,
+          speaker_scope: funnel.speaker_scope,
+          video_topics_enabled: funnel.video_topics_enabled,
+          video_topics: funnel.video_topics,
+          video_topics_scope: funnel.video_topics_scope,
+          show_contact_buttons: funnel.show_contact_buttons,
+          contact_whatsapp: funnel.contact_whatsapp,
+          contact_phone: funnel.contact_phone,
         },
+        creatorProfile: creatorProfile ? {
+          full_name: creatorProfile.full_name,
+          avatar_url: creatorProfile.avatar_url,
+          bio: creatorProfile.bio,
+          kyc_status: creatorProfile.kyc_status,
+        } : null,
         steps: responseSteps,
         overall_completion_percent: overallPercent,
         streak,

@@ -3,14 +3,12 @@ import { MemberLayout } from "@/components/layout/MemberLayout";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
-import { StepCard, StepData } from "@/components/member/StepCard";
-import { VideoPlayer } from "@/components/member/VideoPlayer";
-import { CompletionCard } from "@/components/member/CompletionCard";
 import { AboutTab } from "@/components/member/AboutTab";
 import { CoursesTab } from "@/components/member/CoursesTab";
 import { ProfileTab } from "@/components/member/ProfileTab";
+import { ProgramTab, RichStepData } from "@/components/member/ProgramTab";
+import { CompletionCard } from "@/components/member/CompletionCard";
 import { useNavigate } from "react-router-dom";
 
 interface MemberHomeProps {
@@ -21,7 +19,6 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
 
   const { data: settings, isLoading: settingsLoading } = useQuery({
     queryKey: ["program-settings-member"],
@@ -35,7 +32,6 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
     },
   });
 
-  // Fetch program content for About and Program tabs
   const { data: content, isLoading: contentLoading } = useQuery({
     queryKey: ["member-content", "program", user?.id],
     queryFn: async () => {
@@ -44,8 +40,9 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
       });
       if (error) throw error;
       return data as {
-        funnel: { id: string; name: string; description?: string; speaker_name?: string; speaker_photo_url?: string } | null;
-        steps: StepData[];
+        funnel: any;
+        creatorProfile?: any;
+        steps: RichStepData[];
         overall_completion_percent: number;
         streak: number;
         last_active: string | null;
@@ -54,7 +51,6 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
     enabled: !!user && tab !== "courses",
   });
 
-  // Activity stats for profile
   const { data: activityStats } = useQuery({
     queryKey: ["member-activity-stats", user?.id],
     queryFn: async () => {
@@ -82,20 +78,14 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
     );
   }
 
-  // About tab
   if (tab === "about") {
     return (
       <MemberLayout>
-        <AboutTab
-          settings={settings}
-          content={content}
-          onContinue={() => navigate("/home/program")}
-        />
+        <AboutTab settings={settings} content={content} onContinue={() => navigate("/home/program")} />
       </MemberLayout>
     );
   }
 
-  // Courses tab
   if (tab === "courses") {
     return (
       <MemberLayout>
@@ -104,7 +94,6 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
     );
   }
 
-  // Profile tab
   if (tab === "profile") {
     return (
       <MemberLayout>
@@ -117,12 +106,8 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
   const funnel = content?.funnel;
   const steps = content?.steps || [];
   const completionPct = content?.overall_completion_percent || 0;
-  const completedSteps = steps.filter((s) => s.progress.is_completed).length;
-  const allComplete = steps.length > 0 && completedSteps === steps.length;
 
   const tabTitle = (settings as any)?.program_tab_title || "Your Program";
-  const completionMessage = (settings as any)?.completion_message || "Congratulations! You have completed the program.";
-  const certificateSignatory = (settings as any)?.certificate_signatory || "";
 
   if (!funnel) {
     return (
@@ -145,8 +130,7 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
 
   return (
     <MemberLayout>
-      <div className="space-y-5">
-        {/* Header */}
+      <div className="space-y-4">
         <div>
           <h1 className="text-xl font-heading font-bold">{tabTitle}</h1>
           {funnel.description && (
@@ -154,60 +138,13 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
           )}
         </div>
 
-        {/* Progress bar */}
-        <div className="rounded-2xl border border-border bg-card p-4 space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">
-              {completedSteps} of {steps.length} steps completed
-            </span>
-            <span className="font-medium">{completionPct}%</span>
-          </div>
-          <Progress value={completionPct} className="h-1.5" />
-        </div>
-
-        {/* Steps or Completion */}
-        {allComplete ? (
-          <CompletionCard
-            funnelId={funnel.id}
-            programName={funnel.name}
-            completionMessage={completionMessage}
-            signatory={certificateSignatory}
-            totalSteps={steps.length}
-          />
-        ) : steps.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-card p-8 text-center">
-            <p className="text-muted-foreground">No content yet. Check back soon.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {steps.map((step, index) => (
-              <div key={step.id}>
-                <StepCard
-                  step={step}
-                  index={index}
-                  isExpanded={expandedStepId === step.id}
-                  onToggle={() =>
-                    setExpandedStepId(expandedStepId === step.id ? null : step.id)
-                  }
-                />
-                {expandedStepId === step.id && !step.is_locked && (
-                  <div className="mt-2">
-                    <VideoPlayer
-                      videoUrl={step.video_url}
-                      stepTitle={step.title}
-                      stepId={step.id}
-                      funnelId={funnel.id}
-                      initialPosition={step.progress.last_position_seconds}
-                      durationSeconds={step.duration_seconds}
-                      onComplete={handleStepComplete}
-                      onClose={() => setExpandedStepId(null)}
-                    />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+        <ProgramTab
+          funnel={funnel}
+          steps={steps}
+          completionPct={completionPct}
+          creatorProfile={content?.creatorProfile}
+          onStepComplete={handleStepComplete}
+        />
       </div>
     </MemberLayout>
   );
