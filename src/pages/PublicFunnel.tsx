@@ -15,6 +15,7 @@ import logoImg from "@/assets/sip-logo.png";
 import { MultiStepViewer } from "@/components/funnel/MultiStepViewer";
 import { CodeGateScreen } from "@/components/funnel/CodeGateScreen";
 import { PrivateLeadForm } from "@/components/funnel/PrivateLeadForm";
+import PublicFooterBranding from "@/components/PublicFooterBranding";
 /* ─── Speed Popover ─── */
 const SPEED_OPTIONS = [0.75, 1, 1.25, 1.5, 2];
 
@@ -986,6 +987,8 @@ const PublicFunnel = () => {
         </div>
       </div>
       )}
+
+      <PublicFooterBranding variant="dark" />
 
       {/* CTA pulse animation */}
       <style>{`

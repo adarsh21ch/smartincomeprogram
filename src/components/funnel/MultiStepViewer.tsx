@@ -1006,10 +1006,11 @@ export const MultiStepViewer = ({
         )}
 
         {/* Footer */}
-        <div className="px-4 py-3 text-center" style={{ borderTop: `1px solid ${sc.border}` }}>
-          <p className="text-[11px]" style={{ color: sc.textDim }}>
-            smartincomeprogram.in
-          </p>
+        <div className="px-4 py-1 text-center" style={{ borderTop: `1px solid ${sc.border}` }}>
+          <div style={{ padding: "12px 0", fontSize: 12, color: "rgba(255,255,255,0.25)" }}>
+            ©️ 2025 Smart Income Program · Powered by{" "}
+            <a href="https://nevorai.com" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.25)", textDecoration: "none" }}>Nevorai</a>
+          </div>
         </div>
       </div>
     );
@@ -1486,10 +1487,11 @@ export const MultiStepViewer = ({
           </div>
 
           {/* Footer */}
-          <div className="mt-12 pt-4 pb-6 text-center" style={{ borderTop: `1px solid ${sc.border}` }}>
-            <p className="text-[11px]" style={{ color: sc.textDim }}>
-              smartincomeprogram.in
-            </p>
+          <div className="mt-12 pt-4 pb-2 text-center" style={{ borderTop: `1px solid ${sc.border}` }}>
+            <div style={{ padding: "12px 0", fontSize: 12, color: "rgba(255,255,255,0.25)" }}>
+              ©️ 2025 Smart Income Program · Powered by{" "}
+              <a href="https://nevorai.com" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.25)", textDecoration: "none" }}>Nevorai</a>
+            </div>
           </div>
         </div>
       </div>

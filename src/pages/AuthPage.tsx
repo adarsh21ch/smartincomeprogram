@@ -10,6 +10,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import PublicFooterBranding from "@/components/PublicFooterBranding";
 
 type AuthStep = "login" | "register" | "otp" | "forgot" | "reset-otp" | "new-password";
 
@@ -624,6 +625,8 @@ const AuthPage = () => {
           <Link to="/terms" className="text-primary hover:underline">Terms</Link> and{" "}
           <Link to="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
         </p>
+
+        <PublicFooterBranding variant="dark" />
       </div>
     </div>
   );

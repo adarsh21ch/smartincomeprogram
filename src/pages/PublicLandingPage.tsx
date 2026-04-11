@@ -15,6 +15,7 @@ import {
 import { Loader2, Check, Lock, ChevronRight, ChevronDown, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { TestimonialsViewer } from "@/components/funnel/TestimonialsViewer";
+import PublicFooterBranding from "@/components/PublicFooterBranding";
 
 const INDIAN_STATES = [
   "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Andaman & Nicobar Islands","Chandigarh","Dadra & Nagar Haveli and Daman & Diu","Delhi","Jammu & Kashmir","Ladakh","Lakshadweep","Puducherry"
@@ -587,9 +588,7 @@ const PublicLandingPage = () => {
         )}
       </main>
 
-      <footer className={`text-center py-4 text-xs ${!submitted ? 'lg:hidden' : ''}`} style={{ color: '#555', borderTop: '1px solid rgba(197,147,14,0.15)' }}>
-        © Smart Income Program
-      </footer>
+      <PublicFooterBranding variant="dark" />
     </div>
   );
 };

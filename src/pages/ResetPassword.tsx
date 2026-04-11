@@ -6,6 +6,7 @@ import { Logo } from "@/components/landing/Logo";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Lock } from "lucide-react";
+import PublicFooterBranding from "@/components/PublicFooterBranding";
 
 const ResetPassword = () => {
   const [email, setEmail] = useState("");
@@ -53,6 +54,7 @@ const ResetPassword = () => {
             </>
           )}
         </div>
+        <PublicFooterBranding variant="dark" />
       </div>
     </div>
   );

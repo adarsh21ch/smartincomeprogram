@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Logo } from "@/components/landing/Logo";
+import PublicFooterBranding from "@/components/PublicFooterBranding";
 
 interface Props {
   getText: (section: string, key: string, fallback?: string) => string;
@@ -21,11 +22,12 @@ export const SipFooter = ({ getText }: Props) => {
         <p className="text-xs mb-3" style={{ color: "#444" }}>
           © {new Date().getFullYear()} Smart Income Program
         </p>
-        <div className="flex justify-center gap-4">
+        <div className="flex justify-center gap-4 mb-4">
           <Link to="/privacy" className="text-xs hover:underline" style={{ color: "#555" }}>Privacy Policy</Link>
           <Link to="/terms" className="text-xs hover:underline" style={{ color: "#555" }}>Terms of Use</Link>
           <Link to="/contact" className="text-xs hover:underline" style={{ color: "#555" }}>Contact</Link>
         </div>
+        <PublicFooterBranding variant="dark" />
       </div>
     </footer>
   );
