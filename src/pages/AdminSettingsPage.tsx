@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
-import { Save, Star } from "lucide-react";
+import { Save, Star, Mail, CheckCircle, XCircle, Loader2, ExternalLink } from "lucide-react";
 
 const AdminSettingsPage = () => {
   const queryClient = useQueryClient();
