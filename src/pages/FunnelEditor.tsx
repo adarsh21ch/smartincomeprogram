@@ -281,6 +281,10 @@ const FunnelEditor = () => {
         speaker_photo_url_custom: s.speaker_photo_url_custom || "",
         video_topics_step_enabled: s.video_topics_step_enabled ?? false,
         video_topics_step: Array.isArray(s.video_topics_step) ? s.video_topics_step : [],
+        timer_cta_enabled: s.timer_cta_enabled ?? false,
+        timer_cta_text: s.timer_cta_text || "",
+        timer_cta_url: s.timer_cta_url || "",
+        timer_cta_style: s.timer_cta_style || "gold",
       })));
     }
   }, [existingSteps]);
