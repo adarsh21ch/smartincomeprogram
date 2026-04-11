@@ -2,22 +2,25 @@ import { useState } from "react";
 import { MemberLayout } from "@/components/layout/MemberLayout";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Film, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
-import { WelcomeCard } from "@/components/member/WelcomeCard";
 import { StepCard, StepData } from "@/components/member/StepCard";
 import { VideoPlayer } from "@/components/member/VideoPlayer";
 import { CompletionCard } from "@/components/member/CompletionCard";
 import { AboutTab } from "@/components/member/AboutTab";
+import { CoursesTab } from "@/components/member/CoursesTab";
+import { ProfileTab } from "@/components/member/ProfileTab";
+import { useNavigate } from "react-router-dom";
 
 interface MemberHomeProps {
-  tab: "program" | "about" | "courses";
+  tab: "about" | "program" | "courses" | "profile";
 }
 
 const MemberHome = ({ tab }: MemberHomeProps) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [expandedStepId, setExpandedStepId] = useState<string | null>(null);
 
   const { data: settings, isLoading: settingsLoading } = useQuery({
@@ -32,25 +35,42 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
     },
   });
 
+  // Fetch program content for About and Program tabs
   const { data: content, isLoading: contentLoading } = useQuery({
-    queryKey: ["member-content", tab, user?.id],
+    queryKey: ["member-content", "program", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("get-member-content", {
-        body: { type: tab },
+        body: { type: "program" },
       });
       if (error) throw error;
       return data as {
-        funnel: { id: string; name: string; description?: string } | null;
+        funnel: { id: string; name: string; description?: string; speaker_name?: string; speaker_photo_url?: string } | null;
         steps: StepData[];
         overall_completion_percent: number;
         streak: number;
         last_active: string | null;
       };
     },
-    enabled: tab !== "about" && !!user,
+    enabled: !!user && tab !== "courses",
   });
 
-  const isLoading = settingsLoading || (tab !== "about" && contentLoading);
+  // Activity stats for profile
+  const { data: activityStats } = useQuery({
+    queryKey: ["member-activity-stats", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("member_activity_log" as any)
+        .select("activity_date, videos_watched")
+        .eq("member_id", user!.id);
+      const days = (data as any[])?.length || 0;
+      const videos = (data as any[])?.reduce((sum: number, d: any) => sum + (d.videos_watched || 0), 0) || 0;
+      const completed = content?.steps?.filter((s) => s.progress.is_completed).length || 0;
+      return { daysActive: days, videosWatched: videos, stepsCompleted: completed };
+    },
+    enabled: tab === "profile" && !!user,
+  });
+
+  const isLoading = settingsLoading || ((tab === "about" || tab === "program") && contentLoading);
 
   if (isLoading) {
     return (
@@ -66,26 +86,41 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
   if (tab === "about") {
     return (
       <MemberLayout>
-        <AboutTab settings={settings} />
+        <AboutTab
+          settings={settings}
+          content={content}
+          onContinue={() => navigate("/home/program")}
+        />
       </MemberLayout>
     );
   }
 
-  // Program or Courses tab
-  const tabTitle = tab === "program"
-    ? (settings as any)?.program_tab_title || "Your Program"
-    : (settings as any)?.courses_tab_title || "Your Courses";
+  // Courses tab
+  if (tab === "courses") {
+    return (
+      <MemberLayout>
+        <CoursesTab />
+      </MemberLayout>
+    );
+  }
 
+  // Profile tab
+  if (tab === "profile") {
+    return (
+      <MemberLayout>
+        <ProfileTab stats={activityStats} />
+      </MemberLayout>
+    );
+  }
+
+  // Program tab
   const funnel = content?.funnel;
   const steps = content?.steps || [];
   const completionPct = content?.overall_completion_percent || 0;
   const completedSteps = steps.filter((s) => s.progress.is_completed).length;
-  const streak = content?.streak || 0;
-  const lastActive = content?.last_active || null;
   const allComplete = steps.length > 0 && completedSteps === steps.length;
 
-  const welcomeMessage = (settings as any)?.welcome_message || "Welcome back, [name]! 👋";
-  const welcomeTagline = (settings as any)?.welcome_tagline || "Your success journey continues today.";
+  const tabTitle = (settings as any)?.program_tab_title || "Your Program";
   const completionMessage = (settings as any)?.completion_message || "Congratulations! You have completed the program.";
   const certificateSignatory = (settings as any)?.certificate_signatory || "";
 
@@ -93,13 +128,10 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
     return (
       <MemberLayout>
         <div className="space-y-4">
-          <h1 className="text-2xl font-heading font-bold">{tabTitle}</h1>
-          <div className="glass-card p-8 text-center space-y-2">
-            <Film size={32} className="mx-auto text-muted-foreground" />
-            <p className="text-muted-foreground">
-              {tab === "program"
-                ? "Program content is being prepared. Check back soon!"
-                : "Courses coming soon."}
+          <h1 className="text-xl font-heading font-bold">{tabTitle}</h1>
+          <div className="rounded-2xl border border-border bg-card p-8 text-center space-y-2">
+            <p className="text-muted-foreground text-sm">
+              Program content is being prepared. Check back soon!
             </p>
           </div>
         </div>
@@ -108,26 +140,13 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
   }
 
   const handleStepComplete = () => {
-    queryClient.invalidateQueries({ queryKey: ["member-content", tab, user?.id] });
+    queryClient.invalidateQueries({ queryKey: ["member-content", "program", user?.id] });
   };
 
   return (
     <MemberLayout>
       <div className="space-y-5">
-        {/* Welcome card - only on Program tab */}
-        {tab === "program" && (
-          <WelcomeCard
-            welcomeMessage={welcomeMessage}
-            welcomeTagline={welcomeTagline}
-            completedSteps={completedSteps}
-            totalSteps={steps.length}
-            completionPct={completionPct}
-            streak={streak}
-            lastActive={lastActive}
-          />
-        )}
-
-        {/* Tab title */}
+        {/* Header */}
         <div>
           <h1 className="text-xl font-heading font-bold">{tabTitle}</h1>
           {funnel.description && (
@@ -136,7 +155,7 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
         </div>
 
         {/* Progress bar */}
-        <div className="glass-card p-4 space-y-2">
+        <div className="rounded-2xl border border-border bg-card p-4 space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">
               {completedSteps} of {steps.length} steps completed
@@ -146,7 +165,7 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
           <Progress value={completionPct} className="h-1.5" />
         </div>
 
-        {/* Completion celebration */}
+        {/* Steps or Completion */}
         {allComplete ? (
           <CompletionCard
             funnelId={funnel.id}
@@ -156,7 +175,7 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
             totalSteps={steps.length}
           />
         ) : steps.length === 0 ? (
-          <div className="glass-card p-8 text-center">
+          <div className="rounded-2xl border border-border bg-card p-8 text-center">
             <p className="text-muted-foreground">No content yet. Check back soon.</p>
           </div>
         ) : (
