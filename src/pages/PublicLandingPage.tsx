@@ -32,6 +32,7 @@ const PublicLandingPage = () => {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [honeypot, setHoneypot] = useState("");
   const [showUnmuteHint, setShowUnmuteHint] = useState(true);
+  const [showSpeakerBio, setShowSpeakerBio] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Auto-hide unmute hint after 5 seconds
