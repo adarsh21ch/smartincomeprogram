@@ -15,6 +15,6 @@ export const brand = {
   footer: {
     poweredBy: "Nevorai",
     madeIn: "",
-    copyright: `© ${new Date().getFullYear()} Smart Income Program · All rights reserved`,
+    copyright: `© ${new Date().getFullYear()} Smart Income Program · Powered by Nevorai`,
   },
 } as const;
