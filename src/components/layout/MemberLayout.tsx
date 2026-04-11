@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Logo } from "@/components/landing/Logo";
-import { Film, BookOpen, GraduationCap, User, LogOut, Shield, Sun, Moon, Bell } from "lucide-react";
+import { Info, Target, BookOpen, User, LogOut, Shield, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -11,9 +11,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const tabs = [
-  { icon: Film, label: "Program", path: "/home" },
-  { icon: BookOpen, label: "About", path: "/home/about" },
-  { icon: GraduationCap, label: "Courses", path: "/home/courses" },
+  { icon: Info, label: "About", path: "/home" },
+  { icon: Target, label: "Program", path: "/home/program" },
+  { icon: BookOpen, label: "Courses", path: "/home/courses" },
+  { icon: User, label: "Profile", path: "/home/profile" },
 ];
 
 export const MemberLayout = ({ children }: { children: React.ReactNode }) => {
@@ -38,9 +39,13 @@ export const MemberLayout = ({ children }: { children: React.ReactNode }) => {
     navigate("/");
   };
 
+  const isActive = (path: string) => {
+    if (path === "/home") return location.pathname === "/home";
+    return location.pathname.startsWith(path);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Preview banner */}
       {isPreview && (
         <div className="bg-primary text-primary-foreground text-center text-xs py-1.5 font-medium sticky top-0 z-[60]">
           Preview Mode —{" "}
@@ -71,7 +76,6 @@ export const MemberLayout = ({ children }: { children: React.ReactNode }) => {
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
                     {initials}
                   </div>
-                  <span className="text-sm font-medium hidden sm:block">{firstName}</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -79,10 +83,6 @@ export const MemberLayout = ({ children }: { children: React.ReactNode }) => {
                   <p className="text-sm font-medium">{profile?.full_name || "Member"}</p>
                   <p className="text-xs text-muted-foreground">{profile?.email}</p>
                 </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate("/profile")}>
-                  <User size={14} className="mr-2" /> My Profile
-                </DropdownMenuItem>
                 {isAdmin && (
                   <>
                     <DropdownMenuSeparator />
@@ -99,32 +99,6 @@ export const MemberLayout = ({ children }: { children: React.ReactNode }) => {
             </DropdownMenu>
           </div>
         </div>
-
-        {/* Desktop Tab Bar */}
-        <div className="hidden md:block border-t border-border">
-          <div className="max-w-5xl mx-auto flex px-4">
-            {tabs.map((tab) => {
-              const active = tab.path === "/home"
-                ? location.pathname === "/home"
-                : location.pathname.startsWith(tab.path);
-              return (
-                <Link
-                  key={tab.path}
-                  to={tab.path}
-                  className={cn(
-                    "flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 -mb-[1px] transition-colors",
-                    active
-                      ? "border-primary text-primary"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <tab.icon size={16} />
-                  {tab.label}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
       </header>
 
       {/* Content */}
@@ -132,26 +106,29 @@ export const MemberLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="max-w-5xl mx-auto px-4 py-6">{children}</div>
       </main>
 
-      {/* Mobile Bottom Tab Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border flex justify-around z-50" style={{ paddingBottom: "max(6px, env(safe-area-inset-bottom))" }}>
-        {tabs.map((tab) => {
-          const active = tab.path === "/home"
-            ? location.pathname === "/home"
-            : location.pathname.startsWith(tab.path);
-          return (
-            <Link
-              key={tab.path}
-              to={tab.path}
-              className={cn(
-                "flex flex-col items-center gap-0.5 px-3 py-2 text-[10px] transition-colors",
-                active ? "text-primary" : "text-muted-foreground"
-              )}
-            >
-              <tab.icon size={20} />
-              <span>{tab.label}</span>
-            </Link>
-          );
-        })}
+      {/* Bottom Tab Bar — both mobile and desktop */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md border-t border-border z-50" style={{ paddingBottom: "max(6px, env(safe-area-inset-bottom))" }}>
+        <div className="max-w-5xl mx-auto flex justify-around">
+          {tabs.map((tab) => {
+            const active = isActive(tab.path);
+            return (
+              <Link
+                key={tab.path}
+                to={tab.path}
+                className={cn(
+                  "flex flex-col items-center gap-0.5 px-3 py-2.5 text-[10px] font-medium transition-colors relative",
+                  active ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {active && (
+                  <div className="absolute -top-[1px] left-1/2 -translate-x-1/2 w-8 h-0.5 bg-primary rounded-full" />
+                )}
+                <tab.icon size={20} strokeWidth={active ? 2.5 : 1.5} />
+                <span>{tab.label}</span>
+              </Link>
+            );
+          })}
+        </div>
       </nav>
     </div>
   );
