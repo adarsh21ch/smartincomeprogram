@@ -856,93 +856,122 @@ const FunnelEditor = () => {
       <h2 className="text-lg font-heading font-semibold">Speaker</h2>
       <p className="text-sm text-muted-foreground">Choose how the speaker is shown on your funnel page.</p>
       <div className="space-y-5 mt-4">
-        {/* Mode selector */}
-        <div className="flex rounded-xl border border-border overflow-hidden">
-          {(["none", "account", "custom"] as const).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => update("speaker_mode", mode)}
-              className={`flex-1 py-2.5 text-sm font-semibold transition-all ${
-                funnel.speaker_mode === mode
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {mode === "none" ? "None" : mode === "account" ? "Account" : "Custom"}
-            </button>
-          ))}
-        </div>
-
-        {funnel.speaker_mode === "none" && (
-          <p className="text-sm text-muted-foreground p-4 bg-muted/50 rounded-xl">No speaker info will be shown on the funnel page.</p>
-        )}
-
-        {funnel.speaker_mode === "account" && (
+        {/* Scope selector — only for multi-step */}
+        {isMulti && (
           <div className="p-4 bg-muted/50 rounded-xl space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center overflow-hidden ring-2 ring-primary/20 shrink-0">
-                {userProfile?.avatar_url ? (
-                  <img src={userProfile.avatar_url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-primary font-heading font-bold text-sm">{userProfile?.full_name?.charAt(0)?.toUpperCase() || "?"}</span>
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="font-heading font-bold text-sm truncate">{userProfile?.full_name || "Your Name"}</p>
-                {userProfile?.bio && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{userProfile.bio}</p>}
-              </div>
+            <Label className="font-semibold">Speaker Mode</Label>
+            <div className="flex rounded-xl border border-border overflow-hidden">
+              {(["global", "per_step"] as const).map((scope) => (
+                <button
+                  key={scope}
+                  onClick={() => update("speaker_scope", scope)}
+                  className={`flex-1 py-2.5 text-sm font-semibold transition-all ${
+                    funnel.speaker_scope === scope
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {scope === "global" ? "🌍 One speaker for all steps" : "🎯 Different per step"}
+                </button>
+              ))}
             </div>
-            <p className="text-xs text-muted-foreground">This is pulled from your account profile. Update it in Profile Settings.</p>
+            {funnel.speaker_scope === "per_step" && (
+              <p className="text-sm text-muted-foreground">Speaker settings are now managed inside each step. Go to <strong>Build Journey → Edit any step → Speaker</strong> section.</p>
+            )}
           </div>
         )}
 
-        {funnel.speaker_mode === "custom" && (
-          <div className="space-y-4">
-            <SpeakerPhotoUpload
-              value={funnel.speaker_photo_url}
-              onChange={(url) => update("speaker_photo_url", url)}
-            />
-            <div>
-              <Label className="text-sm font-medium">Speaker Name</Label>
-              <Input
-                value={funnel.speaker_name}
-                onChange={(e) => update("speaker_name", e.target.value.slice(0, 60))}
-                placeholder="e.g. Anmol Kapoor"
-                className="mt-1.5 bg-muted border-border"
-                maxLength={60}
-              />
-              <p className="text-xs text-muted-foreground mt-1">{funnel.speaker_name.length}/60</p>
+        {/* Global speaker settings — shown when scope is global (or single mode) */}
+        {(funnel.speaker_scope === "global" || !isMulti) && (
+          <>
+            {/* Mode selector */}
+            <div className="flex rounded-xl border border-border overflow-hidden">
+              {(["none", "account", "custom"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => update("speaker_mode", mode)}
+                  className={`flex-1 py-2.5 text-sm font-semibold transition-all ${
+                    funnel.speaker_mode === mode
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {mode === "none" ? "None" : mode === "account" ? "Account" : "Custom"}
+                </button>
+              ))}
             </div>
-            <div>
-              <Label className="text-sm font-medium">About Speaker</Label>
-              <Textarea
-                value={funnel.speaker_about}
-                onChange={(e) => update("speaker_about", e.target.value.slice(0, 200))}
-                placeholder="e.g. Network Marketing Leader | Diamond Director at Forever Living"
-                className="mt-1.5 bg-muted border-border"
-                rows={3}
-                maxLength={200}
-              />
-              <p className="text-xs text-muted-foreground mt-1">{funnel.speaker_about.length}/200</p>
-            </div>
-            {/* Preview */}
-            <div className="pt-3 border-t border-border">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Preview</p>
-              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
-                <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center overflow-hidden ring-2 ring-primary/20 shrink-0">
-                  {funnel.speaker_photo_url ? (
-                    <img src={funnel.speaker_photo_url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-primary font-heading font-bold text-sm">{funnel.speaker_name?.charAt(0)?.toUpperCase() || "?"}</span>
-                  )}
+
+            {funnel.speaker_mode === "none" && (
+              <p className="text-sm text-muted-foreground p-4 bg-muted/50 rounded-xl">No speaker info will be shown on the funnel page.</p>
+            )}
+
+            {funnel.speaker_mode === "account" && (
+              <div className="p-4 bg-muted/50 rounded-xl space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center overflow-hidden ring-2 ring-primary/20 shrink-0">
+                    {userProfile?.avatar_url ? (
+                      <img src={userProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-primary font-heading font-bold text-sm">{userProfile?.full_name?.charAt(0)?.toUpperCase() || "?"}</span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-heading font-bold text-sm truncate">{userProfile?.full_name || "Your Name"}</p>
+                    {userProfile?.bio && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{userProfile.bio}</p>}
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="font-heading font-bold text-sm">{funnel.speaker_name || "Speaker Name"}</p>
-                  {funnel.speaker_about && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{funnel.speaker_about}</p>}
+                <p className="text-xs text-muted-foreground">This is pulled from your account profile. Update it in Profile Settings.</p>
+              </div>
+            )}
+
+            {funnel.speaker_mode === "custom" && (
+              <div className="space-y-4">
+                <SpeakerPhotoUpload
+                  value={funnel.speaker_photo_url}
+                  onChange={(url) => update("speaker_photo_url", url)}
+                />
+                <div>
+                  <Label className="text-sm font-medium">Speaker Name</Label>
+                  <Input
+                    value={funnel.speaker_name}
+                    onChange={(e) => update("speaker_name", e.target.value.slice(0, 60))}
+                    placeholder="e.g. Anmol Kapoor"
+                    className="mt-1.5 bg-muted border-border"
+                    maxLength={60}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">{funnel.speaker_name.length}/60</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">About Speaker</Label>
+                  <Textarea
+                    value={funnel.speaker_about}
+                    onChange={(e) => update("speaker_about", e.target.value.slice(0, 200))}
+                    placeholder="e.g. Network Marketing Leader | Diamond Director at Forever Living"
+                    className="mt-1.5 bg-muted border-border"
+                    rows={3}
+                    maxLength={200}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">{funnel.speaker_about.length}/200</p>
+                </div>
+                <div className="pt-3 border-t border-border">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Preview</p>
+                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
+                    <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center overflow-hidden ring-2 ring-primary/20 shrink-0">
+                      {funnel.speaker_photo_url ? (
+                        <img src={funnel.speaker_photo_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-primary font-heading font-bold text-sm">{funnel.speaker_name?.charAt(0)?.toUpperCase() || "?"}</span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-heading font-bold text-sm">{funnel.speaker_name || "Speaker Name"}</p>
+                      {funnel.speaker_about && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{funnel.speaker_about}</p>}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            )}
+          </>
         )}
       </div>
     </>
