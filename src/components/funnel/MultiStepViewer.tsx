@@ -231,8 +231,8 @@ const CountdownTimer = ({ unlockAt, onUnlock, isDark }: { unlockAt: number; onUn
 /* ─── Per-step Speaker Card ─── */
 const StepSpeakerCard = ({ funnel, step, creatorProfile, isDark }: { funnel: any; step: FunnelStep; creatorProfile: any; isDark: boolean }) => {
   const sc = {
-    cardBg: isDark ? "#1a1a22" : "#ffffff",
-    cardBorder: isDark ? "#3f3f46" : "#e5e7eb",
+    cardBg: isDark ? "#1a1a1a" : "#ffffff",
+    cardBorder: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb",
     text: isDark ? "#ffffff" : "#0f172a",
     textMuted: isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)",
   };
@@ -281,8 +281,8 @@ const StepSpeakerCard = ({ funnel, step, creatorProfile, isDark }: { funnel: any
 /* ─── Per-step Video Topics ─── */
 const StepVideoTopics = ({ funnel, step, isDark }: { funnel: any; step: FunnelStep; isDark: boolean }) => {
   const sc = {
-    cardBg: isDark ? "#1a1a22" : "#ffffff",
-    cardBorder: isDark ? "#3f3f46" : "#e5e7eb",
+    cardBg: isDark ? "#1a1a1a" : "#ffffff",
+    cardBorder: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb",
     text: isDark ? "#ffffff" : "#0f172a",
     textMuted: isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)",
   };
@@ -649,7 +649,7 @@ export const MultiStepViewer = ({
 
   /* ─── Theme colors for sidebar ─── */
   const sc = {
-    bg: isDark ? "#0f1117" : "#f8f9fa",
+    bg: isDark ? "#111111" : "#f8f9fa",
     border: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
     text: isDark ? "#ffffff" : "#0f172a",
     textMuted: isDark ? "rgba(255,255,255,0.75)" : "rgba(0,0,0,0.5)",
@@ -662,8 +662,8 @@ export const MultiStepViewer = ({
     progressText: isDark ? "rgba(255,255,255,0.7)" : "rgba(0,0,0,0.45)",
     itemBg: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.02)",
     itemIconBg: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)",
-    cardBg: isDark ? "#1a1a22" : "#ffffff",
-    cardBorder: isDark ? "#3f3f46" : "#e5e7eb",
+    cardBg: isDark ? "#1a1a1a" : "#ffffff",
+    cardBorder: isDark ? "rgba(255,255,255,0.08)" : "#e5e7eb",
     inputBg: isDark ? "#18181b" : "#f1f5f9",
     stepBarBg: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.02)",
     stepBarBorder: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
