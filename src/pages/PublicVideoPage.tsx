@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/landing/Logo";
 import { Video } from "lucide-react";
+import PublicFooterBranding from "@/components/PublicFooterBranding";
 
 const PublicVideoPage = () => {
   const { id } = useParams();
@@ -75,9 +76,7 @@ const PublicVideoPage = () => {
           </p>
         )}
 
-        <div className="mt-8 text-center">
-          <p className="text-xs text-muted-foreground">Smart Income Program</p>
-        </div>
+        <PublicFooterBranding variant="dark" />
       </div>
     </div>
   );
