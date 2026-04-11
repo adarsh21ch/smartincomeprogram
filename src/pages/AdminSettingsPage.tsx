@@ -237,7 +237,7 @@ const GmailConnectionSection = () => {
 
       {!gmailToken && (
         <div className="mb-4 rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground space-y-1">
-          <p><span className="font-medium text-foreground">Important:</span> if Google shows “this app is currently being tested”, add your Gmail address as a <span className="font-medium text-foreground">Test User</span> in Google Cloud OAuth.</p>
+          <p><span className="font-medium text-foreground">Important:</span> the popup blocker issue is removed. If Google still blocks access, it means your Google OAuth app is still in <span className="font-medium text-foreground">Testing</span> and this Gmail is not added as a <span className="font-medium text-foreground">Test User</span>.</p>
           <p>Authorized redirect URI:</p>
           <code className="block text-[10px] bg-muted px-1.5 py-1 rounded select-all break-all">
             {`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gmail-oauth-callback`}
@@ -246,7 +246,7 @@ const GmailConnectionSection = () => {
       )}
 
       <p className="text-[11px] text-muted-foreground mb-4">
-        For Google Cloud Console, add the URI above in <span className="text-foreground font-medium">Authorized redirect URIs</span> and add your Gmail account in <span className="text-foreground font-medium">Audience → Test users</span> if the app is still in Testing mode.
+        In Google Cloud: add the URI above in <span className="text-foreground font-medium">Authorized redirect URIs</span>, enable <span className="text-foreground font-medium">Gmail API</span>, and add your Gmail account in <span className="text-foreground font-medium">Audience → Test users</span> while the app is in Testing mode.
       </p>
 
       {isLoading ? (
@@ -281,7 +281,7 @@ const GmailConnectionSection = () => {
             onClick={handleConnect}
             disabled={connecting}
           >
-            {connecting ? <><Loader2 size={14} className="animate-spin mr-1" /> Redirecting to Google...</> : <><ExternalLink size={14} className="mr-1" /> Connect Gmail Account</>}
+            {connecting ? <><Loader2 size={14} className="animate-spin mr-1" /> Opening Google…</> : <><ExternalLink size={14} className="mr-1" /> Connect Gmail Account</>}
           </Button>
         </div>
       )}
