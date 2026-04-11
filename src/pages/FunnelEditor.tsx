@@ -349,6 +349,17 @@ const FunnelEditor = () => {
           step_type: s.step_type, video_asset_id: s.video_asset_id || null, is_active: s.is_active,
           unlock_rule_type: s.unlock_rule_type, unlock_rule_value: s.unlock_rule_value || null,
           cta_text: s.cta_text || null, cta_url: s.cta_url || null, booking_url: s.booking_url || null,
+          unlock_condition: s.unlock_condition || "full_watch",
+          unlock_percentage: s.unlock_percentage ?? 80,
+          time_delay_enabled: s.time_delay_enabled ?? false,
+          time_delay_minutes: s.time_delay_minutes ?? 0,
+          speaker_mode_step: s.speaker_mode_step || "none",
+          speaker_name_custom: s.speaker_name_custom || null,
+          speaker_title: s.speaker_title || null,
+          speaker_bio: s.speaker_bio || null,
+          speaker_photo_url_custom: s.speaker_photo_url_custom || null,
+          video_topics_step_enabled: s.video_topics_step_enabled ?? false,
+          video_topics_step: s.video_topics_step || [],
         }));
         const { error: stepErr } = await supabase.from("funnel_steps").insert(stepsPayload);
         if (stepErr) throw stepErr;
