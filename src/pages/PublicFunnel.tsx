@@ -11,7 +11,7 @@ import {
   AlertTriangle, BadgeCheck, MapPin, Instagram, Volume2, VolumeX,
   Maximize, Minimize, Share2, Loader2, Gauge, Sun, Moon
 } from "lucide-react";
-import logoImg from "@/assets/logo.png";
+import logoImg from "@/assets/sip-logo.png";
 import { MultiStepViewer } from "@/components/funnel/MultiStepViewer";
 import { CodeGateScreen } from "@/components/funnel/CodeGateScreen";
 import { PrivateLeadForm } from "@/components/funnel/PrivateLeadForm";
@@ -743,9 +743,9 @@ const PublicFunnel = () => {
         }}
       >
         <div className="flex items-center gap-2">
-          <img src={logoImg} alt="Smart Income Program" className="h-6 w-6" />
-          <span className="font-heading font-bold text-[15px]" style={{ color: tc.text, letterSpacing: "-0.02em" }}>Smart Income</span>
-          <span className="font-heading font-extrabold text-primary text-[15px]" style={{ letterSpacing: "-0.02em", marginLeft: "4px" }}>Program</span>
+          <img src={logoImg} alt="Smart Income Program" className="h-7 w-7 rounded-lg object-contain" />
+          <span className="font-heading font-bold text-[15px]" style={{ color: tc.text, letterSpacing: "-0.025em" }}>Smart Income</span>
+          <span className="font-heading font-bold text-[15px]" style={{ color: "#E8B830", letterSpacing: "-0.025em", marginLeft: "3px" }}>Program</span>
         </div>
         <div className="flex items-center gap-1">
           <button
