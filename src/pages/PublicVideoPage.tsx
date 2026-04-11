@@ -49,7 +49,7 @@ const PublicVideoPage = () => {
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center justify-center mb-8">
-          <Logo size="sm" />
+          <Link to="/"><Logo size="sm" /></Link>
         </div>
 
         <div className="aspect-video bg-card rounded-xl overflow-hidden mb-6 relative">
