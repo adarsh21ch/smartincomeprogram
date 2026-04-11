@@ -24,6 +24,7 @@ export const VideoPlayer = ({
   durationSeconds,
   onComplete,
   onClose,
+  hideHeader = false,
 }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
