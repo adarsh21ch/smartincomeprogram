@@ -193,8 +193,8 @@ const PublicLivePage = () => {
         {/* Registered confirmation */}
         {!isEnded && registered && (
           <div className="glass-card p-6 text-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto">
-              <Users size={24} className="text-emerald-500" />
+            <div className="w-12 h-12 rounded-full bg-gold/10 flex items-center justify-center mx-auto">
+              <Users size={24} className="text-gold" />
             </div>
             <h3 className="font-heading font-semibold">You're Registered!</h3>
             <p className="text-sm text-muted-foreground">
@@ -217,7 +217,7 @@ const PublicLivePage = () => {
 
         {/* Footer */}
         <div className="text-center pt-4">
-          <p className="text-[10px] text-muted-foreground">Powered by <span className="text-primary font-semibold">Nevorai</span></p>
+          <p className="text-[10px] text-muted-foreground">Smart Income Program</p>
         </div>
       </div>
     </div>

@@ -158,13 +158,13 @@ const KYCPage = () => {
       );
     if (kyc.status === "approved")
       return (
-        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5 flex items-start gap-4">
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
-            <BadgeCheck className="text-emerald-500" size={20} />
+        <div className="rounded-2xl border border-gold/20 bg-gold/5 p-5 flex items-start gap-4">
+          <div className="w-10 h-10 rounded-xl bg-gold/10 flex items-center justify-center shrink-0">
+            <BadgeCheck className="text-gold" size={20} />
           </div>
           <div>
             <p className="font-heading font-semibold text-sm flex items-center gap-2">
-              Verified Creator <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 font-medium">VERIFIED</span>
+              Verified Creator <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/10 text-gold font-medium">VERIFIED</span>
             </p>
             <p className="text-xs text-muted-foreground mt-1">Your identity has been verified. A trust badge is shown on your public funnels.</p>
           </div>

@@ -508,7 +508,7 @@ const PublicLandingPage = () => {
                   )}
 
                   <div className="pt-2 text-xs" style={{ color: '#555' }}>
-                    © Smart Income Program · Powered by Nevorai
+                    © Smart Income Program
                   </div>
                 </div>
               </section>
@@ -588,7 +588,7 @@ const PublicLandingPage = () => {
       </main>
 
       <footer className={`text-center py-4 text-xs ${!submitted ? 'lg:hidden' : ''}`} style={{ color: '#555', borderTop: '1px solid rgba(197,147,14,0.15)' }}>
-        © Smart Income Program · Powered by Nevorai
+        © Smart Income Program
       </footer>
     </div>
   );

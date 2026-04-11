@@ -281,7 +281,7 @@ const PricingFullPage = () => {
                   if (refConfig && refConfig.monthly_price > 0) {
                     const pct = Math.round((1 - refConfig.yearly_price / (refConfig.monthly_price * 12)) * 100);
                     if (pct > 0) return (
-                      <span className="absolute -top-2 -right-2 text-[10px] bg-green-500 text-white px-1.5 py-0.5 rounded-full font-bold">
+                      <span className="absolute -top-2 -right-2 text-[10px] bg-gold text-white px-1.5 py-0.5 rounded-full font-bold">
                         Save {pct}%
                       </span>
                     );
@@ -362,7 +362,7 @@ const PricingFullPage = () => {
                   </div>
                 )}
                 <div className="mb-6">
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400 font-medium">Pro</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-gold/10 text-gold-dark dark:bg-gold-dark/20 dark:text-gold font-medium">Pro</span>
                   <div className="flex items-baseline gap-1 mt-3">
                     <span className="text-3xl font-heading font-bold">₹{getPrice(proConfig).toLocaleString("en-IN")}</span>
                     <span className="text-sm text-muted-foreground">/{billing === "monthly" ? "mo" : "yr"}</span>

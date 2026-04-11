@@ -330,7 +330,7 @@ const AdminSubscriptionsPage = () => {
           </div>
           <div className="glass-card p-5">
             <p className="text-xs text-muted-foreground mb-1">Pro</p>
-            <p className="text-2xl font-heading font-bold text-green-600">{proCount}</p>
+            <p className="text-2xl font-heading font-bold text-gold">{proCount}</p>
           </div>
           <div className="glass-card p-5">
             <p className="text-xs text-muted-foreground mb-1">Failed</p>
@@ -378,14 +378,14 @@ const AdminSubscriptionsPage = () => {
                           <td className="p-4 text-xs">{s.plan_key}</td>
                           <td className="p-4">
                             <span className={`px-2 py-0.5 rounded-full text-xs ${
-                              s.tier === "pro" ? "bg-green-500/10 text-green-600" :
+                              s.tier === "pro" ? "bg-gold/10 text-gold" :
                               s.tier === "basic" ? "bg-blue-500/10 text-blue-600" :
                               "bg-muted text-muted-foreground"
                             }`}>{s.tier}</span>
                           </td>
                           <td className="p-4">
                             <span className={`px-2 py-0.5 rounded-full text-xs inline-flex items-center gap-1 ${
-                              s.status === "active" ? "bg-green-500/10 text-green-600" :
+                              s.status === "active" ? "bg-gold/10 text-gold" :
                               s.status === "payment_failed" ? "bg-destructive/10 text-destructive" :
                               "bg-muted text-muted-foreground"
                             }`}>
@@ -427,7 +427,7 @@ const AdminSubscriptionsPage = () => {
             <p className="text-sm text-muted-foreground">Edit pricing, limits, and features for each plan. Changes apply immediately to the pricing page.</p>
             <div className="grid md:grid-cols-2 gap-6">
               {renderPlanCard("basic", basicConfig, "blue", "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400")}
-              {renderPlanCard("pro", proConfig, "green", "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400")}
+              {renderPlanCard("pro", proConfig, "green", "bg-gold/10 text-gold-dark dark:bg-gold-dark/20 dark:text-gold")}
             </div>
           </TabsContent>
 

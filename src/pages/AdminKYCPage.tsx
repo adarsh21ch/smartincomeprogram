@@ -125,7 +125,7 @@ const AdminKYCPage = () => {
               <div key={kyc.id} className="glass-card p-4 flex items-center justify-between opacity-70">
                 <div>
                   <p className="font-medium text-sm">{kyc.full_name}</p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${kyc.status === "approved" ? "bg-emerald-500/10 text-emerald-500" : "bg-destructive/10 text-destructive"}`}>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${kyc.status === "approved" ? "bg-gold/10 text-gold" : "bg-destructive/10 text-destructive"}`}>
                     {kyc.status === "approved" ? "Verified" : "Rejected"}
                   </span>
                 </div>

@@ -76,7 +76,7 @@ const PublicVideoPage = () => {
         )}
 
         <div className="mt-8 text-center">
-          <p className="text-xs text-muted-foreground">Powered by <span className="gradient-text font-heading font-semibold">Nevorai</span></p>
+          <p className="text-xs text-muted-foreground">Smart Income Program</p>
         </div>
       </div>
     </div>

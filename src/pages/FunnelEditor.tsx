@@ -524,7 +524,7 @@ const FunnelEditor = () => {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">{selectedVideo.title}</p>
-              <p className="text-xs text-emerald-500 mt-0.5">✓ Selected</p>
+              <p className="text-xs text-gold mt-0.5">✓ Selected</p>
             </div>
             <Button variant="outline" size="sm" onClick={() => setVideoPickerOpen(true)}>Change</Button>
           </div>
@@ -670,7 +670,7 @@ const FunnelEditor = () => {
                           </span>
                         )}
                         {fs.video_topics_step_enabled && (fs.video_topics_step?.length || 0) > 0 && (
-                          <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-emerald-500/10 text-emerald-400 flex items-center gap-1">
+                          <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-gold/10 text-gold flex items-center gap-1">
                             📋 {fs.video_topics_step?.length} topics
                           </span>
                         )}
@@ -1081,8 +1081,8 @@ const FunnelEditor = () => {
                     <p className="font-heading font-bold text-sm">What you'll learn in this session</p>
                     {topics.filter((t: string) => t.trim()).map((topic: string, idx: number) => (
                       <div key={idx} className="flex items-start gap-2.5">
-                        <div className="w-5 h-5 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0 mt-0.5">
-                          <Check size={11} className="text-emerald-500" />
+                        <div className="w-5 h-5 rounded-full bg-gold/15 flex items-center justify-center shrink-0 mt-0.5">
+                          <Check size={11} className="text-gold" />
                         </div>
                         <span className="text-sm">{topic}</span>
                       </div>
@@ -1177,10 +1177,10 @@ const FunnelEditor = () => {
       <p className="text-sm text-muted-foreground">Review and publish your funnel.</p>
       <div className="space-y-4 mt-4">
         <div className="border border-border rounded-xl p-4 space-y-2.5">
-          <div className="flex items-center gap-2"><Check size={16} className={funnel.title ? "text-emerald-500" : "text-muted-foreground"} /><span className="text-sm">{funnel.title ? "Title added" : "Add a title"}</span></div>
-          {!isMulti && <div className="flex items-center gap-2"><Check size={16} className={selectedVideo ? "text-emerald-500" : "text-muted-foreground"} /><span className="text-sm">{selectedVideo ? "Video selected" : "Select a video"}</span></div>}
-          {isMulti && <div className="flex items-center gap-2"><Check size={16} className={flowSteps.length > 0 ? "text-emerald-500" : "text-muted-foreground"} /><span className="text-sm">{flowSteps.length > 0 ? `${flowSteps.length} journey steps configured` : "Add journey steps"}</span></div>}
-          {!isMulti && <div className="flex items-center gap-2"><Check size={16} className={leadForm.capture_enabled ? "text-emerald-500" : "text-muted-foreground"} /><span className="text-sm">{leadForm.capture_enabled ? "Lead capture configured" : "Lead capture disabled"}</span></div>}
+          <div className="flex items-center gap-2"><Check size={16} className={funnel.title ? "text-gold" : "text-muted-foreground"} /><span className="text-sm">{funnel.title ? "Title added" : "Add a title"}</span></div>
+          {!isMulti && <div className="flex items-center gap-2"><Check size={16} className={selectedVideo ? "text-gold" : "text-muted-foreground"} /><span className="text-sm">{selectedVideo ? "Video selected" : "Select a video"}</span></div>}
+          {isMulti && <div className="flex items-center gap-2"><Check size={16} className={flowSteps.length > 0 ? "text-gold" : "text-muted-foreground"} /><span className="text-sm">{flowSteps.length > 0 ? `${flowSteps.length} journey steps configured` : "Add journey steps"}</span></div>}
+          {!isMulti && <div className="flex items-center gap-2"><Check size={16} className={leadForm.capture_enabled ? "text-gold" : "text-muted-foreground"} /><span className="text-sm">{leadForm.capture_enabled ? "Lead capture configured" : "Lead capture disabled"}</span></div>}
         </div>
         {funnel.slug && (
           <div className="p-4 bg-muted/50 rounded-xl">
@@ -1245,7 +1245,7 @@ const FunnelEditor = () => {
                   <p className="text-[10px] font-semibold tracking-[0.05em] text-muted-foreground/50">{(s as any).num || i + 1}</p>
                   <p className="text-[13px] font-semibold leading-tight">{s.label}</p>
                 </div>
-                {i === lastStepIdx && funnel.is_published && <Check size={14} className="ml-auto text-emerald-500" />}
+                {i === lastStepIdx && funnel.is_published && <Check size={14} className="ml-auto text-gold" />}
               </button>
             ))}
           </div>

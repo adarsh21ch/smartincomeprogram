@@ -240,7 +240,7 @@ const GmailConnectionSection = () => {
       ) : gmailToken ? (
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm">
-            <CheckCircle size={16} className="text-green-500" />
+            <CheckCircle size={16} className="text-gold" />
             <span className="text-foreground font-medium">Connected:</span>
             <span className="text-muted-foreground">{gmailToken.gmail_email}</span>
           </div>

@@ -53,7 +53,7 @@ export const PrivacySettings = ({
           </button>
         </div>
         <div className="flex items-center gap-2 mt-3">
-          <span className={`w-2 h-2 rounded-full ${isPrivate ? "bg-amber-500" : "bg-emerald-500"}`} />
+          <span className={`w-2 h-2 rounded-full ${isPrivate ? "bg-amber-500" : "bg-gold"}`} />
           <p className="text-xs text-muted-foreground">
             {isPrivate
               ? "Viewers must enter an access code to unlock this funnel"
@@ -101,14 +101,14 @@ export const PrivacySettings = ({
               <div className="flex items-center justify-between p-3.5 bg-muted/30">
                 <span className="text-sm font-medium">Full Name</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium">Always On</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/10 text-gold font-medium">Always On</span>
                   <Switch checked disabled />
                 </div>
               </div>
               <div className="flex items-center justify-between p-3.5 bg-muted/30">
                 <span className="text-sm font-medium">Phone Number</span>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium">Always On</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-gold/10 text-gold font-medium">Always On</span>
                   <Switch checked disabled />
                 </div>
               </div>

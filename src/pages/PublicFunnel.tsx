@@ -745,7 +745,7 @@ const PublicFunnel = () => {
         <div className="flex items-center gap-2">
           <img src={logoImg} alt="Smart Income Program" className="h-6 w-6" />
           <span className="font-heading font-bold text-[15px]" style={{ color: tc.text, letterSpacing: "-0.02em" }}>Smart Income</span>
-          <span className="font-heading font-extrabold text-primary text-[15px]" style={{ letterSpacing: "-0.03em", fontStyle: "italic", transform: "skewX(-4deg)", display: "inline-block", marginLeft: "-2px" }}>Flow</span>
+          <span className="font-heading font-extrabold text-primary text-[15px]" style={{ letterSpacing: "-0.03em", fontStyle: "italic", transform: "skewX(-4deg)", display: "inline-block", marginLeft: "-2px" }}>Program</span>
         </div>
         <div className="flex items-center gap-1">
           <button
@@ -866,8 +866,8 @@ const PublicFunnel = () => {
                         className="flex items-start gap-2.5 py-2"
                         style={{ borderBottom: idx < funnel.video_topics.filter((t: string) => t?.trim()).length - 1 ? `1px solid ${tc.border}` : "none" }}
                       >
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: "rgba(34,197,94,0.12)" }}>
-                          <Check size={11} className="text-emerald-500" />
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: "rgba(212,175,55,0.12)" }}>
+                          <Check size={11} className="text-gold" />
                         </div>
                         <span className="text-[14px] leading-relaxed" style={{ color: tc.text }}>{topic}</span>
                       </div>
@@ -955,7 +955,7 @@ const PublicFunnel = () => {
 
         {paymentSubmitted && (
           <div className="rounded-2xl p-6 text-center max-w-md mx-auto mt-6" style={{ background: tc.bgCard, border: `1px solid ${tc.border}` }}>
-            <Check size={32} className="text-green-500 mx-auto mb-3" />
+            <Check size={32} className="text-gold mx-auto mb-3" />
             <h3 className="font-heading font-semibold" style={{ color: tc.text }}>Payment Under Review</h3>
             <p className="text-sm mt-1" style={{ color: tc.textMuted }}>Your payment proof has been submitted. You'll be notified once it's verified.</p>
           </div>
