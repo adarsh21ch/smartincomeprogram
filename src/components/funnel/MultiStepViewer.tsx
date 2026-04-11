@@ -1281,7 +1281,7 @@ export const MultiStepViewer = ({
               )}
 
               {/* Step content */}
-              {!activeCountdown && getStepStatus(activeStep.id) !== "locked" && (
+              {!activeCountdown && !isTimerBlurActive && getStepStatus(activeStep.id) !== "locked" && (
                 <>
                   {activeStep.step_type === "video" && activeStep.video_url && (
                     <div className="space-y-4">
