@@ -176,9 +176,11 @@ const GmailConnectionSection = () => {
     if (gmailStatus === "connected") {
       refetch();
       toast.success("Gmail connected successfully!");
+      setConnecting(false);
       window.history.replaceState({}, "", window.location.pathname);
     } else if (gmailStatus === "error") {
       toast.error("Google authorization failed. If the message says the app is still being tested, add this Gmail address as a Test User in Google Cloud first.");
+      setConnecting(false);
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, [refetch]);
@@ -202,11 +204,19 @@ const GmailConnectionSection = () => {
   const handleDisconnect = async () => {
     setDisconnecting(true);
     try {
-      const { error } = await supabase
+      const { data: rows, error: fetchError } = await supabase
         .from("gmail_oauth_tokens")
-        .delete()
-        .neq("id", "00000000-0000-0000-0000-000000000000"); // delete all
-      if (error) throw error;
+        .select("id");
+      if (fetchError) throw fetchError;
+
+      if (rows?.length) {
+        const { error } = await supabase
+          .from("gmail_oauth_tokens")
+          .delete()
+          .in("id", rows.map((row) => row.id));
+        if (error) throw error;
+      }
+
       refetch();
       toast.success("Gmail disconnected");
     } catch (err: any) {
@@ -234,6 +244,10 @@ const GmailConnectionSection = () => {
           </code>
         </div>
       )}
+
+      <p className="text-[11px] text-muted-foreground mb-4">
+        For Google Cloud Console, add the URI above in <span className="text-foreground font-medium">Authorized redirect URIs</span> and add your Gmail account in <span className="text-foreground font-medium">Audience → Test users</span> if the app is still in Testing mode.
+      </p>
 
       {isLoading ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
