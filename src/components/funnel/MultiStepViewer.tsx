@@ -1059,6 +1059,14 @@ export const MultiStepViewer = ({
   const hasContact = funnel.show_contact_buttons && (funnel.contact_whatsapp || funnel.contact_phone);
   const activeCountdown = activeStep ? countdownUnlocks[activeStep.id] : null;
 
+  // Pre-compute: is the blurred timer overlay active? Used to hide video player + UpNext duplicate
+  const nextStepForTimerCheck = activeStepIndex + 1 < steps.length ? steps[activeStepIndex + 1] : null;
+  const nextCountdownForTimerCheck = nextStepForTimerCheck ? countdownUnlocks[nextStepForTimerCheck.id] : null;
+  const isTimerBlurActive = !!(
+    (activeProgress?.status === "completed" && nextCountdownForTimerCheck && nextStepForTimerCheck?.step_type === "video") ||
+    (activeCountdown && activeStep?.step_type === "video")
+  );
+
   return (
     <div className="flex min-h-[calc(100vh-52px)]">
       <JourneySidebar />
