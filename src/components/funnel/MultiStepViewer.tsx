@@ -1137,7 +1137,7 @@ export const MultiStepViewer = ({
 
                       <div className="flex items-center gap-2 mt-2">
                         {(() => {
-                          const rem = Math.max(0, activeCountdown - Date.now());
+                          const rem = Math.max(0, activeCountdown - countdownNow);
                           const h = Math.floor(rem / 3600000);
                           const m = Math.floor((rem % 3600000) / 60000);
                           const s = Math.floor((rem % 60000) / 1000);
