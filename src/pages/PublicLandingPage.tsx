@@ -253,7 +253,7 @@ const PublicLandingPage = () => {
     <div className={`sip-landing min-h-screen flex flex-col overflow-x-hidden ${!submitted ? "lg:h-screen lg:overflow-hidden" : ""}`}>
       {/* Header */}
       <header className="shrink-0 flex items-center justify-center px-4 py-3" style={{ borderBottom: '1px solid rgba(197,147,14,0.15)' }}>
-        <Logo size="sm" />
+        <Link to="/"><Logo size="sm" /></Link>
       </header>
 
       {/* Main Content */}
