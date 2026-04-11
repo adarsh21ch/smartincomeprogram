@@ -1141,21 +1141,12 @@ export const MultiStepViewer = ({
                 )}
               </div>
 
-              {/* Countdown with blurred video preview — shows NEXT step blurred */}
+              {/* Countdown with blurred video preview — shows on the ACTIVE step when it has a countdown */}
               {(() => {
-                // Determine if we should show next step's blurred preview with timer
-                const nextStepForTimer = activeStepIndex + 1 < steps.length ? steps[activeStepIndex + 1] : null;
-                const nextCountdownForTimer = nextStepForTimer ? countdownUnlocks[nextStepForTimer.id] : null;
-                const currentCompleted = activeProgress?.status === "completed";
-                const showNextBlurred = currentCompleted && nextCountdownForTimer && nextStepForTimer?.step_type === "video";
-                // Also show blurred timer if the active step itself has a countdown (navigated to locked step)
-                const showActiveBlurred = activeCountdown && activeStep.step_type === "video";
+                if (!activeCountdown || activeStep.step_type !== "video") return null;
 
-                const timerStep = showNextBlurred ? nextStepForTimer : showActiveBlurred ? activeStep : null;
-                const timerUnlockAt = showNextBlurred ? nextCountdownForTimer : showActiveBlurred ? activeCountdown : null;
-                const timerStepIndex = showNextBlurred ? activeStepIndex + 1 : activeStepIndex;
-
-                if (!timerStep || !timerUnlockAt) return null;
+                const timerStep = activeStep;
+                const timerUnlockAt = activeCountdown;
 
                 const rem = Math.max(0, timerUnlockAt - countdownNow);
                 const h = Math.floor(rem / 3600000);
@@ -1163,10 +1154,9 @@ export const MultiStepViewer = ({
                 const s = Math.floor((rem % 60000) / 1000);
 
                 // Auto-unlock when timer reaches 0
-                if (rem <= 0 && timerStep) {
+                if (rem <= 0) {
                   setTimeout(() => {
                     handleCountdownComplete(timerStep.id);
-                    if (showNextBlurred) switchToStep(timerStepIndex);
                   }, 0);
                 }
 
