@@ -445,21 +445,19 @@ const PublicLandingPage = () => {
             </div>
 
             {/* ── DESKTOP LAYOUT (lg+) ── */}
-            <div className="hidden lg:block space-y-10">
-              {/* Row 1: Hero/Sections + Speaker */}
-              <div className="grid lg:grid-cols-5 gap-8 items-start">
-                <div className="lg:col-span-3 space-y-6">
-                  {sections.map(renderSection)}
-                  {sections.length === 0 && (
-                    <div className="space-y-4">
-                      <h1 className="text-3xl md:text-4xl font-bold" style={{ color: '#F5F0E8' }}>{page.title}</h1>
-                      {page.description && <p className="text-lg" style={{ color: '#888' }}>{page.description}</p>}
-                    </div>
-                  )}
-                </div>
+            <div className="hidden lg:grid lg:grid-cols-5 gap-8 items-start">
+              <div className="lg:col-span-3 space-y-8">
+                {sections.map(renderSection)}
+                {sections.length === 0 && (
+                  <div className="space-y-4">
+                    <h1 className="text-3xl md:text-4xl font-bold" style={{ color: '#F5F0E8' }}>{page.title}</h1>
+                    {page.description && <p className="text-lg" style={{ color: '#888' }}>{page.description}</p>}
+                  </div>
+                )}
 
+                {/* Speaker */}
                 {(page.speaker_name || page.speaker_photo_url) && (
-                  <div className="lg:col-span-2 sip-card p-6 flex gap-5 items-start self-start">
+                  <div className="sip-card p-6 flex gap-5 items-start">
                     {page.speaker_photo_url && (
                       <img src={page.speaker_photo_url} alt={page.speaker_name} className="w-20 h-20 rounded-full object-cover shrink-0" style={{ border: '2px solid rgba(197,147,14,0.3)' }} />
                     )}
@@ -470,22 +468,21 @@ const PublicLandingPage = () => {
                     </div>
                   </div>
                 )}
+
+                {/* Testimonials — shown on left before form */}
+                {showTestimonialsOnRegistration && (
+                  <TestimonialsViewer
+                    testimonials={testimonials}
+                    sectionTitle={page.testimonials_section_title || "What our members say"}
+                  />
+                )}
               </div>
 
-              {/* Row 2: Testimonials full width */}
-              {showTestimonialsOnRegistration && (
-                <TestimonialsViewer
-                  testimonials={testimonials}
-                  sectionTitle={page.testimonials_section_title || "What our members say"}
-                />
-              )}
-
-              {/* Row 3: Registration form centered */}
-              <div className="max-w-lg mx-auto">
-                <div className="sip-card p-8 space-y-5">
-                  <div className="text-center">
-                    <h3 className="text-xl font-bold" style={{ color: '#F5F0E8' }}>{page.form_title}</h3>
-                    <p className="text-sm mt-1" style={{ color: '#E8B830' }}>{page.form_subtitle}</p>
+              <div className="lg:col-span-2 self-start" style={{ position: 'sticky', top: '1rem' }}>
+                <div className="sip-card p-6 space-y-5">
+                  <div>
+                    <h3 className="text-lg font-bold" style={{ color: '#F5F0E8' }}>{page.form_title}</h3>
+                    <p className="text-sm" style={{ color: '#E8B830' }}>{page.form_subtitle}</p>
                   </div>
 
                   <form onSubmit={handleSubmit} className="space-y-4">
