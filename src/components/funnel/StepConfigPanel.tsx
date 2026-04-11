@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -5,9 +6,9 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Slider } from "@/components/ui/slider";
-import { Video, Lock, Clock, MessageSquare, Music } from "lucide-react";
+import { Video, Lock, Clock, MessageSquare, Music, User, ListChecks, Plus, X } from "lucide-react";
 import { getStepTypeMeta } from "./StepTypeSelector";
+import { SpeakerPhotoUpload } from "./SpeakerPhotoUpload";
 
 interface FlowStep {
   id?: string;
@@ -28,6 +29,17 @@ interface FlowStep {
   between_step_message?: string;
   between_step_message_enabled?: boolean;
   unlock_after_percent?: number;
+  unlock_condition?: string;
+  unlock_percentage?: number;
+  time_delay_enabled?: boolean;
+  time_delay_minutes?: number;
+  speaker_mode_step?: string;
+  speaker_name_custom?: string;
+  speaker_title?: string;
+  speaker_bio?: string;
+  speaker_photo_url_custom?: string;
+  video_topics_step_enabled?: boolean;
+  video_topics_step?: Array<{ icon: string; text: string }>;
 }
 
 interface StepConfigPanelProps {
@@ -38,6 +50,9 @@ interface StepConfigPanelProps {
   onUpdate: (key: keyof FlowStep, value: any) => void;
   onOpenVideoPicker: () => void;
   totalSteps: number;
+  speakerScope?: string;
+  videoTopicsScope?: string;
+  userProfile?: { full_name?: string; avatar_url?: string; bio?: string } | null;
 }
 
 const UNLOCK_OPTIONS: { value: string; label: string; description: string }[] = [
@@ -52,9 +67,16 @@ const UNLOCK_OPTIONS: { value: string; label: string; description: string }[] = 
   { value: "booking_done", label: "After booking completed", description: "Booking/call must be marked done" },
 ];
 
-export const StepConfigPanel = ({ open, onClose, step, stepIndex, onUpdate, onOpenVideoPicker, totalSteps }: StepConfigPanelProps) => {
+export const StepConfigPanel = ({ open, onClose, step, stepIndex, onUpdate, onOpenVideoPicker, totalSteps, speakerScope, videoTopicsScope, userProfile }: StepConfigPanelProps) => {
   if (!step) return null;
   const meta = getStepTypeMeta(step.step_type);
+
+  const topics = step.video_topics_step || [];
+  const addTopic = () => {
+    if (topics.length < 10) onUpdate("video_topics_step" as keyof FlowStep, [...topics, { icon: "✅", text: "" }]);
+  };
+  const removeTopic = (i: number) => onUpdate("video_topics_step" as keyof FlowStep, topics.filter((_, idx) => idx !== i));
+  const updateTopicText = (i: number, text: string) => onUpdate("video_topics_step" as keyof FlowStep, topics.map((t, idx) => idx === i ? { ...t, text: text.slice(0, 100) } : t));
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
@@ -72,7 +94,6 @@ export const StepConfigPanel = ({ open, onClose, step, stepIndex, onUpdate, onOp
         </SheetHeader>
 
         <div className="space-y-5">
-          {/* Title — always shown */}
           <div>
             <Label className="text-sm font-medium">Step Title</Label>
             <Input
@@ -83,7 +104,6 @@ export const StepConfigPanel = ({ open, onClose, step, stepIndex, onUpdate, onOp
             />
           </div>
 
-          {/* VIDEO fields */}
           {step.step_type === "video" && (
             <>
               <div>
@@ -102,243 +122,258 @@ export const StepConfigPanel = ({ open, onClose, step, stepIndex, onUpdate, onOp
               </div>
               <div>
                 <Label className="text-sm font-medium">Description <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                <Textarea
-                  value={step.description}
-                  onChange={(e) => onUpdate("description", e.target.value)}
-                  placeholder="Brief description shown below the video..."
-                  className="mt-1.5 bg-muted border-border"
-                  rows={2}
-                />
+                <Textarea value={step.description} onChange={(e) => onUpdate("description", e.target.value)} placeholder="Brief description shown below the video..." className="mt-1.5 bg-muted border-border" rows={2} />
               </div>
             </>
           )}
 
-          {/* LEAD FORM fields */}
           {step.step_type === "lead_form" && (
             <div>
               <Label className="text-sm font-medium">Description <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Textarea
-                value={step.description}
-                onChange={(e) => onUpdate("description", e.target.value)}
-                placeholder="Tell the viewer why to fill the form..."
-                className="mt-1.5 bg-muted border-border"
-                rows={2}
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                Lead form fields are configured in your funnel's Lead Capture settings.
-              </p>
+              <Textarea value={step.description} onChange={(e) => onUpdate("description", e.target.value)} placeholder="Tell the viewer why to fill the form..." className="mt-1.5 bg-muted border-border" rows={2} />
+              <p className="text-xs text-muted-foreground mt-2">Lead form fields are configured in your funnel's Lead Capture settings.</p>
             </div>
           )}
-
-          {/* CTA fields */}
           {step.step_type === "cta" && (
             <>
-              <div>
-                <Label className="text-sm font-medium">Button Text</Label>
-                <Input
-                  value={step.cta_text}
-                  onChange={(e) => onUpdate("cta_text", e.target.value)}
-                  placeholder="e.g. Visit Our Page, Join WhatsApp"
-                  className="mt-1.5 bg-muted border-border"
-                />
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Destination URL</Label>
-                <Input
-                  value={step.cta_url}
-                  onChange={(e) => onUpdate("cta_url", e.target.value)}
-                  placeholder="https://... or WhatsApp link"
-                  className="mt-1.5 bg-muted border-border"
-                />
-                <p className="text-xs text-muted-foreground mt-1.5">
-                  Paste any URL — website, WhatsApp, Instagram, Telegram, etc.
-                </p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Description <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                <Textarea
-                  value={step.description}
-                  onChange={(e) => onUpdate("description", e.target.value)}
-                  placeholder="Why should they click?"
-                  className="mt-1.5 bg-muted border-border"
-                  rows={2}
-                />
-              </div>
+              <div><Label className="text-sm font-medium">Button Text</Label><Input value={step.cta_text} onChange={(e) => onUpdate("cta_text", e.target.value)} placeholder="e.g. Visit Our Page" className="mt-1.5 bg-muted border-border" /></div>
+              <div><Label className="text-sm font-medium">Destination URL</Label><Input value={step.cta_url} onChange={(e) => onUpdate("cta_url", e.target.value)} placeholder="https://..." className="mt-1.5 bg-muted border-border" /><p className="text-xs text-muted-foreground mt-1.5">Paste any URL</p></div>
+              <div><Label className="text-sm font-medium">Description <span className="text-muted-foreground font-normal">(optional)</span></Label><Textarea value={step.description} onChange={(e) => onUpdate("description", e.target.value)} placeholder="Why should they click?" className="mt-1.5 bg-muted border-border" rows={2} /></div>
             </>
           )}
-
-          {/* PAYMENT fields */}
           {step.step_type === "payment" && (
-            <div>
-              <Label className="text-sm font-medium">Description <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Textarea
-                value={step.description}
-                onChange={(e) => onUpdate("description", e.target.value)}
-                placeholder="Payment instructions for the viewer..."
-                className="mt-1.5 bg-muted border-border"
-                rows={2}
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                Payment details (UPI ID, QR code) are configured in your funnel's Payment settings.
-              </p>
-            </div>
+            <div><Label className="text-sm font-medium">Description <span className="text-muted-foreground font-normal">(optional)</span></Label><Textarea value={step.description} onChange={(e) => onUpdate("description", e.target.value)} placeholder="Payment instructions..." className="mt-1.5 bg-muted border-border" rows={2} /><p className="text-xs text-muted-foreground mt-2">Payment details are in Payment settings.</p></div>
           )}
-
-          {/* BOOKING fields */}
           {step.step_type === "booking" && (
             <>
-              <div>
-                <Label className="text-sm font-medium">Booking Link</Label>
-                <Input
-                  value={step.booking_url}
-                  onChange={(e) => onUpdate("booking_url", e.target.value)}
-                  placeholder="Calendly, Zoom, Google Meet, or any URL"
-                  className="mt-1.5 bg-muted border-border"
-                />
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Button Text</Label>
-                <Input
-                  value={step.cta_text}
-                  onChange={(e) => onUpdate("cta_text", e.target.value)}
-                  placeholder="e.g. Book Your Call"
-                  className="mt-1.5 bg-muted border-border"
-                />
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Description <span className="text-muted-foreground font-normal">(optional)</span></Label>
-                <Textarea
-                  value={step.description}
-                  onChange={(e) => onUpdate("description", e.target.value)}
-                  placeholder="What will this call be about?"
-                  className="mt-1.5 bg-muted border-border"
-                  rows={2}
-                />
-              </div>
+              <div><Label className="text-sm font-medium">Booking Link</Label><Input value={step.booking_url} onChange={(e) => onUpdate("booking_url", e.target.value)} placeholder="Calendly, Zoom, etc." className="mt-1.5 bg-muted border-border" /></div>
+              <div><Label className="text-sm font-medium">Button Text</Label><Input value={step.cta_text} onChange={(e) => onUpdate("cta_text", e.target.value)} placeholder="Book Your Call" className="mt-1.5 bg-muted border-border" /></div>
+              <div><Label className="text-sm font-medium">Description <span className="text-muted-foreground font-normal">(optional)</span></Label><Textarea value={step.description} onChange={(e) => onUpdate("description", e.target.value)} placeholder="What will this call be about?" className="mt-1.5 bg-muted border-border" rows={2} /></div>
             </>
           )}
-
-          {/* MANUAL APPROVAL fields */}
           {step.step_type === "manual_approval" && (
-            <div>
-              <Label className="text-sm font-medium">Internal Note <span className="text-muted-foreground font-normal">(only you see this)</span></Label>
-              <Textarea
-                value={step.description}
-                onChange={(e) => onUpdate("description", e.target.value)}
-                placeholder="e.g. Unlock after WhatsApp conversation..."
-                className="mt-1.5 bg-muted border-border"
-                rows={2}
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                The viewer will see a "Waiting for approval" message. You can unlock this step from the Lead Progress tab.
-              </p>
-            </div>
+            <div><Label className="text-sm font-medium">Internal Note</Label><Textarea value={step.description} onChange={(e) => onUpdate("description", e.target.value)} placeholder="e.g. Unlock after WhatsApp conversation..." className="mt-1.5 bg-muted border-border" rows={2} /><p className="text-xs text-muted-foreground mt-2">Viewer sees "Waiting for approval". Unlock from Lead Progress tab.</p></div>
           )}
 
-          {/* Unlock rule — only for steps after first */}
           {stepIndex > 0 && (
-            <div className="pt-4 border-t border-border">
-              <Label className="text-sm font-medium flex items-center gap-1.5 mb-2">
-                <Lock size={12} className="text-muted-foreground" />
-                When should this step unlock?
-              </Label>
-              <Select value={step.unlock_rule_type} onValueChange={(v) => onUpdate("unlock_rule_type", v)}>
-                <SelectTrigger className="bg-muted border-border">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-card border-border">
-                  {UNLOCK_OPTIONS.map((r) => (
-                    <SelectItem key={r.value} value={r.value}>
-                      <span>{r.label}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {(step.unlock_rule_type === "watch_seconds" || step.unlock_rule_type === "watch_percent") && (
-                <Input
-                  type="number"
-                  value={step.unlock_rule_value}
-                  onChange={(e) => onUpdate("unlock_rule_value", e.target.value)}
-                  placeholder={step.unlock_rule_type === "watch_seconds" ? "Number of seconds" : "Percentage (0–100)"}
-                  className="mt-2 bg-muted border-border"
-                />
+            <div className="pt-4 border-t border-border space-y-4">
+              <div>
+                <Label className="text-sm font-medium flex items-center gap-1.5 mb-1">
+                  <Lock size={12} className="text-muted-foreground" />
+                  When does this step unlock?
+                </Label>
+                <p className="text-xs text-muted-foreground mb-3">Set how much of the previous step a viewer must complete.</p>
+              </div>
+
+              <div className="flex rounded-xl border border-border overflow-hidden">
+                {(["full_watch", "percentage", "time_spent"] as const).map((cond) => (
+                  <button
+                    key={cond}
+                    onClick={() => onUpdate("unlock_condition" as keyof FlowStep, cond)}
+                    className={`flex-1 py-2 text-xs font-semibold transition-all ${
+                      (step.unlock_condition || "full_watch") === cond
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {cond === "full_watch" ? "▶ Full Watch" : cond === "percentage" ? "% Percentage" : "⏱ Time Spent"}
+                  </button>
+                ))}
+              </div>
+
+              {(step.unlock_condition || "full_watch") === "full_watch" && (
+                <p className="text-xs text-muted-foreground p-3 bg-muted/50 rounded-lg">Next step unlocks only after the previous video is watched completely (100%).</p>
               )}
-              <p className="text-xs text-muted-foreground mt-2">
-                {UNLOCK_OPTIONS.find((r) => r.value === step.unlock_rule_type)?.description}
-              </p>
+
+              {(step.unlock_condition || "full_watch") === "percentage" && (
+                <div className="space-y-2">
+                  <Label className="text-xs">Unlock after watching __% of previous video</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={step.unlock_percentage ?? 80}
+                    onChange={(e) => onUpdate("unlock_percentage" as keyof FlowStep, Math.min(99, Math.max(1, parseInt(e.target.value) || 80)))}
+                    className="w-24 bg-muted border-border"
+                  />
+                  <p className="text-xs text-muted-foreground">Step {stepIndex + 1} unlocks when viewer watches {step.unlock_percentage ?? 80}% of Step {stepIndex}</p>
+                </div>
+              )}
+
+              {(step.unlock_condition || "full_watch") === "time_spent" && (
+                <div className="space-y-2">
+                  <Label className="text-xs">Unlock after viewer spends __ minutes on previous step</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={999}
+                    value={step.unlock_percentage ?? 10}
+                    onChange={(e) => onUpdate("unlock_percentage" as keyof FlowStep, Math.min(999, Math.max(1, parseInt(e.target.value) || 10)))}
+                    className="w-24 bg-muted border-border"
+                  />
+                  <p className="text-xs text-muted-foreground">Counts time the viewer has the step open, regardless of watch %</p>
+                </div>
+              )}
+
+              <div className="space-y-3 pt-3 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-1.5">
+                      <Clock size={12} className="text-muted-foreground" />
+                      Add waiting period after unlock condition is met
+                    </Label>
+                  </div>
+                  <Switch
+                    checked={step.time_delay_enabled ?? false}
+                    onCheckedChange={(v) => onUpdate("time_delay_enabled" as keyof FlowStep, v)}
+                  />
+                </div>
+                {step.time_delay_enabled && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Wait</span>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={step.time_delay_minutes || 30}
+                        onChange={(e) => onUpdate("time_delay_minutes" as keyof FlowStep, parseInt(e.target.value) || 30)}
+                        className="w-20 bg-muted border-border"
+                      />
+                      <span className="text-xs text-muted-foreground">minutes before revealing this step</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Viewer will see a countdown timer. After the countdown ends, the step unlocks automatically.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-3 border-t border-border">
+                <Label className="text-xs text-muted-foreground mb-2 block">Legacy unlock rule</Label>
+                <Select value={step.unlock_rule_type} onValueChange={(v) => onUpdate("unlock_rule_type", v)}>
+                  <SelectTrigger className="bg-muted border-border"><SelectValue /></SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    {UNLOCK_OPTIONS.map((r) => (<SelectItem key={r.value} value={r.value}><span>{r.label}</span></SelectItem>))}
+                  </SelectContent>
+                </Select>
+                {(step.unlock_rule_type === "watch_seconds" || step.unlock_rule_type === "watch_percent") && (
+                  <Input type="number" value={step.unlock_rule_value} onChange={(e) => onUpdate("unlock_rule_value", e.target.value)} placeholder={step.unlock_rule_type === "watch_seconds" ? "Number of seconds" : "Percentage (0–100)"} className="mt-2 bg-muted border-border" />
+                )}
+              </div>
             </div>
           )}
 
-          {/* Enhanced: Time-based unlock timer */}
+          {speakerScope === "per_step" && (
+            <div className="pt-4 border-t border-border space-y-4">
+              <Label className="text-sm font-medium flex items-center gap-1.5">
+                <User size={12} className="text-muted-foreground" />
+                Speaker for this step
+              </Label>
+              <div className="flex rounded-xl border border-border overflow-hidden">
+                {(["none", "account", "custom"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => onUpdate("speaker_mode_step" as keyof FlowStep, mode)}
+                    className={`flex-1 py-2 text-xs font-semibold transition-all ${
+                      (step.speaker_mode_step || "none") === mode
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {mode === "none" ? "None" : mode === "account" ? "Account" : "Custom"}
+                  </button>
+                ))}
+              </div>
+              {(step.speaker_mode_step || "none") === "none" && (
+                <p className="text-xs text-muted-foreground">No speaker shown for this step.</p>
+              )}
+              {(step.speaker_mode_step || "none") === "account" && userProfile && (
+                <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
+                  <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center overflow-hidden shrink-0">
+                    {userProfile.avatar_url ? <img src={userProfile.avatar_url} alt="" className="w-full h-full object-cover" /> : <span className="text-primary font-bold text-xs">{userProfile.full_name?.charAt(0)?.toUpperCase() || "?"}</span>}
+                  </div>
+                  <div><p className="font-bold text-sm">{userProfile.full_name || "Your Name"}</p></div>
+                </div>
+              )}
+              {(step.speaker_mode_step || "none") === "custom" && (
+                <div className="space-y-3">
+                  <SpeakerPhotoUpload value={step.speaker_photo_url_custom || ""} onChange={(url) => onUpdate("speaker_photo_url_custom" as keyof FlowStep, url)} />
+                  <div><Label className="text-xs">Speaker Name</Label><Input value={step.speaker_name_custom || ""} onChange={(e) => onUpdate("speaker_name_custom" as keyof FlowStep, e.target.value.slice(0, 60))} placeholder="e.g. John Doe" className="mt-1 bg-muted border-border" maxLength={60} /></div>
+                  <div><Label className="text-xs">Speaker Title</Label><Input value={step.speaker_title || ""} onChange={(e) => onUpdate("speaker_title" as keyof FlowStep, e.target.value.slice(0, 60))} placeholder="e.g. Founder & Coach" className="mt-1 bg-muted border-border" maxLength={60} /></div>
+                  <div><Label className="text-xs">Bio</Label><Textarea value={step.speaker_bio || ""} onChange={(e) => onUpdate("speaker_bio" as keyof FlowStep, e.target.value.slice(0, 200))} placeholder="Short bio..." className="mt-1 bg-muted border-border" rows={2} maxLength={200} /></div>
+                </div>
+              )}
+            </div>
+          )}
+          {speakerScope === "global" && stepIndex > 0 && (
+            <div className="pt-4 border-t border-border">
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5"><User size={12} /> This funnel uses one speaker for all steps. Change in Speaker tab.</p>
+            </div>
+          )}
+
+          {videoTopicsScope === "per_step" && (
+            <div className="pt-4 border-t border-border space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium flex items-center gap-1.5">
+                  <ListChecks size={12} className="text-muted-foreground" />
+                  Key points for this step
+                </Label>
+                <Switch
+                  checked={step.video_topics_step_enabled ?? false}
+                  onCheckedChange={(v) => onUpdate("video_topics_step_enabled" as keyof FlowStep, v)}
+                />
+              </div>
+              {step.video_topics_step_enabled && (
+                <div className="space-y-2">
+                  {topics.map((topic, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Input
+                        value={topic.text}
+                        onChange={(e) => updateTopicText(idx, e.target.value)}
+                        placeholder="Enter a topic..."
+                        className="flex-1 bg-muted border-border text-sm"
+                        maxLength={100}
+                      />
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0" onClick={() => removeTopic(idx)}>
+                        <X size={12} />
+                      </Button>
+                    </div>
+                  ))}
+                  {topics.length < 10 && (
+                    <Button variant="outline" size="sm" className="w-full" onClick={addTopic}>
+                      <Plus size={12} /> Add Topic
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {stepIndex < totalSteps - 1 && (
             <div className="pt-4 border-t border-border space-y-4">
               <Label className="text-sm font-medium flex items-center gap-1.5">
                 <Clock size={12} className="text-muted-foreground" />
                 After Completing This Step
               </Label>
-
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Time delay before next step (minutes)</Label>
-                <div className="flex items-center gap-3">
-                  <Input
-                    type="number"
-                    min={0}
-                    value={step.unlock_timer_minutes || 0}
-                    onChange={(e) => onUpdate("unlock_timer_minutes" as keyof FlowStep, parseInt(e.target.value) || 0)}
-                    className="w-24 bg-muted border-border"
-                  />
-                  <span className="text-xs text-muted-foreground">0 = no delay</span>
-                </div>
-              </div>
-
-              {/* Between-step audio */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium flex items-center gap-1.5">
-                    <Music size={12} className="text-muted-foreground" />
-                    Audio Note (between steps)
-                  </Label>
-                  <Switch
-                    checked={step.between_step_audio_enabled || false}
-                    onCheckedChange={(v) => onUpdate("between_step_audio_enabled" as keyof FlowStep, v)}
-                  />
+                  <Label className="text-sm font-medium flex items-center gap-1.5"><Music size={12} className="text-muted-foreground" /> Audio Note (between steps)</Label>
+                  <Switch checked={step.between_step_audio_enabled || false} onCheckedChange={(v) => onUpdate("between_step_audio_enabled" as keyof FlowStep, v)} />
                 </div>
                 {step.between_step_audio_enabled && (
-                  <Input
-                    value={step.between_step_audio_url || ""}
-                    onChange={(e) => onUpdate("between_step_audio_url" as keyof FlowStep, e.target.value)}
-                    placeholder="Audio file URL (MP3, M4A)"
-                    className="bg-muted border-border"
-                  />
+                  <Input value={step.between_step_audio_url || ""} onChange={(e) => onUpdate("between_step_audio_url" as keyof FlowStep, e.target.value)} placeholder="Audio file URL (MP3, M4A)" className="bg-muted border-border" />
                 )}
               </div>
-
-              {/* Between-step text message */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm font-medium flex items-center gap-1.5">
-                    <MessageSquare size={12} className="text-muted-foreground" />
-                    Text Message (between steps)
-                  </Label>
-                  <Switch
-                    checked={step.between_step_message_enabled || false}
-                    onCheckedChange={(v) => onUpdate("between_step_message_enabled" as keyof FlowStep, v)}
-                  />
+                  <Label className="text-sm font-medium flex items-center gap-1.5"><MessageSquare size={12} className="text-muted-foreground" /> Text Message (between steps)</Label>
+                  <Switch checked={step.between_step_message_enabled || false} onCheckedChange={(v) => onUpdate("between_step_message_enabled" as keyof FlowStep, v)} />
                 </div>
                 {step.between_step_message_enabled && (
-                  <Textarea
-                    value={step.between_step_message || ""}
-                    onChange={(e) => onUpdate("between_step_message" as keyof FlowStep, e.target.value)}
-                    placeholder="Message shown while waiting for next step..."
-                    className="bg-muted border-border"
-                    rows={3}
-                  />
+                  <Textarea value={step.between_step_message || ""} onChange={(e) => onUpdate("between_step_message" as keyof FlowStep, e.target.value)} placeholder="Message shown while waiting..." className="bg-muted border-border" rows={3} />
                 )}
               </div>
             </div>
           )}
 
-          {/* Active toggle */}
           <div className="pt-4 border-t border-border">
             <div className="flex items-center justify-between">
               <div>

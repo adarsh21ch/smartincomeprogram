@@ -47,6 +47,18 @@ interface FlowStep {
   between_step_message?: string;
   between_step_message_enabled?: boolean;
   unlock_after_percent?: number;
+  // New per-step fields
+  unlock_condition?: string;
+  unlock_percentage?: number;
+  time_delay_enabled?: boolean;
+  time_delay_minutes?: number;
+  speaker_mode_step?: string;
+  speaker_name_custom?: string;
+  speaker_title?: string;
+  speaker_bio?: string;
+  speaker_photo_url_custom?: string;
+  video_topics_step_enabled?: boolean;
+  video_topics_step?: Array<{ icon: string; text: string }>;
 }
 
 const createEmptyStep = (order: number, type: string = "video"): FlowStep => ({
@@ -89,9 +101,8 @@ const MULTI_STEPS = [
   { icon: User, label: "Speaker", num: "4" },
   { icon: ListChecks, label: "Video Topics", num: "5" },
   { icon: MessageCircle, label: "Contact Info", num: "6" },
-  { icon: IndianRupee, label: "Payment", num: "7" },
-  { icon: Lock, label: "Privacy", num: "8" },
-  { icon: Rocket, label: "Publish", num: "9" },
+  { icon: Lock, label: "Privacy", num: "7" },
+  { icon: Rocket, label: "Publish", num: "8" },
 ];
 
 const UNLOCK_LABELS: Record<string, string> = {
@@ -153,6 +164,8 @@ const FunnelEditor = () => {
     speaker_name: "", speaker_photo_url: "", speaker_about: "",
     video_topics_enabled: false,
     video_topics: [] as string[],
+    speaker_scope: "global" as "global" | "per_step",
+    video_topics_scope: "global" as "global" | "per_step",
   });
 
   const [leadForm, setLeadForm] = useState({
@@ -218,6 +231,8 @@ const FunnelEditor = () => {
         speaker_about: (f as any).speaker_about || "",
         video_topics_enabled: (f as any).video_topics_enabled ?? false,
         video_topics: Array.isArray((f as any).video_topics) ? (f as any).video_topics : [],
+        speaker_scope: (f as any).speaker_scope || "global",
+        video_topics_scope: (f as any).video_topics_scope || "global",
       }));
       setModeChosen(true);
       if (f.audio_note_url) setAudioNoteEnabled(true);
@@ -251,6 +266,17 @@ const FunnelEditor = () => {
         step_type: s.step_type || "video", video_asset_id: s.video_asset_id, is_active: s.is_active ?? true,
         unlock_rule_type: s.unlock_rule_type || "auto", unlock_rule_value: s.unlock_rule_value || "",
         cta_text: s.cta_text || "", cta_url: s.cta_url || "", booking_url: s.booking_url || "",
+        unlock_condition: s.unlock_condition || "full_watch",
+        unlock_percentage: s.unlock_percentage ?? 80,
+        time_delay_enabled: s.time_delay_enabled ?? false,
+        time_delay_minutes: s.time_delay_minutes ?? 0,
+        speaker_mode_step: s.speaker_mode_step || "none",
+        speaker_name_custom: s.speaker_name_custom || "",
+        speaker_title: s.speaker_title || "",
+        speaker_bio: s.speaker_bio || "",
+        speaker_photo_url_custom: s.speaker_photo_url_custom || "",
+        video_topics_step_enabled: s.video_topics_step_enabled ?? false,
+        video_topics_step: Array.isArray(s.video_topics_step) ? s.video_topics_step : [],
       })));
     }
   }, [existingSteps]);
@@ -295,6 +321,8 @@ const FunnelEditor = () => {
       speaker_about: funnel.speaker_about || null,
       video_topics_enabled: funnel.video_topics_enabled,
       video_topics: funnel.video_topics.filter((t: string) => t.trim() !== ""),
+      speaker_scope: funnel.speaker_scope,
+      video_topics_scope: funnel.video_topics_scope,
     };
   }, [user, funnel, selectedVideo]);
 
@@ -321,6 +349,17 @@ const FunnelEditor = () => {
           step_type: s.step_type, video_asset_id: s.video_asset_id || null, is_active: s.is_active,
           unlock_rule_type: s.unlock_rule_type, unlock_rule_value: s.unlock_rule_value || null,
           cta_text: s.cta_text || null, cta_url: s.cta_url || null, booking_url: s.booking_url || null,
+          unlock_condition: s.unlock_condition || "full_watch",
+          unlock_percentage: s.unlock_percentage ?? 80,
+          time_delay_enabled: s.time_delay_enabled ?? false,
+          time_delay_minutes: s.time_delay_minutes ?? 0,
+          speaker_mode_step: s.speaker_mode_step || "none",
+          speaker_name_custom: s.speaker_name_custom || null,
+          speaker_title: s.speaker_title || null,
+          speaker_bio: s.speaker_bio || null,
+          speaker_photo_url_custom: s.speaker_photo_url_custom || null,
+          video_topics_step_enabled: s.video_topics_step_enabled ?? false,
+          video_topics_step: s.video_topics_step || [],
         }));
         const { error: stepErr } = await supabase.from("funnel_steps").insert(stepsPayload);
         if (stepErr) throw stepErr;
@@ -399,7 +438,7 @@ const FunnelEditor = () => {
 
   // ── Render helper for common steps ──
   // Single: 0=Controls, 1=Speaker, 2=VideoTopics, 3=LeadForm, 4=Whatsapp, 5=Payment, 6=Privacy, 7=Publish
-  // Multi:  0=Controls, 1=Speaker, 2=VideoTopics, 3=Whatsapp, 4=Payment, 5=Privacy, 6=Publish
+  // Multi:  0=Controls, 1=Speaker, 2=VideoTopics, 3=Whatsapp, 4=Privacy, 5=Publish (Payment hidden)
   const renderCommonStep = (offset: number) => {
     const idx = wizardStep - offset;
     if (idx === 0) return renderControlsStep();
@@ -407,9 +446,9 @@ const FunnelEditor = () => {
     if (idx === 2) return renderVideoTopicsStep();
     if (!isMulti && idx === 3) return renderLeadFormStep();
     const whatsappIdx = isMulti ? 3 : 4;
-    const paymentIdx = isMulti ? 4 : 5;
-    const privacyIdx = isMulti ? 5 : 6;
-    const publishIdx = isMulti ? 6 : 7;
+    const paymentIdx = isMulti ? -1 : 5; // Payment hidden for multi
+    const privacyIdx = isMulti ? 4 : 6;
+    const publishIdx = isMulti ? 5 : 7;
     if (idx === whatsappIdx) return renderWhatsappStep();
     if (idx === paymentIdx) return renderPaymentStep();
     if (idx === privacyIdx) return renderPrivacyStep();
@@ -605,15 +644,34 @@ const FunnelEditor = () => {
                       </Button>
                     </div>
 
-                    {/* Bottom row: type badge + unlock rule + actions */}
+                    {/* Bottom row: type badge + unlock rule + new badges + actions */}
                     <div className="flex items-center justify-between pl-[52px]">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-muted text-muted-foreground">
                           {meta.label}
                         </span>
                         {idx > 0 && (
-                          <span className="text-[12px] text-muted-foreground flex items-center gap-1">
-                            <Lock size={9} /> {UNLOCK_LABELS[fs.unlock_rule_type] || "Auto"}
+                          <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-muted text-muted-foreground flex items-center gap-1">
+                            <Lock size={9} />
+                            {fs.unlock_condition === "full_watch" ? "Full watch" :
+                             fs.unlock_condition === "percentage" ? `${fs.unlock_percentage || 80}%` :
+                             fs.unlock_condition === "time_spent" ? `${fs.unlock_percentage || 10} min` :
+                             UNLOCK_LABELS[fs.unlock_rule_type] || "Auto"}
+                          </span>
+                        )}
+                        {fs.time_delay_enabled && (fs.time_delay_minutes || 0) > 0 && (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-amber-500/10 text-amber-600 flex items-center gap-1">
+                            ⏱ +{fs.time_delay_minutes} min delay
+                          </span>
+                        )}
+                        {fs.speaker_mode_step && fs.speaker_mode_step !== "none" && (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-blue-500/10 text-blue-400 flex items-center gap-1">
+                            👤 {fs.speaker_mode_step === "account" ? "Account" : "Custom"}
+                          </span>
+                        )}
+                        {fs.video_topics_step_enabled && (fs.video_topics_step?.length || 0) > 0 && (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full font-medium bg-emerald-500/10 text-emerald-400 flex items-center gap-1">
+                            📋 {fs.video_topics_step?.length} topics
                           </span>
                         )}
                       </div>
@@ -798,93 +856,122 @@ const FunnelEditor = () => {
       <h2 className="text-lg font-heading font-semibold">Speaker</h2>
       <p className="text-sm text-muted-foreground">Choose how the speaker is shown on your funnel page.</p>
       <div className="space-y-5 mt-4">
-        {/* Mode selector */}
-        <div className="flex rounded-xl border border-border overflow-hidden">
-          {(["none", "account", "custom"] as const).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => update("speaker_mode", mode)}
-              className={`flex-1 py-2.5 text-sm font-semibold transition-all ${
-                funnel.speaker_mode === mode
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {mode === "none" ? "None" : mode === "account" ? "Account" : "Custom"}
-            </button>
-          ))}
-        </div>
-
-        {funnel.speaker_mode === "none" && (
-          <p className="text-sm text-muted-foreground p-4 bg-muted/50 rounded-xl">No speaker info will be shown on the funnel page.</p>
-        )}
-
-        {funnel.speaker_mode === "account" && (
+        {/* Scope selector — only for multi-step */}
+        {isMulti && (
           <div className="p-4 bg-muted/50 rounded-xl space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center overflow-hidden ring-2 ring-primary/20 shrink-0">
-                {userProfile?.avatar_url ? (
-                  <img src={userProfile.avatar_url} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-primary font-heading font-bold text-sm">{userProfile?.full_name?.charAt(0)?.toUpperCase() || "?"}</span>
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="font-heading font-bold text-sm truncate">{userProfile?.full_name || "Your Name"}</p>
-                {userProfile?.bio && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{userProfile.bio}</p>}
-              </div>
+            <Label className="font-semibold">Speaker Mode</Label>
+            <div className="flex rounded-xl border border-border overflow-hidden">
+              {(["global", "per_step"] as const).map((scope) => (
+                <button
+                  key={scope}
+                  onClick={() => update("speaker_scope", scope)}
+                  className={`flex-1 py-2.5 text-sm font-semibold transition-all ${
+                    funnel.speaker_scope === scope
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {scope === "global" ? "🌍 One speaker for all steps" : "🎯 Different per step"}
+                </button>
+              ))}
             </div>
-            <p className="text-xs text-muted-foreground">This is pulled from your account profile. Update it in Profile Settings.</p>
+            {funnel.speaker_scope === "per_step" && (
+              <p className="text-sm text-muted-foreground">Speaker settings are now managed inside each step. Go to <strong>Build Journey → Edit any step → Speaker</strong> section.</p>
+            )}
           </div>
         )}
 
-        {funnel.speaker_mode === "custom" && (
-          <div className="space-y-4">
-            <SpeakerPhotoUpload
-              value={funnel.speaker_photo_url}
-              onChange={(url) => update("speaker_photo_url", url)}
-            />
-            <div>
-              <Label className="text-sm font-medium">Speaker Name</Label>
-              <Input
-                value={funnel.speaker_name}
-                onChange={(e) => update("speaker_name", e.target.value.slice(0, 60))}
-                placeholder="e.g. Anmol Kapoor"
-                className="mt-1.5 bg-muted border-border"
-                maxLength={60}
-              />
-              <p className="text-xs text-muted-foreground mt-1">{funnel.speaker_name.length}/60</p>
+        {/* Global speaker settings — shown when scope is global (or single mode) */}
+        {(funnel.speaker_scope === "global" || !isMulti) && (
+          <>
+            {/* Mode selector */}
+            <div className="flex rounded-xl border border-border overflow-hidden">
+              {(["none", "account", "custom"] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => update("speaker_mode", mode)}
+                  className={`flex-1 py-2.5 text-sm font-semibold transition-all ${
+                    funnel.speaker_mode === mode
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {mode === "none" ? "None" : mode === "account" ? "Account" : "Custom"}
+                </button>
+              ))}
             </div>
-            <div>
-              <Label className="text-sm font-medium">About Speaker</Label>
-              <Textarea
-                value={funnel.speaker_about}
-                onChange={(e) => update("speaker_about", e.target.value.slice(0, 200))}
-                placeholder="e.g. Network Marketing Leader | Diamond Director at Forever Living"
-                className="mt-1.5 bg-muted border-border"
-                rows={3}
-                maxLength={200}
-              />
-              <p className="text-xs text-muted-foreground mt-1">{funnel.speaker_about.length}/200</p>
-            </div>
-            {/* Preview */}
-            <div className="pt-3 border-t border-border">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Preview</p>
-              <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
-                <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center overflow-hidden ring-2 ring-primary/20 shrink-0">
-                  {funnel.speaker_photo_url ? (
-                    <img src={funnel.speaker_photo_url} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-primary font-heading font-bold text-sm">{funnel.speaker_name?.charAt(0)?.toUpperCase() || "?"}</span>
-                  )}
+
+            {funnel.speaker_mode === "none" && (
+              <p className="text-sm text-muted-foreground p-4 bg-muted/50 rounded-xl">No speaker info will be shown on the funnel page.</p>
+            )}
+
+            {funnel.speaker_mode === "account" && (
+              <div className="p-4 bg-muted/50 rounded-xl space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center overflow-hidden ring-2 ring-primary/20 shrink-0">
+                    {userProfile?.avatar_url ? (
+                      <img src={userProfile.avatar_url} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-primary font-heading font-bold text-sm">{userProfile?.full_name?.charAt(0)?.toUpperCase() || "?"}</span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-heading font-bold text-sm truncate">{userProfile?.full_name || "Your Name"}</p>
+                    {userProfile?.bio && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{userProfile.bio}</p>}
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="font-heading font-bold text-sm">{funnel.speaker_name || "Speaker Name"}</p>
-                  {funnel.speaker_about && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{funnel.speaker_about}</p>}
+                <p className="text-xs text-muted-foreground">This is pulled from your account profile. Update it in Profile Settings.</p>
+              </div>
+            )}
+
+            {funnel.speaker_mode === "custom" && (
+              <div className="space-y-4">
+                <SpeakerPhotoUpload
+                  value={funnel.speaker_photo_url}
+                  onChange={(url) => update("speaker_photo_url", url)}
+                />
+                <div>
+                  <Label className="text-sm font-medium">Speaker Name</Label>
+                  <Input
+                    value={funnel.speaker_name}
+                    onChange={(e) => update("speaker_name", e.target.value.slice(0, 60))}
+                    placeholder="e.g. Anmol Kapoor"
+                    className="mt-1.5 bg-muted border-border"
+                    maxLength={60}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">{funnel.speaker_name.length}/60</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium">About Speaker</Label>
+                  <Textarea
+                    value={funnel.speaker_about}
+                    onChange={(e) => update("speaker_about", e.target.value.slice(0, 200))}
+                    placeholder="e.g. Network Marketing Leader | Diamond Director at Forever Living"
+                    className="mt-1.5 bg-muted border-border"
+                    rows={3}
+                    maxLength={200}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">{funnel.speaker_about.length}/200</p>
+                </div>
+                <div className="pt-3 border-t border-border">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Preview</p>
+                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
+                    <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center overflow-hidden ring-2 ring-primary/20 shrink-0">
+                      {funnel.speaker_photo_url ? (
+                        <img src={funnel.speaker_photo_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-primary font-heading font-bold text-sm">{funnel.speaker_name?.charAt(0)?.toUpperCase() || "?"}</span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-heading font-bold text-sm">{funnel.speaker_name || "Speaker Name"}</p>
+                      {funnel.speaker_about && <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{funnel.speaker_about}</p>}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            )}
+          </>
         )}
       </div>
     </>
@@ -909,7 +996,35 @@ const FunnelEditor = () => {
         <h2 className="text-lg font-heading font-semibold">Video Topics</h2>
         <p className="text-sm text-muted-foreground">Add key points covered in your video. These will appear on your funnel page.</p>
         <div className="space-y-5 mt-4">
-          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
+          {/* Scope selector — only for multi-step */}
+          {isMulti && (
+            <div className="p-4 bg-muted/50 rounded-xl space-y-3">
+              <Label className="font-semibold">Topics Mode</Label>
+              <div className="flex rounded-xl border border-border overflow-hidden">
+                {(["global", "per_step"] as const).map((scope) => (
+                  <button
+                    key={scope}
+                    onClick={() => update("video_topics_scope", scope)}
+                    className={`flex-1 py-2.5 text-sm font-semibold transition-all ${
+                      funnel.video_topics_scope === scope
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {scope === "global" ? "🌍 Same for all steps" : "🎯 Different per step"}
+                  </button>
+                ))}
+              </div>
+              {funnel.video_topics_scope === "per_step" && (
+                <p className="text-sm text-muted-foreground">Video topics are now managed inside each step. Go to <strong>Build Journey → Edit any step → Key Points</strong> section.</p>
+              )}
+            </div>
+          )}
+
+          {/* Global topics — shown when scope is global (or single mode) */}
+          {(funnel.video_topics_scope === "global" || !isMulti) && (
+            <>
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
             <div>
               <Label className="font-semibold">Show Video Topics on funnel page</Label>
               <p className="text-xs text-muted-foreground mt-0.5">Display key points below the video</p>
@@ -976,6 +1091,8 @@ const FunnelEditor = () => {
                 </div>
               )}
             </div>
+          )}
+            </>
           )}
         </div>
       </>
