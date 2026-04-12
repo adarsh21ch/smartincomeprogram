@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Logo } from "@/components/landing/Logo";
-import { Info, Target, BookOpen, User, LogOut, Shield, Sun, Moon } from "lucide-react";
+import { House, Target, BookOpen, User, LogOut, Shield, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const tabs = [
-  { icon: Info, label: "Home", path: "/home" },
+  { icon: House, label: "Home", path: "/home" },
   { icon: Target, label: "Program", path: "/home/program" },
   { icon: BookOpen, label: "Courses", path: "/home/courses" },
   { icon: User, label: "Profile", path: "/home/profile" },
