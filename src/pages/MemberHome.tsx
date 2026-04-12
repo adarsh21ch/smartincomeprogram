@@ -36,18 +36,36 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
   const { data: content, isLoading: contentLoading, error: contentFetchError } = useQuery({
     queryKey: ["member-content", "program", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("get-member-content", {
-        body: { type: "program" },
-      });
-      if (error) {
-        // If 401/session expired, sign out and redirect
-        if (error.message?.includes("401") || error.message?.includes("Unauthorized")) {
+      // Get fresh session token
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      if (!accessToken) {
+        await supabase.auth.signOut();
+        throw new Error("SESSION_EXPIRED");
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-member-content`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
+          body: JSON.stringify({ type: "program" }),
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
           await supabase.auth.signOut();
           throw new Error("SESSION_EXPIRED");
         }
-        throw error;
+        throw new Error(`Function error: ${response.status}`);
       }
-      return data as {
+
+      return (await response.json()) as {
         funnel: any;
         creatorProfile?: any;
         steps: RichStepData[];
@@ -58,7 +76,6 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
     },
     enabled: !!user && tab !== "courses",
     retry: (failureCount, error) => {
-      // Don't retry on session expired
       if (error?.message === "SESSION_EXPIRED") return false;
       return failureCount < 2;
     },
