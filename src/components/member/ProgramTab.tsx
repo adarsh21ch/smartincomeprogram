@@ -1069,6 +1069,8 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
         countdownUnlocks={countdownUnlocks}
         stepStates={stepStates}
         onStepClick={handleStepClick}
+      />
+
       {/* Active step content */}
       <AnimatePresence mode="wait">
         <motion.div
