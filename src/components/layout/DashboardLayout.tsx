@@ -156,7 +156,7 @@ export const DashboardLayout = ({ children }: { children: React.ReactNode }) => 
           </div>
         </div>
 
-        <div className="flex-1 p-4 md:p-8 pb-20 md:pb-8 overflow-auto">{children}</div>
+        <div className="flex-1 p-4 md:p-8 pb-20 md:pb-8 overflow-x-hidden overflow-y-auto">{children}</div>
       </main>
 
       {/* Mobile bottom tab bar */}

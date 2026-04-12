@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Play, Pause, Volume2, VolumeX, Maximize, X, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { UnmutePill } from "./UnmutePill";
 
 export interface VideoPlayerProgress {
   currentTime: number;
@@ -24,6 +25,7 @@ interface VideoPlayerProps {
   onComplete: () => void;
   onClose: () => void;
   hideHeader?: boolean;
+  autoPlayMuted?: boolean;
 }
 
 export const VideoPlayer = ({
@@ -39,15 +41,17 @@ export const VideoPlayer = ({
   onComplete,
   onClose,
   hideHeader = false,
+  autoPlayMuted = false,
 }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(durationSeconds || 0);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(autoPlayMuted);
   const [speed, setSpeed] = useState(1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [hasCompleted, setHasCompleted] = useState(false);
+  const [showUnmutePill, setShowUnmutePill] = useState(false);
   const progressSaveRef = useRef<NodeJS.Timeout>();
   const maxWatchedSecondsRef = useRef(initialPosition);
   const timeSpentSecondsRef = useRef(initialTimeSpentSeconds);
@@ -133,6 +137,20 @@ export const VideoPlayer = ({
         video.currentTime = initialPosition;
       }
       emitProgress(video.currentTime, video.duration);
+
+      // Auto-play muted if requested
+      if (autoPlayMuted) {
+        video.muted = true;
+        video.playsInline = true;
+        video.play().then(() => {
+          setIsPlaying(true);
+          setShowUnmutePill(true);
+          // Track as currently playing globally
+          (window as any).__playingVideo = video;
+        }).catch(() => {
+          // Autoplay blocked — user will click play manually
+        });
+      }
     };
 
     const handleTimeUpdate = () => {
@@ -168,6 +186,12 @@ export const VideoPlayer = ({
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
+      // Pause any other playing video globally
+      const prev = (window as any).__playingVideo;
+      if (prev && prev !== video) {
+        prev.pause();
+      }
+      (window as any).__playingVideo = video;
       video.play();
       setIsPlaying(true);
     } else {
@@ -245,6 +269,18 @@ export const VideoPlayer = ({
             setIsPlaying(false);
             const video = videoRef.current;
             if (video) saveProgress(video.currentTime, video.duration);
+          }}
+        />
+        {/* Unmute pill */}
+        <UnmutePill
+          visible={showUnmutePill && isMuted}
+          onUnmute={() => {
+            const video = videoRef.current;
+            if (video) {
+              video.muted = false;
+              setIsMuted(false);
+            }
+            setShowUnmutePill(false);
           }}
         />
         {!isPlaying && (

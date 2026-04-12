@@ -1,13 +1,14 @@
 import { useAuth } from "@/hooks/useAuth";
-import { Play, Flame, Calendar, TrendingUp } from "lucide-react";
+import { Play, Flame, TrendingUp, ChevronRight, CheckCircle2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { StepData } from "@/components/member/StepCard";
 import { motion } from "framer-motion";
+import { brand } from "@/config/brand";
 
 interface AboutTabProps {
   settings: any;
   content?: {
-    funnel: { id: string; name: string; description?: string; speaker_name?: string; speaker_photo_url?: string } | null;
+    funnel: { id: string; name: string; description?: string; speaker_name?: string; speaker_photo_url?: string; speaker_about?: string; video_topics_enabled?: boolean; video_topics?: Array<{ icon: string; text: string }> } | null;
     steps: StepData[];
     overall_completion_percent: number;
     streak: number;
@@ -29,16 +30,6 @@ export const AboutTab = ({ settings, content, onContinue }: AboutTabProps) => {
   // Find next video to watch
   const nextStep = steps.find((s) => !s.is_locked && !s.progress.is_completed);
 
-  // Level badge
-  const levelBadge =
-    completionPct === 100
-      ? "🏆 Program Complete"
-      : completionPct >= 60
-      ? "🚀 Making Progress"
-      : completionPct >= 20
-      ? "📈 Getting Started"
-      : "🌱 Just Joined";
-
   // Animated progress ring
   const radius = 44;
   const circumference = 2 * Math.PI * radius;
@@ -50,6 +41,31 @@ export const AboutTab = ({ settings, content, onContinue }: AboutTabProps) => {
     return mins > 0 ? `${mins} min` : "< 1 min";
   };
 
+  // Collect video topics
+  const videoTopics: Array<{ icon: string; text: string }> = [];
+  if (content?.funnel?.video_topics_enabled && content.funnel.video_topics?.length) {
+    videoTopics.push(...content.funnel.video_topics);
+  }
+  // Also collect per-step topics
+  steps.forEach((s: any) => {
+    if (s.video_topics_step_enabled && s.video_topics_step?.length) {
+      s.video_topics_step.forEach((t: any) => {
+        if (!videoTopics.find((vt) => vt.text === t.text)) videoTopics.push(t);
+      });
+    }
+  });
+
+  const lastActiveText = content?.last_active
+    ? (() => {
+        const d = new Date(content.last_active);
+        const now = new Date();
+        const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
+        if (diffDays === 0) return "Today";
+        if (diffDays === 1) return "Yesterday";
+        return `${diffDays} days ago`;
+      })()
+    : null;
+
   return (
     <div className="space-y-5">
       {/* Welcome Banner */}
@@ -57,19 +73,19 @@ export const AboutTab = ({ settings, content, onContinue }: AboutTabProps) => {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="rounded-2xl bg-gradient-to-br from-primary/10 via-card to-card border border-primary/20 p-5"
+        className="rounded-2xl border-l-[3px] border-l-primary border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-card p-5"
       >
         <h1 className="text-xl font-heading font-bold text-foreground">
-          Welcome back, {firstName}! 👋
+          👋 Welcome, {firstName}!
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {settings?.welcome_tagline || "Your success journey continues today."}
+          {settings?.welcome_tagline || "Your journey to building income starts here."}
         </p>
-        <div className="flex items-center gap-2 mt-3">
-          <span className="text-xs px-3 py-1 rounded-full bg-primary/10 text-primary font-medium">
-            {levelBadge}
-          </span>
-        </div>
+        {onContinue && (
+          <button onClick={onContinue} className="mt-3 text-xs text-primary font-medium flex items-center gap-1 hover:underline">
+            Go to Program <ChevronRight size={12} />
+          </button>
+        )}
       </motion.div>
 
       {/* Progress Ring + Stats */}
@@ -80,6 +96,7 @@ export const AboutTab = ({ settings, content, onContinue }: AboutTabProps) => {
           transition={{ duration: 0.4, delay: 0.1 }}
           className="rounded-2xl border border-border bg-card p-5"
         >
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Your Progress</p>
           <div className="flex items-center gap-6">
             {/* Ring */}
             <div className="relative shrink-0">
@@ -106,24 +123,62 @@ export const AboutTab = ({ settings, content, onContinue }: AboutTabProps) => {
             </div>
 
             {/* Stats */}
-            <div className="flex-1 grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-muted/50 p-3 text-center">
-                <TrendingUp size={16} className="mx-auto text-primary mb-1" />
-                <p className="text-lg font-bold text-foreground">{completedSteps}/{totalSteps}</p>
-                <p className="text-[10px] text-muted-foreground">Steps Done</p>
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <TrendingUp size={14} className="text-primary" />
+                <span className="text-sm text-foreground font-medium">{completedSteps} of {totalSteps} steps</span>
               </div>
-              <div className="rounded-xl bg-muted/50 p-3 text-center">
-                <Flame size={16} className="mx-auto text-orange-400 mb-1" />
-                <p className="text-lg font-bold text-foreground">{streak}</p>
-                <p className="text-[10px] text-muted-foreground">Day Streak</p>
-              </div>
+              {lastActiveText && (
+                <p className="text-xs text-muted-foreground">Last active: {lastActiveText}</p>
+              )}
+              {streak > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <Flame size={14} className="text-orange-400" />
+                  <span className="text-xs text-foreground font-medium">{streak} day streak</span>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Continue button */}
+          {nextStep && onContinue && (
+            <button
+              onClick={onContinue}
+              className="mt-4 w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-1"
+            >
+              Continue Program <ChevronRight size={14} />
+            </button>
+          )}
         </motion.div>
       )}
 
-      {/* Program Overview */}
-      {content?.funnel && (
+      {/* What You'll Learn */}
+      {videoTopics.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="rounded-2xl border border-border bg-card p-5 space-y-3"
+        >
+          <h2 className="text-sm font-heading font-semibold text-foreground">What You'll Learn</h2>
+          <ul className="space-y-2">
+            {videoTopics.slice(0, 8).map((t, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-foreground">
+                <CheckCircle2 size={14} className="text-primary mt-0.5 shrink-0" />
+                <span>{t.text}</span>
+              </li>
+            ))}
+          </ul>
+          {videoTopics.length > 8 && (
+            <button onClick={onContinue} className="text-xs text-primary font-medium hover:underline">
+              See all {videoTopics.length} topics →
+            </button>
+          )}
+        </motion.div>
+      )}
+
+      {/* About the Program */}
+      {content?.funnel?.description && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -131,46 +186,10 @@ export const AboutTab = ({ settings, content, onContinue }: AboutTabProps) => {
           className="rounded-2xl border border-border bg-card p-5 space-y-3"
         >
           <h2 className="text-sm font-heading font-semibold text-foreground">{content.funnel.name}</h2>
-          {content.funnel.description && (
-            <p className="text-xs text-muted-foreground leading-relaxed">{content.funnel.description}</p>
-          )}
+          <p className="text-xs text-muted-foreground leading-relaxed">{content.funnel.description}</p>
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span>📹 {totalSteps} videos</span>
             {content.funnel.speaker_name && <span>👤 {content.funnel.speaker_name}</span>}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Continue Watching */}
-      {nextStep && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-          className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 to-card p-5"
-        >
-          <p className="text-[10px] uppercase tracking-widest text-primary font-semibold mb-2">Continue Watching</p>
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <Play size={24} className="text-primary ml-0.5" fill="currentColor" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-semibold text-foreground truncate">{nextStep.title}</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {nextStep.progress.watch_percent > 0
-                  ? `${nextStep.progress.watch_percent}% watched`
-                  : formatDuration(nextStep.duration_seconds) || "Ready to watch"}
-              </p>
-              {nextStep.progress.watch_percent > 0 && (
-                <Progress value={nextStep.progress.watch_percent} className="h-1 mt-1.5" />
-              )}
-            </div>
-            <button
-              onClick={onContinue}
-              className="shrink-0 px-4 py-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors"
-            >
-              {nextStep.progress.watch_percent > 0 ? "Resume" : "Start"} →
-            </button>
           </div>
         </motion.div>
       )}
@@ -180,7 +199,7 @@ export const AboutTab = ({ settings, content, onContinue }: AboutTabProps) => {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.4 }}
+          transition={{ duration: 0.4, delay: 0.25 }}
           className="rounded-2xl border border-border bg-card p-5"
         >
           <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-3">Your Mentor</p>
@@ -198,11 +217,21 @@ export const AboutTab = ({ settings, content, onContinue }: AboutTabProps) => {
             )}
             <div>
               <h3 className="font-heading font-semibold text-foreground">{content.funnel.speaker_name}</h3>
-              <p className="text-xs text-muted-foreground">Program Creator</p>
+              <p className="text-xs text-primary">Program Creator</p>
+              {content.funnel.speaker_about && (
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{content.funnel.speaker_about}</p>
+              )}
             </div>
           </div>
         </motion.div>
       )}
+
+      {/* Footer */}
+      <div className="pt-2 pb-4 text-center">
+        <p className="text-[10px] text-muted-foreground/50">
+          {brand.footer.copyright} · Powered by Nevorai
+        </p>
+      </div>
     </div>
   );
 };

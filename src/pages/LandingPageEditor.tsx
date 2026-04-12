@@ -285,8 +285,19 @@ const LandingPageEditor = () => {
         <div className="p-4 bg-muted/50 rounded-xl space-y-3">
           <Label className="font-semibold">Theme Color</Label>
           <div className="flex items-center gap-3">
-            <input type="color" value={form.theme_color} onChange={(e) => updateField("theme_color", e.target.value)} className="w-10 h-10 rounded border cursor-pointer" />
-            <Input value={form.theme_color} onChange={(e) => updateField("theme_color", e.target.value)} className="w-32 bg-muted border-border" />
+            <input type="color" value={form.theme_color || "#D4AF37"} onChange={(e) => updateField("theme_color", e.target.value)} className="w-10 h-10 rounded border cursor-pointer" />
+            <Input value={form.theme_color || "#D4AF37"} onChange={(e) => updateField("theme_color", e.target.value)} className="w-32 bg-muted border-border" />
+          </div>
+          <div className="flex items-center gap-2 mt-2">
+            {["#D4AF37", "#FFFFFF", "#EF4444", "#3B82F6", "#8B5CF6"].map((c) => (
+              <button
+                key={c}
+                onClick={() => updateField("theme_color", c)}
+                className={`w-7 h-7 rounded-full border-2 transition-all ${form.theme_color === c ? "border-foreground scale-110" : "border-border"}`}
+                style={{ background: c }}
+                title={c}
+              />
+            ))}
           </div>
         </div>
 
@@ -944,11 +955,11 @@ const LandingPageEditor = () => {
               </div>
             </div>
 
-            {/* Mobile compact step selector */}
-            <div className="lg:hidden grid grid-cols-4 sm:grid-cols-5 gap-1.5 pb-3 mb-3">
+            {/* Mobile compact step selector — 3-column grid */}
+            <div className="lg:hidden grid grid-cols-3 sm:grid-cols-4 gap-1.5 pb-3 mb-3">
               {WIZARD_STEPS.map((s, i) => (
                 <button key={i} onClick={() => setWizardStep(i)}
-                  className={`flex flex-col items-center gap-1 px-1.5 py-2 rounded-lg text-[10px] font-semibold transition-all ${
+                  className={`flex flex-col items-center gap-1 px-1 py-2 rounded-lg text-[10px] font-semibold transition-all min-w-0 ${
                     wizardStep === i
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted/60 text-muted-foreground"
