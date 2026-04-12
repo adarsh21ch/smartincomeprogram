@@ -96,6 +96,7 @@ export const VideoPlayer = ({
           time_spent_seconds: timeSpentSecondsRef.current,
           status: isCompleted ? "completed" : watchedPercent > 0 ? "in_progress" : "unlocked",
           completed_at: isCompleted ? new Date().toISOString() : null,
+          permanently_unlocked: isCompleted ? true : undefined,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "funnel_id,funnel_step_id,session_id", ignoreDuplicates: false }
