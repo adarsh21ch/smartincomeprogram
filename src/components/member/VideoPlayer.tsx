@@ -25,6 +25,7 @@ interface VideoPlayerProps {
   onComplete: () => void;
   onClose: () => void;
   hideHeader?: boolean;
+  autoPlayMuted?: boolean;
 }
 
 export const VideoPlayer = ({
