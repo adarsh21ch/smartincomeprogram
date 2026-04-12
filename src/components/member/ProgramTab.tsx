@@ -238,7 +238,7 @@ const writeResumeState = (key: string, activeStepId: string | null, progress: Re
   } catch { /* quota exceeded — ignore */ }
 };
 
-/* ─── Scrollable Step Strip ─── */
+/* ─── Compact Scrollable Step Strip ─── */
 const StepBar = ({
   steps,
   activeIndex,
@@ -257,77 +257,67 @@ const StepBar = ({
   }>;
   onStepClick: (index: number) => void;
 }) => {
-  const shouldScroll = steps.length > 4;
-
   return (
-    <div className="overflow-x-auto scrollbar-hide">
-      <div className={cn("flex gap-2 pb-1", shouldScroll ? "min-w-max snap-x snap-mandatory" : "w-full") }>
-      {steps.map((step, i) => {
-        const state = stepStates[i];
-        const isCompleted = state.completed;
-        const isActive = i === activeIndex;
-        const isLocked = !state.accessible && !isCompleted;
-        const hasCountdown = state.hasCountdown || !!countdownUnlocks[step.id];
+    <div className="overflow-x-auto scrollbar-hide" style={{ height: 80 }}>
+      <div className="flex gap-2 pb-1 h-full items-center" style={{ minWidth: "max-content" }}>
+        {steps.map((step, i) => {
+          const state = stepStates[i];
+          const isCompleted = state.completed;
+          const isActive = i === activeIndex;
+          const isLocked = !state.accessible && !isCompleted;
+          const hasCountdown = state.hasCountdown || !!countdownUnlocks[step.id];
 
-        return (
-          <button
-            key={step.id}
-            onClick={() => onStepClick(i)}
-            className={cn(
-              "snap-start rounded-2xl border px-3 py-3 text-left transition-all",
-              shouldScroll ? "w-[112px] flex-none sm:w-[128px]" : "min-w-0 flex-1",
-              isActive && "border-primary/40 bg-primary/10 shadow-sm shadow-primary/10",
-              !isActive && isCompleted && "border-primary/20 bg-primary/5",
-              !isActive && !isCompleted && hasCountdown && "border-warning/30 bg-warning/10",
-              !isActive && !isCompleted && !hasCountdown && state.accessible && "border-border/60 bg-card/70",
-              isLocked && "border-border/40 bg-muted/20 opacity-60",
-            )}
-            disabled={isLocked && !hasCountdown}
-          >
-            <div className="flex items-start gap-2">
-              <div
-                className={cn(
-                  "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-[11px] font-bold",
-                  isCompleted && "border-primary bg-primary text-primary-foreground",
-                  !isCompleted && isActive && "border-primary bg-primary/10 text-primary",
-                  !isCompleted && !isActive && hasCountdown && "border-warning/40 bg-warning/10 text-warning",
-                  !isCompleted && !isActive && !hasCountdown && state.accessible && "border-border bg-muted/40 text-foreground",
-                  isLocked && "border-border/50 bg-muted/30 text-muted-foreground",
-                )}
-              >
-                {isCompleted ? <Check size={14} strokeWidth={3} /> : hasCountdown ? <Timer size={13} /> : isLocked ? <Lock size={12} /> : i + 1}
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-                  Step {i + 1}
-                </p>
-                <p className={cn(
-                  "mt-1 truncate text-sm font-semibold",
-                  isActive ? "text-foreground" : isLocked ? "text-muted-foreground" : "text-foreground/90",
-                )}>
-                  {step.title || `Step ${i + 1}`}
-                </p>
-                <p className={cn(
-                  "mt-1 text-[11px]",
-                  isCompleted && "text-primary",
-                  !isCompleted && hasCountdown && "text-warning",
-                  !isCompleted && !hasCountdown && state.accessible && "text-muted-foreground",
-                  isLocked && "text-muted-foreground/70",
-                )}>
-                  {isCompleted
-                    ? "Completed"
-                    : hasCountdown
-                      ? "Timer active"
-                      : state.accessible
-                        ? state.watchPercent > 0 ? `${Math.floor(state.watchPercent)}% watched` : "Ready to play"
-                        : "Locked"}
-                </p>
-              </div>
-            </div>
-          </button>
-        );
-      })}
+          return (
+            <button
+              key={step.id}
+              onClick={() => onStepClick(i)}
+              className={cn(
+                "rounded-xl border transition-all flex flex-col items-center justify-center gap-1 flex-shrink-0",
+                isActive ? "border-primary/40 bg-primary/10 items-start px-3 py-2" : "border-border/40 bg-card/50 px-2 py-2",
+                isLocked && !hasCountdown && "opacity-50 cursor-not-allowed",
+              )}
+              style={{
+                height: 64,
+                minWidth: isActive ? 140 : 72,
+              }}
+              disabled={isLocked && !hasCountdown}
+            >
+              {isActive ? (
+                <>
+                  <div className="flex items-center gap-2 w-full">
+                    <div className={cn(
+                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
+                      isCompleted ? "bg-primary text-primary-foreground" : "border-2 border-primary bg-primary/10 text-primary",
+                    )}>
+                      {isCompleted ? <Check size={12} strokeWidth={3} /> : i + 1}
+                    </div>
+                    <p className="text-xs font-semibold text-foreground truncate flex-1 text-left">
+                      {step.title || `Step ${i + 1}`}
+                    </p>
+                  </div>
+                  <p className={cn(
+                    "text-[10px] pl-9",
+                    isCompleted ? "text-primary" : hasCountdown ? "text-warning" : "text-muted-foreground",
+                  )}>
+                    {isCompleted ? "Completed" : hasCountdown ? "Timer" : state.watchPercent > 0 ? `${Math.floor(state.watchPercent)}%` : "Playing"}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className={cn(
+                    "flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold",
+                    isCompleted ? "bg-primary text-primary-foreground" : hasCountdown ? "border border-warning/40 bg-warning/10 text-warning" : isLocked ? "border border-border/50 bg-muted/30 text-muted-foreground" : "border border-border bg-muted/40 text-foreground",
+                  )}>
+                    {isCompleted ? <Check size={12} strokeWidth={3} /> : hasCountdown ? <Timer size={11} /> : isLocked ? <Lock size={10} /> : i + 1}
+                  </div>
+                  <p className="text-[9px] text-muted-foreground truncate max-w-[56px] text-center">
+                    {(step.title || `S${i + 1}`).slice(0, 8)}
+                  </p>
+                </>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
