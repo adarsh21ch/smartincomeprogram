@@ -137,6 +137,20 @@ export const VideoPlayer = ({
         video.currentTime = initialPosition;
       }
       emitProgress(video.currentTime, video.duration);
+
+      // Auto-play muted if requested
+      if (autoPlayMuted) {
+        video.muted = true;
+        video.playsInline = true;
+        video.play().then(() => {
+          setIsPlaying(true);
+          setShowUnmutePill(true);
+          // Track as currently playing globally
+          (window as any).__playingVideo = video;
+        }).catch(() => {
+          // Autoplay blocked — user will click play manually
+        });
+      }
     };
 
     const handleTimeUpdate = () => {
