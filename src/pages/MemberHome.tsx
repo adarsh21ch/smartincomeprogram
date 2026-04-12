@@ -2,8 +2,9 @@ import { useState } from "react";
 import { MemberLayout } from "@/components/layout/MemberLayout";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertTriangle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 import { AboutTab } from "@/components/member/AboutTab";
 import { CoursesTab } from "@/components/member/CoursesTab";
 import { ProfileTab } from "@/components/member/ProfileTab";
@@ -38,7 +39,14 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
       const { data, error } = await supabase.functions.invoke("get-member-content", {
         body: { type: "program" },
       });
-      if (error) throw error;
+      if (error) {
+        // If 401/session expired, sign out and redirect
+        if (error.message?.includes("401") || error.message?.includes("Unauthorized")) {
+          await supabase.auth.signOut();
+          throw new Error("SESSION_EXPIRED");
+        }
+        throw error;
+      }
       return data as {
         funnel: any;
         creatorProfile?: any;
@@ -66,6 +74,7 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
     enabled: tab === "profile" && !!user,
   });
 
+  const contentError = (tab === "about" || tab === "program") ? content === undefined && !contentLoading : false;
   const isLoading = settingsLoading || ((tab === "about" || tab === "program") && contentLoading);
 
   if (isLoading) {
