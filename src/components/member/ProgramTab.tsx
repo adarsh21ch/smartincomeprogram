@@ -507,7 +507,13 @@ const UpNextSection = ({
   if (cond === "time_spent") conditionText = `Spend at least ${nextStep.unlock_percentage || 10} minutes on the current step.`;
 
   return (
-    <div className="rounded-2xl p-4 border border-border/50 bg-muted/10">
+    <div
+      className="rounded-2xl p-4 border mt-4"
+      style={{
+        background: "rgba(212,175,55,0.05)",
+        borderColor: "rgba(212,175,55,0.15)",
+      }}
+    >
       <div className="flex items-center gap-2 mb-2">
         <Lock size={12} className="text-muted-foreground/50" />
         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">Up Next — Locked</p>
@@ -516,19 +522,6 @@ const UpNextSection = ({
         Step {nextIndex + 1}: {nextStep.title}
       </p>
       <p className="text-xs text-muted-foreground mt-1">{conditionText}</p>
-      {requiredPct > 0 && (
-        <div className="mt-2 hidden md:block">
-          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-            <div
-              className="h-full rounded-full bg-primary/60 transition-all duration-500"
-              style={{ width: `${progressToward}%` }}
-            />
-          </div>
-          <p className="text-[11px] text-muted-foreground mt-1">
-            {Math.floor(currentWatchPct)}% / {requiredPct}% needed
-          </p>
-        </div>
-      )}
     </div>
   );
 };
