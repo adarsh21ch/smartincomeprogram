@@ -574,15 +574,22 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
     const progress = getProgressSnapshot(step);
     const countdownAt = countdownUnlocks[step.id] ?? getServerCountdownAt(step);
     const hasCountdown = Boolean(step.is_locked && countdownAt);
+
+    // Check if PREVIOUS step is completed locally — allows optimistic unlock
+    const prevCompleted = index > 0
+      ? (getProgressSnapshot(steps[index - 1]).is_completed)
+      : false;
+    const locallyUnlocked = index === 0 || !step.is_locked || prevCompleted;
+
     const unlockResult: UnlockResult = {
-      unlocked: index === 0 || !step.is_locked,
+      unlocked: locallyUnlocked,
       reason: hasCountdown ? "delay_countdown" : (step.lock_reason ?? undefined),
       unlockAt: countdownAt ?? undefined,
     };
 
     return {
       completed: progress.is_completed,
-      accessible: index === 0 || progress.is_completed || !step.is_locked || hasCountdown,
+      accessible: locallyUnlocked || progress.is_completed || hasCountdown,
       hasCountdown,
       watchPercent: progress.watch_percent,
       unlockResult,
@@ -765,7 +772,7 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
     }
   }, [steps, getProgressSnapshot, onStepComplete, persistConditionMetAt]);
 
-  const handleStepCompleted = useCallback((stepIndex: number) => {
+  const handleStepCompleted = useCallback(async (stepIndex: number) => {
     const step = steps[stepIndex];
     if (!step) return;
 
@@ -783,6 +790,62 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
       [step.id]: completedProgress,
     }));
 
+    // Write completion to DB BEFORE invalidating queries so Home tab gets fresh data
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        const nextStep = steps[stepIndex + 1] ?? null;
+        const conditionMet = nextStep ? meetsUnlockCondition(nextStep, {
+          watchedPercent: completedProgress.watch_percent,
+          timeSpentSeconds: completedProgress.time_spent_seconds,
+          isCompleted: true,
+        }) : false;
+        const unlocksImmediately = conditionMet && !getCountdownUnlockAt(nextStep, completedProgress.condition_met_at ?? completedAt);
+
+        const ops: PromiseLike<unknown>[] = [
+          supabase.from("funnel_step_progress").upsert(
+            {
+              funnel_id: funnel.id,
+              funnel_step_id: step.id,
+              session_id: authUser.id,
+              watched_percentage: completedProgress.watch_percent,
+              last_position_seconds: Math.floor(completedProgress.last_position_seconds),
+              time_spent_seconds: completedProgress.time_spent_seconds,
+              condition_met_at: completedProgress.condition_met_at,
+              status: "completed",
+              completed_at: completedAt,
+              updated_at: completedAt,
+            },
+            { onConflict: "funnel_id,funnel_step_id,session_id", ignoreDuplicates: false }
+          ),
+        ];
+
+        // Permanently unlock next step if condition met immediately
+        if (nextStep && unlocksImmediately) {
+          ops.push(
+            supabase.from("funnel_step_progress").upsert(
+              {
+                funnel_id: funnel.id,
+                funnel_step_id: nextStep.id,
+                session_id: authUser.id,
+                status: "unlocked",
+                permanently_unlocked: true,
+                condition_met_at: completedProgress.condition_met_at ?? completedAt,
+                unlocked_at: completedAt,
+                updated_at: completedAt,
+              },
+              { onConflict: "funnel_id,funnel_step_id,session_id", ignoreDuplicates: false }
+            )
+          );
+        }
+
+        await Promise.all(ops);
+      }
+    } catch {
+      // Silently fail — local state is already updated, server will catch up
+    }
+
+    // Now invalidate queries so Home tab and Program tab get fresh server data
     onStepComplete();
 
     const nextStep = steps[stepIndex + 1];
@@ -803,10 +866,10 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
       return;
     }
 
-    if (!nextStep.is_locked) {
-      setTimeout(() => setActiveStepIndex(stepIndex + 1), 900);
-    }
-  }, [steps, getProgressSnapshot, onStepComplete]);
+    // Auto-advance to next step — use LOCAL knowledge that condition is met,
+    // don't rely on server's is_locked which hasn't refreshed yet
+    setTimeout(() => setActiveStepIndex(stepIndex + 1), 900);
+  }, [steps, getProgressSnapshot, onStepComplete, funnel.id]);
 
   const completedSteps = stepStates.filter((state) => state.completed).length;
   const allComplete = steps.length > 0 && completedSteps === steps.length;
@@ -869,13 +932,15 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
   const activeStep = steps[activeStepIndex];
   const activeProgress = activeStep ? getProgressSnapshot(activeStep) : null;
   const nextStep = activeStepIndex + 1 < steps.length ? steps[activeStepIndex + 1] : null;
-  const activeCountdown = activeStep?.is_locked ? (countdownUnlocks[activeStep.id] ?? getServerCountdownAt(activeStep) ?? null) : null;
+  const activeState = stepStates[activeStepIndex];
+  const activeCountdown = (activeStep?.is_locked && !activeState?.accessible) ? (countdownUnlocks[activeStep.id] ?? getServerCountdownAt(activeStep) ?? null) : null;
   const isTimerBlurActive = !!(activeCountdown && activeStep?.step_type === "video");
 
-  const nextCountdownAt = nextStep?.is_locked ? (countdownUnlocks[nextStep.id] ?? getServerCountdownAt(nextStep) ?? null) : null;
+  const nextStepState = nextStep ? stepStates[activeStepIndex + 1] : null;
+  const nextCountdownAt = nextStepState?.hasCountdown ? (countdownUnlocks[nextStep!.id] ?? getServerCountdownAt(nextStep) ?? null) : null;
   const nextStepUnlock = nextStep
     ? {
-        unlocked: !nextStep.is_locked,
+        unlocked: nextStepState?.accessible && !nextStepState?.hasCountdown,
         reason: nextCountdownAt ? "delay_countdown" : (nextStep.lock_reason ?? undefined),
         unlockAt: nextCountdownAt ?? undefined,
       }
