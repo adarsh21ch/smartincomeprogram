@@ -39,7 +39,7 @@ const AdminProgramPage = () => {
   const [welcomeMessage, setWelcomeMessage] = useState("Welcome back, [name]! 👋");
   const [welcomeTagline, setWelcomeTagline] = useState("Your success journey continues today.");
   const [programTabTitle, setProgramTabTitle] = useState("Your Program");
-  const [coursesTabTitle, setCoursesTabTitle] = useState("Your Courses");
+  const [coursesTabTitle, setCoursesTabTitle] = useState("Trainings");
   const [completionMessage, setCompletionMessage] = useState("Congratulations! You have completed the program.");
   const [certificateSignatory, setCertificateSignatory] = useState("");
 
@@ -114,7 +114,7 @@ const AdminProgramPage = () => {
     setWelcomeMessage((settings as any).welcome_message || "Welcome back, [name]! 👋");
     setWelcomeTagline((settings as any).welcome_tagline || "Your success journey continues today.");
     setProgramTabTitle((settings as any).program_tab_title || "Your Program");
-    setCoursesTabTitle((settings as any).courses_tab_title || "Your Courses");
+    setCoursesTabTitle((settings as any).courses_tab_title || "Trainings");
     setCompletionMessage((settings as any).completion_message || "Congratulations! You have completed the program.");
     setCertificateSignatory((settings as any).certificate_signatory || "");
     setAboutOverview((settings as any).about_overview_text || "");
@@ -436,46 +436,13 @@ const AdminProgramPage = () => {
             </div>
           </div>
 
-          {/* Courses Funnel */}
+          {/* Training Cards */}
           <div className="space-y-3 p-4 rounded-lg border border-border bg-muted/30">
             <div>
-              <Label className="text-sm font-medium">Courses Funnel</Label>
-              <p className="text-xs text-muted-foreground mt-0.5">Content shown in the member's "Courses" tab.</p>
+              <Label className="text-sm font-medium">Training Cards</Label>
+              <p className="text-xs text-muted-foreground mt-0.5">Each training card can have its own funnel. Manage which members have access to each training.</p>
             </div>
-            <Select value={coursesFunnelId} onValueChange={setCoursesFunnelId}>
-              <SelectTrigger className="bg-muted border-border">
-                <SelectValue placeholder="Select a funnel..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">— None selected —</SelectItem>
-                {publishedFunnels.map((f) => (
-                  <SelectItem key={f.id} value={f.id}>{f.title}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {coursesFunnelId === "__none__" ? (
-              <div className="flex items-center gap-2 text-xs text-warning">
-                <AlertTriangle size={14} />
-                No funnel selected. Members will see "Courses coming soon."
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-xs text-success">
-                <CheckCircle2 size={14} />
-                Active: {selectedCoursesFunnel?.title}
-              </div>
-            )}
-            <div className="flex gap-2">
-              <Button variant="hero" size="sm" onClick={saveCoursesFunnel} disabled={updateSettings.isPending}>
-                Save
-              </Button>
-              {selectedCoursesFunnel && (
-                <Button variant="outline" size="sm" asChild>
-                  <a href={`/f/${selectedCoursesFunnel.slug}`} target="_blank" rel="noopener">
-                    <ExternalLink size={12} className="mr-1" /> Preview
-                  </a>
-                </Button>
-              )}
-            </div>
+            <p className="text-xs text-muted-foreground">Training cards are managed in the section below. Each card can link to a specific funnel.</p>
           </div>
         </section>
 
@@ -525,7 +492,7 @@ const AdminProgramPage = () => {
               <Input value={programTabTitle} onChange={(e) => setProgramTabTitle(e.target.value)} className="mt-1 bg-muted border-border" />
             </div>
             <div>
-              <Label className="text-xs">Courses Tab Title</Label>
+              <Label className="text-xs">Trainings Tab Title</Label>
               <Input value={coursesTabTitle} onChange={(e) => setCoursesTabTitle(e.target.value)} className="mt-1 bg-muted border-border" />
             </div>
           </div>
@@ -653,7 +620,7 @@ const AdminProgramPage = () => {
           </Button>
         </section>
 
-        {/* Course Cards Manager */}
+        {/* Training Cards Manager */}
         <CourseCardsManager />
 
         {/* Preview */}

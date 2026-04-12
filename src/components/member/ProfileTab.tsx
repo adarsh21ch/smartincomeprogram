@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Lock, LogOut, Video, CheckCircle2, Calendar } from "lucide-react";
+import { Lock, LogOut, Video, CheckCircle2, Calendar, Shield, Users, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
 import { brand } from "@/config/brand";
@@ -25,6 +27,7 @@ interface ProfileTabProps {
 
 export const ProfileTab = ({ stats }: ProfileTabProps) => {
   const { user, profile, signOut, refreshProfile } = useAuth();
+  const { isAdmin } = useAdmin();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -33,6 +36,16 @@ export const ProfileTab = ({ stats }: ProfileTabProps) => {
   const [pwForm, setPwForm] = useState({ newPassword: "", confirmPassword: "" });
   const [pwLoading, setPwLoading] = useState(false);
   const [showPwSection, setShowPwSection] = useState(false);
+
+  // Check sub-admin role
+  const { data: isSubAdmin = false } = useQuery({
+    queryKey: ["is-sub-admin", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.rpc("has_role", { _user_id: user!.id, _role: "sub_admin" });
+      return !!data;
+    },
+    enabled: !!user,
+  });
 
   useEffect(() => {
     if (profile) {
@@ -169,6 +182,52 @@ export const ProfileTab = ({ stats }: ProfileTabProps) => {
             <p className="text-lg font-bold text-foreground">{stats.daysActive}</p>
             <p className="text-[10px] text-muted-foreground">Days Active</p>
           </div>
+        </motion.div>
+      )}
+
+      {/* Admin Panel Button */}
+      {isAdmin && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <button
+            onClick={() => navigate("/admin/dashboard")}
+            className="w-full rounded-2xl border p-4 flex items-center justify-between transition-colors hover:border-primary/40"
+            style={{
+              background: "rgba(212,160,23,0.1)",
+              borderColor: "rgba(212,160,23,0.3)",
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <Shield size={18} className="text-primary" />
+              <div className="text-left">
+                <p className="text-[15px] font-bold text-primary">Admin Panel</p>
+                <p className="text-[11px] text-muted-foreground">Manage program, funnels, and members</p>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-primary" />
+          </button>
+        </motion.div>
+      )}
+
+      {/* Sub-Admin Button */}
+      {!isAdmin && isSubAdmin && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <button
+            onClick={() => navigate("/home/manage-access")}
+            className="w-full rounded-2xl border p-4 flex items-center justify-between transition-colors hover:border-primary/40"
+            style={{
+              background: "rgba(212,160,23,0.06)",
+              borderColor: "rgba(212,160,23,0.2)",
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <Users size={18} className="text-primary" />
+              <div className="text-left">
+                <p className="text-[15px] font-bold text-primary">Manage Training Access</p>
+                <p className="text-[11px] text-muted-foreground">Grant or revoke member access to trainings</p>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-primary" />
+          </button>
         </motion.div>
       )}
 

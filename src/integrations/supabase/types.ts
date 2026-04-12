@@ -77,6 +77,8 @@ export type Database = {
           created_at: string | null
           description: string | null
           display_order: number | null
+          funnel_id: string | null
+          funnel_slug: string | null
           icon: string | null
           id: string
           is_active: boolean | null
@@ -87,6 +89,8 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           display_order?: number | null
+          funnel_id?: string | null
+          funnel_slug?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean | null
@@ -97,12 +101,22 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           display_order?: number | null
+          funnel_id?: string | null
+          funnel_slug?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean | null
           title?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "course_cards_funnel_id_fkey"
+            columns: ["funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_send_log: {
         Row: {
@@ -2413,6 +2427,68 @@ export type Database = {
           },
         ]
       }
+      training_card_access: {
+        Row: {
+          granted_at: string | null
+          granted_by: string
+          id: string
+          is_active: boolean | null
+          revoked_at: string | null
+          revoked_by: string | null
+          training_card_id: string
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string | null
+          granted_by: string
+          id?: string
+          is_active?: boolean | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          training_card_id: string
+          user_id: string
+        }
+        Update: {
+          granted_at?: string | null
+          granted_by?: string
+          id?: string
+          is_active?: boolean | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          training_card_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_card_access_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_card_access_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_card_access_training_card_id_fkey"
+            columns: ["training_card_id"]
+            isOneToOne: false
+            referencedRelation: "course_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_card_access_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_kyc_submissions: {
         Row: {
           aadhar_back_url: string | null
@@ -2786,7 +2862,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user" | "member"
+      app_role: "admin" | "moderator" | "user" | "member" | "sub_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2914,7 +2990,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user", "member"],
+      app_role: ["admin", "moderator", "user", "member", "sub_admin"],
     },
   },
 } as const

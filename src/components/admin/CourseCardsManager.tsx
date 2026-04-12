@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Plus, Trash2, Loader2, GripVertical, Pencil, X, Check } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Trash2, Loader2, GripVertical, Pencil, X, Check, ExternalLink, AlertTriangle, CheckCircle2, Users } from "lucide-react";
 import { toast } from "sonner";
+import { ManageAccessModal } from "@/components/admin/ManageAccessModal";
 
 interface CourseCard {
   id: string;
@@ -18,15 +20,19 @@ interface CourseCard {
   display_order: number;
   is_active: boolean;
   created_at: string;
+  funnel_id: string | null;
+  funnel_slug: string | null;
 }
 
-const emptyCard = { title: "", description: "", icon: "🎓", badge_text: "Members Only", is_active: true };
+const emptyCard = { title: "", description: "", icon: "🎓", badge_text: "Members Only", is_active: true, funnel_id: "__none__" as string, funnel_slug: "" };
 
 export const CourseCardsManager = () => {
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [addingNew, setAddingNew] = useState(false);
   const [form, setForm] = useState(emptyCard);
+  const [accessCardId, setAccessCardId] = useState<string | null>(null);
+  const [accessCardTitle, setAccessCardTitle] = useState("");
 
   const { data: cards = [], isLoading } = useQuery({
     queryKey: ["admin-course-cards"],
@@ -39,11 +45,44 @@ export const CourseCardsManager = () => {
     },
   });
 
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin-course-cards"] });
+  const { data: funnels = [] } = useQuery({
+    queryKey: ["admin-funnels-list-cards"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("funnels")
+        .select("id, title, slug, is_published, total_views")
+        .order("title");
+      return data || [];
+    },
+  });
+
+  // Fetch access counts per card
+  const { data: accessCounts = {} } = useQuery({
+    queryKey: ["training-access-counts"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("training_card_access" as any)
+        .select("training_card_id")
+        .eq("is_active", true);
+      const counts: Record<string, number> = {};
+      (data as any[] || []).forEach((row: any) => {
+        counts[row.training_card_id] = (counts[row.training_card_id] || 0) + 1;
+      });
+      return counts;
+    },
+  });
+
+  const publishedFunnels = funnels.filter((f) => f.is_published);
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["admin-course-cards"] });
+    queryClient.invalidateQueries({ queryKey: ["training-access-counts"] });
+  };
 
   const addMutation = useMutation({
     mutationFn: async (card: typeof emptyCard) => {
       const maxOrder = cards.length > 0 ? Math.max(...cards.map((c) => c.display_order)) : 0;
+      const selectedFunnel = funnels.find((f) => f.id === card.funnel_id);
       const { error } = await supabase.from("course_cards" as any).insert({
         title: card.title,
         description: card.description || null,
@@ -51,6 +90,8 @@ export const CourseCardsManager = () => {
         badge_text: card.badge_text || "Members Only",
         display_order: maxOrder + 1,
         is_active: card.is_active,
+        funnel_id: card.funnel_id === "__none__" ? null : card.funnel_id,
+        funnel_slug: selectedFunnel?.slug || null,
       } as any);
       if (error) throw error;
     },
@@ -89,97 +130,175 @@ export const CourseCardsManager = () => {
 
   const startEdit = (card: CourseCard) => {
     setEditingId(card.id);
-    setForm({ title: card.title, description: card.description || "", icon: card.icon, badge_text: card.badge_text, is_active: card.is_active });
+    setForm({
+      title: card.title,
+      description: card.description || "",
+      icon: card.icon,
+      badge_text: card.badge_text,
+      is_active: card.is_active,
+      funnel_id: card.funnel_id || "__none__",
+      funnel_slug: card.funnel_slug || "",
+    });
   };
 
   const saveEdit = () => {
     if (!editingId || !form.title.trim()) return;
-    updateMutation.mutate({ id: editingId, updates: { title: form.title, description: form.description || null, icon: form.icon, badge_text: form.badge_text, is_active: form.is_active } as any });
+    const selectedFunnel = funnels.find((f) => f.id === form.funnel_id);
+    updateMutation.mutate({
+      id: editingId,
+      updates: {
+        title: form.title,
+        description: form.description || null,
+        icon: form.icon,
+        badge_text: form.badge_text,
+        is_active: form.is_active,
+        funnel_id: form.funnel_id === "__none__" ? null : form.funnel_id,
+        funnel_slug: selectedFunnel?.slug || null,
+      } as any,
+    });
   };
 
   return (
-    <section className="glass-card p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-heading font-semibold">Courses Tab Cards</h2>
-          <p className="text-xs text-muted-foreground mt-1">Manage the locked course cards shown to members on the Courses tab.</p>
-        </div>
-        <Button size="sm" variant="outline" onClick={() => { setAddingNew(true); setForm(emptyCard); setEditingId(null); }} className="gap-1">
-          <Plus size={14} /> Add Card
-        </Button>
-      </div>
-
-      {/* Add new card form */}
-      {addingNew && (
-        <div className="p-4 rounded-lg border border-primary/30 bg-muted/30 space-y-3">
-          <h3 className="text-sm font-semibold">New Course Card</h3>
-          <CardForm form={form} setForm={setForm} />
-          <div className="flex gap-2">
-            <Button size="sm" variant="hero" onClick={() => { if (!form.title.trim()) return; addMutation.mutate(form); }} disabled={addMutation.isPending}>
-              {addMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Save
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setAddingNew(false)}><X size={14} /> Cancel</Button>
+    <>
+      <section className="glass-card p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-heading font-semibold">Training Cards</h2>
+            <p className="text-xs text-muted-foreground mt-1">Manage training cards shown to members on the Trainings tab. Each card can link to a funnel.</p>
           </div>
+          <Button size="sm" variant="outline" onClick={() => { setAddingNew(true); setForm(emptyCard); setEditingId(null); }} className="gap-1">
+            <Plus size={14} /> Add Card
+          </Button>
         </div>
-      )}
 
-      {/* Card list */}
-      {isLoading ? (
-        <div className="flex justify-center py-8"><Loader2 className="animate-spin text-muted-foreground" size={20} /></div>
-      ) : cards.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-4">No course cards yet. Add one above.</p>
-      ) : (
-        <div className="space-y-2">
-          {cards.map((card, i) => (
-            <div key={card.id} className="p-3 rounded-lg border border-border bg-muted/20">
-              {editingId === card.id ? (
-                <div className="space-y-3">
-                  <CardForm form={form} setForm={setForm} />
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="hero" onClick={saveEdit} disabled={updateMutation.isPending}>
-                      {updateMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Save
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}><X size={14} /> Cancel</Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <div className="flex flex-col gap-0.5">
-                    <button onClick={() => moveCard(i, "up")} disabled={i === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30">
-                      <GripVertical size={14} />
-                    </button>
-                  </div>
-                  <span className="text-xl">{card.icon}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{card.title}</p>
-                    <p className="text-xs text-muted-foreground">{card.badge_text}</p>
-                  </div>
-                  <Switch
-                    checked={card.is_active}
-                    onCheckedChange={(checked) => updateMutation.mutate({ id: card.id, updates: { is_active: checked } as any })}
-                  />
-                  <Button size="icon" variant="ghost" onClick={() => startEdit(card)} className="h-8 w-8">
-                    <Pencil size={14} />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => { if (confirm("Delete this course card?")) deleteMutation.mutate(card.id); }}
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                  >
-                    <Trash2 size={14} />
-                  </Button>
-                </div>
-              )}
+        {/* Add new card form */}
+        {addingNew && (
+          <div className="p-4 rounded-lg border border-primary/30 bg-muted/30 space-y-3">
+            <h3 className="text-sm font-semibold">New Training Card</h3>
+            <CardForm form={form} setForm={setForm} funnels={publishedFunnels} />
+            <div className="flex gap-2">
+              <Button size="sm" variant="hero" onClick={() => { if (!form.title.trim()) return; addMutation.mutate(form); }} disabled={addMutation.isPending}>
+                {addMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Save
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setAddingNew(false)}><X size={14} /> Cancel</Button>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
+
+        {/* Card list */}
+        {isLoading ? (
+          <div className="flex justify-center py-8"><Loader2 className="animate-spin text-muted-foreground" size={20} /></div>
+        ) : cards.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">No training cards yet. Add one above.</p>
+        ) : (
+          <div className="space-y-2">
+            {cards.map((card, i) => {
+              const linkedFunnel = funnels.find((f) => f.id === card.funnel_id);
+              const memberCount = accessCounts[card.id] || 0;
+
+              return (
+                <div key={card.id} className="p-3 rounded-lg border border-border bg-muted/20">
+                  {editingId === card.id ? (
+                    <div className="space-y-3">
+                      <CardForm form={form} setForm={setForm} funnels={publishedFunnels} />
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="hero" onClick={saveEdit} disabled={updateMutation.isPending}>
+                          {updateMutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Save
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}><X size={14} /> Cancel</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <div className="flex flex-col gap-0.5">
+                          <button onClick={() => moveCard(i, "up")} disabled={i === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30">
+                            <GripVertical size={14} />
+                          </button>
+                        </div>
+                        <span className="text-xl">{card.icon}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{card.title}</p>
+                          <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                            <span className="text-xs text-muted-foreground">{card.badge_text}</span>
+                            <span className="text-[10px] text-muted-foreground">·</span>
+                            {linkedFunnel ? (
+                              <span className="text-xs text-green-400 flex items-center gap-1">
+                                <CheckCircle2 size={10} /> Funnel: {linkedFunnel.title}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-warning flex items-center gap-1">
+                                <AlertTriangle size={10} /> No funnel
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <Switch
+                          checked={card.is_active}
+                          onCheckedChange={(checked) => updateMutation.mutate({ id: card.id, updates: { is_active: checked } as any })}
+                        />
+                        <Button size="icon" variant="ghost" onClick={() => startEdit(card)} className="h-8 w-8">
+                          <Pencil size={14} />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => { if (confirm("Delete this training card?")) deleteMutation.mutate(card.id); }}
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                      {/* Access row */}
+                      <div className="flex items-center gap-3 pl-10">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Users size={12} /> Members with access: {memberCount}
+                        </span>
+                        <button
+                          onClick={() => { setAccessCardId(card.id); setAccessCardTitle(card.title); }}
+                          className="text-xs text-primary font-medium hover:underline"
+                        >
+                          Manage Access
+                        </button>
+                        {linkedFunnel && (
+                          <a href={`/f/${linkedFunnel.slug}`} target="_blank" rel="noopener" className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+                            <ExternalLink size={10} /> Preview
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Manage Access Modal */}
+      {accessCardId && (
+        <ManageAccessModal
+          cardId={accessCardId}
+          cardTitle={accessCardTitle}
+          open={!!accessCardId}
+          onClose={() => { setAccessCardId(null); invalidate(); }}
+        />
       )}
-    </section>
+    </>
   );
 };
 
-function CardForm({ form, setForm }: { form: typeof emptyCard; setForm: (f: typeof emptyCard) => void }) {
+function CardForm({
+  form,
+  setForm,
+  funnels,
+}: {
+  form: typeof emptyCard;
+  setForm: (f: typeof emptyCard) => void;
+  funnels: Array<{ id: string; title: string; slug: string; total_views: number | null }>;
+}) {
+  const selectedFunnel = funnels.find((f) => f.id === form.funnel_id);
+
   return (
     <div className="grid sm:grid-cols-2 gap-3">
       <div>
@@ -198,6 +317,36 @@ function CardForm({ form, setForm }: { form: typeof emptyCard; setForm: (f: type
         <Label className="text-xs">Description (max 200)</Label>
         <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value.slice(0, 200) })} className="mt-1 bg-muted border-border" rows={2} />
       </div>
+
+      {/* Linked Funnel */}
+      <div className="sm:col-span-2 p-3 rounded-lg border border-border bg-background space-y-2">
+        <Label className="text-xs font-semibold">Linked Funnel</Label>
+        <p className="text-[11px] text-muted-foreground">When a member has access, this funnel opens for them.</p>
+        <Select value={form.funnel_id} onValueChange={(v) => setForm({ ...form, funnel_id: v })}>
+          <SelectTrigger className="bg-muted border-border">
+            <SelectValue placeholder="Select a funnel..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">— No funnel —</SelectItem>
+            {funnels.map((f) => (
+              <SelectItem key={f.id} value={f.id}>
+                {f.title} ({f.total_views || 0} views)
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {form.funnel_id === "__none__" && (
+          <p className="text-[11px] text-warning flex items-center gap-1">
+            <AlertTriangle size={10} /> No funnel selected. Members will see "Content coming soon."
+          </p>
+        )}
+        {selectedFunnel && (
+          <a href={`/f/${selectedFunnel.slug}`} target="_blank" rel="noopener" className="text-[11px] text-primary hover:underline flex items-center gap-1">
+            <ExternalLink size={10} /> Preview funnel →
+          </a>
+        )}
+      </div>
+
       <div className="flex items-center gap-2">
         <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
         <Label className="text-xs">Visible to members</Label>
