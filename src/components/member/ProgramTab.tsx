@@ -765,7 +765,7 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
     }
   }, [steps, getProgressSnapshot, onStepComplete, persistConditionMetAt]);
 
-  const handleStepCompleted = useCallback((stepIndex: number) => {
+  const handleStepCompleted = useCallback(async (stepIndex: number) => {
     const step = steps[stepIndex];
     if (!step) return;
 
@@ -783,6 +783,62 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
       [step.id]: completedProgress,
     }));
 
+    // Write completion to DB BEFORE invalidating queries so Home tab gets fresh data
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        const nextStep = steps[stepIndex + 1] ?? null;
+        const conditionMet = nextStep ? meetsUnlockCondition(nextStep, {
+          watchedPercent: completedProgress.watch_percent,
+          timeSpentSeconds: completedProgress.time_spent_seconds,
+          isCompleted: true,
+        }) : false;
+        const unlocksImmediately = conditionMet && !getCountdownUnlockAt(nextStep, completedProgress.condition_met_at ?? completedAt);
+
+        const ops: PromiseLike<unknown>[] = [
+          supabase.from("funnel_step_progress").upsert(
+            {
+              funnel_id: funnel.id,
+              funnel_step_id: step.id,
+              session_id: authUser.id,
+              watched_percentage: completedProgress.watch_percent,
+              last_position_seconds: Math.floor(completedProgress.last_position_seconds),
+              time_spent_seconds: completedProgress.time_spent_seconds,
+              condition_met_at: completedProgress.condition_met_at,
+              status: "completed",
+              completed_at: completedAt,
+              updated_at: completedAt,
+            },
+            { onConflict: "funnel_id,funnel_step_id,session_id", ignoreDuplicates: false }
+          ),
+        ];
+
+        // Permanently unlock next step if condition met immediately
+        if (nextStep && unlocksImmediately) {
+          ops.push(
+            supabase.from("funnel_step_progress").upsert(
+              {
+                funnel_id: funnel.id,
+                funnel_step_id: nextStep.id,
+                session_id: authUser.id,
+                status: "unlocked",
+                permanently_unlocked: true,
+                condition_met_at: completedProgress.condition_met_at ?? completedAt,
+                unlocked_at: completedAt,
+                updated_at: completedAt,
+              },
+              { onConflict: "funnel_id,funnel_step_id,session_id", ignoreDuplicates: false }
+            )
+          );
+        }
+
+        await Promise.all(ops);
+      }
+    } catch {
+      // Silently fail — local state is already updated, server will catch up
+    }
+
+    // Now invalidate queries so Home tab and Program tab get fresh server data
     onStepComplete();
 
     const nextStep = steps[stepIndex + 1];
@@ -803,10 +859,10 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
       return;
     }
 
-    if (!nextStep.is_locked) {
-      setTimeout(() => setActiveStepIndex(stepIndex + 1), 900);
-    }
-  }, [steps, getProgressSnapshot, onStepComplete]);
+    // Auto-advance to next step — use LOCAL knowledge that condition is met,
+    // don't rely on server's is_locked which hasn't refreshed yet
+    setTimeout(() => setActiveStepIndex(stepIndex + 1), 900);
+  }, [steps, getProgressSnapshot, onStepComplete, funnel.id]);
 
   const completedSteps = stepStates.filter((state) => state.completed).length;
   const allComplete = steps.length > 0 && completedSteps === steps.length;
