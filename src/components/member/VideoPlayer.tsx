@@ -186,6 +186,12 @@ export const VideoPlayer = ({
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
+      // Pause any other playing video globally
+      const prev = (window as any).__playingVideo;
+      if (prev && prev !== video) {
+        prev.pause();
+      }
+      (window as any).__playingVideo = video;
       video.play();
       setIsPlaying(true);
     } else {
