@@ -932,7 +932,8 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
   const activeStep = steps[activeStepIndex];
   const activeProgress = activeStep ? getProgressSnapshot(activeStep) : null;
   const nextStep = activeStepIndex + 1 < steps.length ? steps[activeStepIndex + 1] : null;
-  const activeCountdown = activeStep?.is_locked ? (countdownUnlocks[activeStep.id] ?? getServerCountdownAt(activeStep) ?? null) : null;
+  const activeState = stepStates[activeStepIndex];
+  const activeCountdown = (activeStep?.is_locked && !activeState?.accessible) ? (countdownUnlocks[activeStep.id] ?? getServerCountdownAt(activeStep) ?? null) : null;
   const isTimerBlurActive = !!(activeCountdown && activeStep?.step_type === "video");
 
   const nextStepState = nextStep ? stepStates[activeStepIndex + 1] : null;
