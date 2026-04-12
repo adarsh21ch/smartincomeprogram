@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Play, Pause, Volume2, VolumeX, Maximize, X, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { UnmutePill } from "./UnmutePill";
 
 export interface VideoPlayerProgress {
   currentTime: number;
