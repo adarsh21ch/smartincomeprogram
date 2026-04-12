@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const tabs = [
-  { icon: Info, label: "About", path: "/home" },
+  { icon: Info, label: "Home", path: "/home" },
   { icon: Target, label: "Program", path: "/home/program" },
   { icon: BookOpen, label: "Courses", path: "/home/courses" },
   { icon: User, label: "Profile", path: "/home/profile" },
