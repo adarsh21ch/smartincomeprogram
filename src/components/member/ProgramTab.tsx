@@ -1020,6 +1020,7 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
 
             {activeStep.step_type === "video" && activeStep.video_url ? (
               <VideoPlayer
+                key={activeStep.id}
                 videoUrl={activeStep.video_url}
                 stepTitle={activeStep.title}
                 stepId={activeStep.id}
@@ -1131,6 +1132,7 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
             <>
               {activeStep.step_type === "video" && activeStep.video_url ? (
                 <VideoPlayer
+                  key={activeStep.id}
                   videoUrl={activeStep.video_url}
                   stepTitle={activeStep.title}
                   stepId={activeStep.id}

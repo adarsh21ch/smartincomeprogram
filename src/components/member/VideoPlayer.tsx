@@ -48,6 +48,7 @@ export const VideoPlayer = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const seekBarRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(durationSeconds || 0);
   const [isMuted, setIsMuted] = useState(autoPlayMuted);
@@ -143,6 +144,7 @@ export const VideoPlayer = ({
 
     maxWatchedSecondsRef.current = initialPosition;
     timeSpentSecondsRef.current = initialTimeSpentSeconds;
+    setIsBuffering(true);
 
     const handleLoaded = () => {
       setDuration(video.duration);
@@ -169,12 +171,22 @@ export const VideoPlayer = ({
       emitProgress(video.currentTime, video.duration);
     };
 
+    const handleCanPlay = () => setIsBuffering(false);
+    const handleWaiting = () => setIsBuffering(true);
+    const handlePlaying = () => setIsBuffering(false);
+
     video.addEventListener("loadedmetadata", handleLoaded);
     video.addEventListener("timeupdate", handleTimeUpdate);
+    video.addEventListener("canplay", handleCanPlay);
+    video.addEventListener("waiting", handleWaiting);
+    video.addEventListener("playing", handlePlaying);
 
     return () => {
       video.removeEventListener("loadedmetadata", handleLoaded);
       video.removeEventListener("timeupdate", handleTimeUpdate);
+      video.removeEventListener("canplay", handleCanPlay);
+      video.removeEventListener("waiting", handleWaiting);
+      video.removeEventListener("playing", handlePlaying);
     };
   }, [emitProgress, initialPosition, initialTimeSpentSeconds]);
 
@@ -367,6 +379,12 @@ export const VideoPlayer = ({
             if (video) saveProgress(video.currentTime, video.duration);
           }}
         />
+        {/* Loading spinner while buffering */}
+        {isBuffering && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 z-10 pointer-events-none">
+            <div className="w-10 h-10 border-3 border-primary/30 border-t-primary rounded-full animate-spin" />
+          </div>
+        )}
         {/* Unmute pill — shows whenever video is muted and playing */}
         <UnmutePill
           visible={isMuted && isPlaying}
@@ -374,11 +392,10 @@ export const VideoPlayer = ({
             const video = videoRef.current;
             if (video) {
               video.muted = false;
-              // State synced via volumechange listener
             }
           }}
         />
-        {!isPlaying && (
+        {!isPlaying && !isBuffering && (
           <button
             onClick={togglePlay}
             className="absolute inset-0 flex items-center justify-center bg-black/30"
