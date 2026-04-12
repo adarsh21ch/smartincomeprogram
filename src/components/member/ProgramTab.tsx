@@ -1144,6 +1144,8 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
                   onClose={() => {}}
                   hideHeader
                   autoPlayMuted
+                  preloadNextUrl={nextStep?.video_url ?? null}
+                />
                 />
               ) : activeStep.step_type === "video" && !activeStep.video_url ? (
                 <div className="aspect-video rounded-2xl flex items-center justify-center bg-card border border-border">
