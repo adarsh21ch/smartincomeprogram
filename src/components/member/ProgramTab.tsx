@@ -958,6 +958,18 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
   if (allComplete) {
     return (
       <div className="space-y-4">
+        {/* Completion banner */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="rounded-2xl border border-primary/20 bg-gradient-to-b from-primary/5 to-transparent p-5 text-center space-y-1"
+        >
+          <Trophy size={28} className="mx-auto text-primary" />
+          <h2 className="text-lg font-bold text-foreground">Program Complete! 🎉</h2>
+          <p className="text-xs text-muted-foreground">You can rewatch any video anytime.</p>
+        </motion.div>
+
+        {/* Progress bar */}
         <div className="rounded-2xl border border-border bg-card p-4 space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">{completedSteps} of {steps.length} steps completed</span>
@@ -967,6 +979,8 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
             <div className="h-full rounded-full transition-all" style={{ width: "100%", background: "#22c55e" }} />
           </div>
         </div>
+
+        {/* Step bar — all steps accessible */}
         <StepBar
           steps={steps}
           activeIndex={activeStepIndex}
@@ -974,11 +988,54 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
           stepStates={stepStates}
           onStepClick={handleStepClick}
         />
-        <div className="rounded-2xl border border-primary/20 bg-gradient-to-b from-primary/5 to-transparent p-8 text-center space-y-3">
-          <Trophy size={40} className="mx-auto text-primary" />
-          <h2 className="text-xl font-bold text-foreground">Program Complete! 🎉</h2>
-          <p className="text-sm text-muted-foreground">Congratulations! You've completed all steps.</p>
-        </div>
+
+        {/* Active step content — reuse normal rendering */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeStep.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-3"
+          >
+            <div className="pb-2 border-b border-border/50">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  Step {activeStepIndex + 1} of {steps.length}
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-widest flex items-center gap-1" style={{ color: "#D4AF37" }}>
+                  <Check size={10} /> Completed
+                </span>
+              </div>
+              <h2 className="text-lg font-bold text-foreground">{activeStep.title}</h2>
+              {activeStep.description && (
+                <p className="text-sm text-muted-foreground mt-1">{activeStep.description}</p>
+              )}
+            </div>
+
+            {activeStep.step_type === "video" && activeStep.video_url ? (
+              <VideoPlayer
+                videoUrl={activeStep.video_url}
+                stepTitle={activeStep.title}
+                stepId={activeStep.id}
+                funnelId={funnel.id}
+                initialPosition={0}
+                durationSeconds={activeStep.duration_seconds}
+                initialTimeSpentSeconds={activeProgress?.time_spent_seconds ?? 0}
+                completionThreshold={95}
+                onProgress={(progress) => handleVideoProgress(activeStepIndex, progress)}
+                onComplete={() => {}}
+                onClose={() => {}}
+                hideHeader
+                autoPlayMuted
+              />
+            ) : null}
+
+            <SpeakerCard funnel={funnel} step={activeStep} creatorProfile={creatorProfile} />
+            <VideoTopics funnel={funnel} step={activeStep} />
+          </motion.div>
+        </AnimatePresence>
       </div>
     );
   }
