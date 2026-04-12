@@ -381,7 +381,7 @@ export const VideoPlayer = ({
       </div>
 
       {/* Controls */}
-      <div className="px-3 py-2 space-y-1.5">
+      <div className="px-3 py-2 space-y-1.5 group">
         {/* Seek bar */}
         <div
           ref={seekBarRef}
