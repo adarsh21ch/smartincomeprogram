@@ -22,15 +22,12 @@ Deno.serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Auth client: validates the user's JWT via anon key + their Authorization header
-    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader! } },
-    });
-    const { data: { user }, error: authError } = await authClient.auth.getUser();
-     console.log("Auth result:", authError?.message || "OK", "user:", user?.id);
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    console.log("Auth result:", authError?.message || "OK", "user:", user?.id);
     if (authError || !user) {
       console.log("Auth failed:", authError?.message);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -38,9 +35,6 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    // Service client: bypasses RLS for data queries
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { type } = await req.json();
     if (!type || !["program", "courses"].includes(type)) {
