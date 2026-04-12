@@ -26,6 +26,7 @@ interface VideoPlayerProps {
   onClose: () => void;
   hideHeader?: boolean;
   autoPlayMuted?: boolean;
+  preloadNextUrl?: string | null;
 }
 
 export const VideoPlayer = ({
@@ -42,6 +43,7 @@ export const VideoPlayer = ({
   onClose,
   hideHeader = false,
   autoPlayMuted = false,
+  preloadNextUrl,
 }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const seekBarRef = useRef<HTMLDivElement>(null);
@@ -52,7 +54,6 @@ export const VideoPlayer = ({
   const [speed, setSpeed] = useState(1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [hasCompleted, setHasCompleted] = useState(false);
-  const [showUnmutePill, setShowUnmutePill] = useState(false);
   const [isSeeking, setIsSeeking] = useState(false);
   const progressSaveRef = useRef<NodeJS.Timeout>();
   const maxWatchedSecondsRef = useRef(initialPosition);
@@ -104,7 +105,6 @@ export const VideoPlayer = ({
         { onConflict: "funnel_id,funnel_step_id,session_id", ignoreDuplicates: false }
       );
 
-      // Upsert activity log for streak tracking
       const userId = (await supabase.auth.getUser()).data.user?.id;
       if (userId) {
         await supabase.from("member_activity_log" as any).upsert(
@@ -127,6 +127,16 @@ export const VideoPlayer = ({
     }
   }, [completionThreshold, emitProgress, funnelId, stepId, hasCompleted, onComplete]);
 
+  // Sync isMuted state with actual video element (handles browser autoplay policies)
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const syncMuteState = () => setIsMuted(video.muted);
+    video.addEventListener("volumechange", syncMuteState);
+    return () => video.removeEventListener("volumechange", syncMuteState);
+  }, []);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -141,17 +151,15 @@ export const VideoPlayer = ({
       }
       emitProgress(video.currentTime, video.duration);
 
-      // Auto-play muted if requested
       if (autoPlayMuted) {
         video.muted = true;
         video.playsInline = true;
         video.play().then(() => {
           setIsPlaying(true);
-          setShowUnmutePill(true);
-          // Track as currently playing globally
+          setIsMuted(true);
           (window as any).__playingVideo = video;
         }).catch(() => {
-          // Autoplay blocked — user will click play manually
+          // Autoplay blocked
         });
       }
     };
@@ -170,7 +178,7 @@ export const VideoPlayer = ({
     };
   }, [emitProgress, initialPosition, initialTimeSpentSeconds]);
 
-  // Save progress and time spent every 5 seconds while playing
+  // Save progress every 5 seconds while playing
   useEffect(() => {
     if (isPlaying) {
       progressSaveRef.current = setInterval(() => {
@@ -185,11 +193,21 @@ export const VideoPlayer = ({
     };
   }, [isPlaying, saveProgress]);
 
+  // Preload next video in a hidden element
+  useEffect(() => {
+    if (!preloadNextUrl) return;
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "video";
+    link.href = preloadNextUrl;
+    document.head.appendChild(link);
+    return () => { document.head.removeChild(link); };
+  }, [preloadNextUrl]);
+
   const togglePlay = () => {
     const video = videoRef.current;
     if (!video) return;
     if (video.paused) {
-      // Pause any other playing video globally
       const prev = (window as any).__playingVideo;
       if (prev && prev !== video) {
         prev.pause();
@@ -241,7 +259,7 @@ export const VideoPlayer = ({
     const video = videoRef.current;
     if (!video) return;
     video.muted = !video.muted;
-    setIsMuted(video.muted);
+    // State synced via volumechange event listener
   };
 
   const setPlaybackSpeed = (s: number) => {
@@ -254,22 +272,18 @@ export const VideoPlayer = ({
 
   const enterFullscreen = async (videoEl: HTMLVideoElement) => {
     try {
-      // iOS Safari — uses native fullscreen on the video element
       if ((videoEl as any).webkitEnterFullscreen) {
         (videoEl as any).webkitEnterFullscreen();
         return;
       }
-      // Standard
       if (videoEl.requestFullscreen) {
         await videoEl.requestFullscreen();
         return;
       }
-      // Older webkit
       if ((videoEl as any).webkitRequestFullscreen) {
         await (videoEl as any).webkitRequestFullscreen();
         return;
       }
-      // Firefox
       if ((videoEl as any).mozRequestFullScreen) {
         await (videoEl as any).mozRequestFullScreen();
         return;
@@ -293,7 +307,6 @@ export const VideoPlayer = ({
     else enterFullscreen(video);
   };
 
-  // Lock orientation to landscape in fullscreen on mobile
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -328,7 +341,6 @@ export const VideoPlayer = ({
 
   return (
     <div className="rounded-xl border border-primary/20 bg-card overflow-hidden animate-in slide-in-from-top-2 duration-300">
-      {/* Header */}
       {!hideHeader && (
         <div className="flex items-center justify-between px-4 py-2 border-b border-border">
           <span className="text-sm font-medium text-foreground truncate">{stepTitle}</span>
@@ -338,7 +350,6 @@ export const VideoPlayer = ({
         </div>
       )}
 
-      {/* Video */}
       <div className="relative aspect-video bg-black">
         <video
           ref={videoRef}
@@ -356,16 +367,15 @@ export const VideoPlayer = ({
             if (video) saveProgress(video.currentTime, video.duration);
           }}
         />
-        {/* Unmute pill */}
+        {/* Unmute pill — shows whenever video is muted and playing */}
         <UnmutePill
-          visible={showUnmutePill && isMuted}
+          visible={isMuted && isPlaying}
           onUnmute={() => {
             const video = videoRef.current;
             if (video) {
               video.muted = false;
-              setIsMuted(false);
+              // State synced via volumechange listener
             }
-            setShowUnmutePill(false);
           }}
         />
         {!isPlaying && (
@@ -380,9 +390,7 @@ export const VideoPlayer = ({
         )}
       </div>
 
-      {/* Controls */}
       <div className="px-3 py-2 space-y-1.5 group">
-        {/* Seek bar */}
         <div
           ref={seekBarRef}
           className="relative h-4 flex items-center cursor-pointer touch-none select-none"
@@ -415,7 +423,6 @@ export const VideoPlayer = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Speed */}
             <div className="relative">
               <button
                 onClick={() => setShowSpeedMenu(!showSpeedMenu)}
