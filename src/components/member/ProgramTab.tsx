@@ -580,7 +580,8 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
     if (stepIndex === 0) return { unlocked: true };
     const step = steps[stepIndex];
     const prevStep = steps[stepIndex - 1];
-    return checkStepUnlock(step, stepIndex, getProgressSnapshot(prevStep));
+    const currentStepProgress = step.progress;
+    return checkStepUnlock(step, stepIndex, getProgressSnapshot(prevStep), currentStepProgress);
   }, [steps, getProgressSnapshot]);
 
   // Persist resume state whenever activeStepIndex or localProgress changes
