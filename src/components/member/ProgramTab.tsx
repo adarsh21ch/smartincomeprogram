@@ -574,15 +574,22 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
     const progress = getProgressSnapshot(step);
     const countdownAt = countdownUnlocks[step.id] ?? getServerCountdownAt(step);
     const hasCountdown = Boolean(step.is_locked && countdownAt);
+
+    // Check if PREVIOUS step is completed locally — allows optimistic unlock
+    const prevCompleted = index > 0
+      ? (getProgressSnapshot(steps[index - 1]).is_completed)
+      : false;
+    const locallyUnlocked = index === 0 || !step.is_locked || prevCompleted;
+
     const unlockResult: UnlockResult = {
-      unlocked: index === 0 || !step.is_locked,
+      unlocked: locallyUnlocked,
       reason: hasCountdown ? "delay_countdown" : (step.lock_reason ?? undefined),
       unlockAt: countdownAt ?? undefined,
     };
 
     return {
       completed: progress.is_completed,
-      accessible: index === 0 || progress.is_completed || !step.is_locked || hasCountdown,
+      accessible: locallyUnlocked || progress.is_completed || hasCountdown,
       hasCountdown,
       watchPercent: progress.watch_percent,
       unlockResult,
