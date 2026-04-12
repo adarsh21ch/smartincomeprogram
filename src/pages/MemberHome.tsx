@@ -33,7 +33,7 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
     },
   });
 
-  const { data: content, isLoading: contentLoading } = useQuery({
+  const { data: content, isLoading: contentLoading, error: contentFetchError } = useQuery({
     queryKey: ["member-content", "program", user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke("get-member-content", {
@@ -57,6 +57,11 @@ const MemberHome = ({ tab }: MemberHomeProps) => {
       };
     },
     enabled: !!user && tab !== "courses",
+    retry: (failureCount, error) => {
+      // Don't retry on session expired
+      if (error?.message === "SESSION_EXPIRED") return false;
+      return failureCount < 2;
+    },
   });
 
   const { data: activityStats } = useQuery({
