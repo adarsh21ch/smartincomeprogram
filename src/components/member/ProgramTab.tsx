@@ -22,6 +22,8 @@ export interface RichStepData {
   thumbnail_url: string | null;
   duration_seconds: number | null;
   is_locked: boolean;
+  lock_reason?: string | null;
+  unlock_at?: string | null;
   cta_text?: string | null;
   cta_url?: string | null;
   booking_url?: string | null;
@@ -104,54 +106,32 @@ const getInitialProgressState = (step: RichStepData): LocalStepProgress => ({
   last_position_seconds: step.progress.last_position_seconds ?? 0,
 });
 
-const checkStepUnlock = (
-  step: RichStepData,
-  stepIndex: number,
-  prevProgress: { watch_percent: number; is_completed: boolean; condition_met_at?: string | null; time_spent_seconds?: number } | null,
-  currentStepProgress?: { permanently_unlocked?: boolean } | null
-): UnlockResult => {
-  if (stepIndex === 0) return { unlocked: true };
-
-  // CHECK FIRST: if this step was ever permanently unlocked
-  if (currentStepProgress?.permanently_unlocked === true) {
-    return { unlocked: true };
-  }
-
-  if (!prevProgress) return { unlocked: false, reason: "previous_not_started" };
+const meetsUnlockCondition = (
+  step: RichStepData | null | undefined,
+  progress: { watchedPercent: number; timeSpentSeconds: number; isCompleted?: boolean }
+) => {
+  if (!step) return false;
 
   const condition = step.unlock_condition || "full_watch";
-  const watchPct = prevProgress.watch_percent || 0;
-  const timeSpent = prevProgress.time_spent_seconds || 0;
 
-  let conditionMet = false;
-  if (condition === "full_watch") {
-    conditionMet = watchPct >= 95 || prevProgress.is_completed;
-  } else if (condition === "percentage") {
-    conditionMet = watchPct >= (step.unlock_percentage || 80);
-  } else if (condition === "time_spent") {
-    const requiredSeconds = (step.unlock_percentage || 10) * 60;
-    conditionMet = timeSpent >= requiredSeconds;
-  } else {
-    conditionMet = prevProgress.is_completed;
+  if (condition === "percentage") {
+    return progress.watchedPercent >= (step.unlock_percentage || 80);
   }
 
-  if (!conditionMet) return { unlocked: false, reason: "condition_not_met" };
-
-  // Time delay check
-  if (step.time_delay_enabled && (step.time_delay_minutes || 0) > 0) {
-    const conditionMetAt = prevProgress.condition_met_at;
-    if (!conditionMetAt) return { unlocked: false, reason: "delay_waiting" };
-
-    const delayMs = (step.time_delay_minutes || 0) * 60 * 1000;
-    const unlockAt = new Date(conditionMetAt).getTime() + delayMs;
-    const now = Date.now();
-
-    if (now < unlockAt) {
-      return { unlocked: false, reason: "delay_countdown", unlockAt, remainingMs: unlockAt - now };
-    }
+  if (condition === "time_spent") {
+    return progress.timeSpentSeconds >= ((step.unlock_percentage || 10) * 60);
   }
 
-  return { unlocked: true };
+  return progress.watchedPercent >= 95 || Boolean(progress.isCompleted);
+};
+
+const getCountdownUnlockAt = (step: RichStepData | null | undefined, conditionMetAt?: string | null) => {
+  if (!step?.time_delay_enabled || !conditionMetAt) return null;
+
+  const delayMinutes = step.time_delay_minutes || 0;
+  if (delayMinutes <= 0) return null;
+
+  return new Date(conditionMetAt).getTime() + delayMinutes * 60 * 1000;
 };
 
 /* ─── Speaker Card ─── */
@@ -546,6 +526,13 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
   const hasInitializedStepRef = useRef(false);
   const pendingConditionPersistRef = useRef<Record<string, boolean>>({});
 
+  const getServerCountdownAt = useCallback((step: RichStepData | null | undefined) => {
+    if (!step?.is_locked || !step.unlock_at) return null;
+
+    const unlockAt = new Date(step.unlock_at).getTime();
+    return Number.isFinite(unlockAt) && unlockAt > Date.now() ? unlockAt : null;
+  }, []);
+
   useEffect(() => {
     setLocalProgress((previous) => {
       const nextEntries = steps.map((step) => {
@@ -576,14 +563,6 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
     [localProgress]
   );
 
-  const getStepUnlockStatus = useCallback((stepIndex: number): UnlockResult => {
-    if (stepIndex === 0) return { unlocked: true };
-    const step = steps[stepIndex];
-    const prevStep = steps[stepIndex - 1];
-    const currentStepProgress = step.progress;
-    return checkStepUnlock(step, stepIndex, getProgressSnapshot(prevStep), currentStepProgress);
-  }, [steps, getProgressSnapshot]);
-
   // Persist resume state whenever activeStepIndex or localProgress changes
   useEffect(() => {
     if (!hasInitializedStepRef.current || steps.length === 0) return;
@@ -593,12 +572,17 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
 
   const stepStates = steps.map((step, index) => {
     const progress = getProgressSnapshot(step);
-    const unlockResult = index === 0 ? { unlocked: true } : getStepUnlockStatus(index);
-    const hasCountdown = Boolean(countdownUnlocks[step.id]) || unlockResult.reason === "delay_countdown";
+    const countdownAt = countdownUnlocks[step.id] ?? getServerCountdownAt(step);
+    const hasCountdown = Boolean(step.is_locked && countdownAt);
+    const unlockResult: UnlockResult = {
+      unlocked: index === 0 || !step.is_locked,
+      reason: hasCountdown ? "delay_countdown" : (step.lock_reason ?? undefined),
+      unlockAt: countdownAt ?? undefined,
+    };
 
     return {
       completed: progress.is_completed,
-      accessible: index === 0 || progress.is_completed || unlockResult.unlocked || hasCountdown,
+      accessible: index === 0 || progress.is_completed || !step.is_locked || hasCountdown,
       hasCountdown,
       watchPercent: progress.watch_percent,
       unlockResult,
@@ -609,11 +593,7 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
     if (hasInitializedStepRef.current || steps.length === 0) return;
 
     // 1. Priority: a step with an active countdown timer
-    const timerIdx = steps.findIndex((_, i) => {
-      if (i === 0) return false;
-      const result = getStepUnlockStatus(i);
-      return result.reason === "delay_countdown";
-    });
+    const timerIdx = stepStates.findIndex((state) => state.hasCountdown);
     if (timerIdx >= 0) {
       setActiveStepIndex(timerIdx);
       hasInitializedStepRef.current = true;
@@ -626,13 +606,7 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
       const savedIdx = steps.findIndex((s) => s.id === savedId);
       if (savedIdx >= 0) {
         const savedProgress = getProgressSnapshot(steps[savedIdx]);
-        const savedUnlock = savedIdx === 0 ? { unlocked: true } : getStepUnlockStatus(savedIdx);
-        if (
-          savedProgress.is_completed ||
-          savedProgress.watch_percent > 0 ||
-          savedUnlock.unlocked ||
-          savedUnlock.reason === "delay_countdown"
-        ) {
+        if (savedProgress.is_completed || stepStates[savedIdx]?.accessible) {
           setActiveStepIndex(savedIdx);
           hasInitializedStepRef.current = true;
           return;
@@ -641,14 +615,11 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
     }
 
     // 3. Fallback: first incomplete unlocked step
-    const firstAvailableIndex = steps.findIndex((_, index) => {
-      const progress = getProgressSnapshot(steps[index]);
-      return !progress.is_completed && (index === 0 || getStepUnlockStatus(index).unlocked || getStepUnlockStatus(index).reason === "delay_countdown");
-    });
+    const firstAvailableIndex = stepStates.findIndex((state) => !state.completed && state.accessible);
 
-    setActiveStepIndex(firstAvailableIndex >= 0 ? firstAvailableIndex : steps.length - 1);
+    setActiveStepIndex(firstAvailableIndex >= 0 ? firstAvailableIndex : 0);
     hasInitializedStepRef.current = true;
-  }, [steps, getProgressSnapshot, getStepUnlockStatus]);
+  }, [steps, getProgressSnapshot, stepStates]);
 
   useEffect(() => {
     if (steps.length === 0) return;
@@ -656,20 +627,28 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
   }, [steps.length]);
 
   useEffect(() => {
-    const countdowns: Record<string, number> = {};
+    const now = Date.now();
+    const serverCountdowns = Object.fromEntries(
+      steps
+        .map((step) => {
+          const unlockAt = getServerCountdownAt(step);
+          return unlockAt && unlockAt > now ? [step.id, unlockAt] as const : null;
+        })
+        .filter((entry): entry is readonly [string, number] => Boolean(entry))
+    );
 
-    for (let i = 1; i < steps.length; i++) {
-      const step = steps[i];
-      const prevStep = steps[i - 1];
-      const result = checkStepUnlock(step, i, getProgressSnapshot(prevStep), step.progress);
+    setCountdownUnlocks((previous) => {
+      const next = { ...previous };
 
-      if (result.reason === "delay_countdown" && result.unlockAt) {
-        countdowns[step.id] = result.unlockAt;
-      }
-    }
+      Object.entries(next).forEach(([stepId, unlockAt]) => {
+        if (unlockAt <= now || !steps.some((step) => step.id === stepId)) {
+          delete next[stepId];
+        }
+      });
 
-    setCountdownUnlocks(countdowns);
-  }, [steps, getProgressSnapshot]);
+      return { ...next, ...serverCountdowns };
+    });
+  }, [getServerCountdownAt, steps]);
 
   const isStepAccessible = useCallback((stepIndex: number): boolean => {
     const state = stepStates[stepIndex];
@@ -678,28 +657,57 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
 
   const persistConditionMetAt = useCallback(async (
     step: RichStepData,
+    nextStep: RichStepData | null,
     progress: VideoPlayerProgress,
     conditionMetAt: string,
   ) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) return false;
 
-    await supabase.from("funnel_step_progress").upsert(
-      {
-        funnel_id: funnel.id,
-        funnel_step_id: step.id,
-        session_id: user.id,
-        watched_percentage: progress.watchedPercent,
-        last_position_seconds: Math.floor(progress.currentTime),
-        max_watched_seconds: progress.maxWatchedSeconds,
-        time_spent_seconds: progress.timeSpentSeconds,
-        condition_met_at: conditionMetAt,
-        status: progress.watchedPercent >= 95 ? "completed" : progress.watchedPercent > 0 ? "in_progress" : "unlocked",
-        completed_at: progress.watchedPercent >= 95 ? new Date().toISOString() : null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "funnel_id,funnel_step_id,session_id", ignoreDuplicates: false }
-    );
+    const now = new Date().toISOString();
+    const isCompleted = progress.watchedPercent >= 95;
+    const unlocksImmediately = Boolean(nextStep) && !getCountdownUnlockAt(nextStep, conditionMetAt);
+
+    const operations: PromiseLike<unknown>[] = [
+      supabase.from("funnel_step_progress").upsert(
+        {
+          funnel_id: funnel.id,
+          funnel_step_id: step.id,
+          session_id: user.id,
+          watched_percentage: progress.watchedPercent,
+          last_position_seconds: Math.floor(progress.currentTime),
+          max_watched_seconds: progress.maxWatchedSeconds,
+          time_spent_seconds: progress.timeSpentSeconds,
+          condition_met_at: conditionMetAt,
+          status: isCompleted ? "completed" : progress.watchedPercent > 0 ? "in_progress" : "unlocked",
+          completed_at: isCompleted ? now : null,
+          updated_at: now,
+        },
+        { onConflict: "funnel_id,funnel_step_id,session_id", ignoreDuplicates: false }
+      ),
+    ];
+
+    if (nextStep && unlocksImmediately) {
+      operations.push(
+        supabase.from("funnel_step_progress").upsert(
+          {
+            funnel_id: funnel.id,
+            funnel_step_id: nextStep.id,
+            session_id: user.id,
+            status: "unlocked",
+            permanently_unlocked: true,
+            condition_met_at: conditionMetAt,
+            unlocked_at: now,
+            updated_at: now,
+          },
+          { onConflict: "funnel_id,funnel_step_id,session_id", ignoreDuplicates: false }
+        )
+      );
+    }
+
+    await Promise.all(operations);
+
+    return unlocksImmediately;
   }, [funnel.id]);
 
   const handleVideoProgress = useCallback((stepIndex: number, progress: VideoPlayerProgress) => {
@@ -712,13 +720,11 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
     let shouldPersistCondition = false;
 
     if (!conditionMetAt && nextStep && !pendingConditionPersistRef.current[step.id]) {
-      const unlockCondition = nextStep.unlock_condition || "full_watch";
-      const meetsUnlockCondition =
-        (unlockCondition === "full_watch" && progress.watchedPercent >= 95) ||
-        (unlockCondition === "percentage" && progress.watchedPercent >= (nextStep.unlock_percentage || 80)) ||
-        (unlockCondition === "time_spent" && progress.timeSpentSeconds >= ((nextStep.unlock_percentage || 10) * 60));
-
-      if (meetsUnlockCondition) {
+      if (meetsUnlockCondition(nextStep, {
+        watchedPercent: progress.watchedPercent,
+        timeSpentSeconds: progress.timeSpentSeconds,
+        isCompleted: progress.watchedPercent >= 95,
+      })) {
         conditionMetAt = new Date().toISOString();
         shouldPersistCondition = true;
       }
@@ -741,12 +747,23 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
     });
 
     if (shouldPersistCondition && conditionMetAt) {
+      const unlockAt = getCountdownUnlockAt(nextStep, conditionMetAt);
+      if (nextStep && unlockAt) {
+        setCountdownUnlocks((previous) => ({ ...previous, [nextStep.id]: unlockAt }));
+      }
+
       pendingConditionPersistRef.current[step.id] = true;
-      void persistConditionMetAt(step, progress, conditionMetAt).finally(() => {
-        pendingConditionPersistRef.current[step.id] = false;
-      });
+      void persistConditionMetAt(step, nextStep, progress, conditionMetAt)
+        .then((unlockedImmediately) => {
+          if (unlockedImmediately) {
+            onStepComplete();
+          }
+        })
+        .finally(() => {
+          pendingConditionPersistRef.current[step.id] = false;
+        });
     }
-  }, [steps, getProgressSnapshot, persistConditionMetAt]);
+  }, [steps, getProgressSnapshot, onStepComplete, persistConditionMetAt]);
 
   const handleStepCompleted = useCallback((stepIndex: number) => {
     const step = steps[stepIndex];
@@ -771,11 +788,22 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
     const nextStep = steps[stepIndex + 1];
     if (!nextStep) return;
 
-    const nextResult = checkStepUnlock(nextStep, stepIndex + 1, completedProgress);
-    if (nextResult.unlocked) {
+    if (!meetsUnlockCondition(nextStep, {
+      watchedPercent: completedProgress.watch_percent,
+      timeSpentSeconds: completedProgress.time_spent_seconds,
+      isCompleted: true,
+    })) {
+      return;
+    }
+
+    const nextUnlockAt = getCountdownUnlockAt(nextStep, completedProgress.condition_met_at ?? completedAt);
+    if (nextUnlockAt) {
+      setCountdownUnlocks((previous) => ({ ...previous, [nextStep.id]: nextUnlockAt }));
       setTimeout(() => setActiveStepIndex(stepIndex + 1), 900);
-    } else if (nextResult.reason === "delay_countdown" && nextResult.unlockAt) {
-      setCountdownUnlocks((previous) => ({ ...previous, [nextStep.id]: nextResult.unlockAt! }));
+      return;
+    }
+
+    if (!nextStep.is_locked) {
       setTimeout(() => setActiveStepIndex(stepIndex + 1), 900);
     }
   }, [steps, getProgressSnapshot, onStepComplete]);
@@ -805,25 +833,53 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
     setActiveStepIndex(index);
   };
 
-  const handleCountdownComplete = useCallback((stepId: string) => {
+  const handleCountdownComplete = useCallback(async (stepId: string) => {
     setCountdownUnlocks((prev) => {
       const n = { ...prev };
       delete n[stepId];
       return n;
     });
-    onStepComplete();
-    toast.success("Step unlocked! 🎉");
-  }, [onStepComplete]);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const now = new Date().toISOString();
+
+      await supabase.from("funnel_step_progress").upsert(
+        {
+          funnel_id: funnel.id,
+          funnel_step_id: stepId,
+          session_id: user.id,
+          status: "unlocked",
+          permanently_unlocked: true,
+          unlocked_at: now,
+          updated_at: now,
+        },
+        { onConflict: "funnel_id,funnel_step_id,session_id", ignoreDuplicates: false }
+      );
+
+      onStepComplete();
+      toast.success("Step unlocked! 🎉");
+    } catch {
+      toast.error("Couldn't unlock the next step. Please refresh and try again.");
+    }
+  }, [funnel.id, onStepComplete]);
 
   const activeStep = steps[activeStepIndex];
   const activeProgress = activeStep ? getProgressSnapshot(activeStep) : null;
-  const activeUnlock = activeStep && activeStepIndex > 0 ? getStepUnlockStatus(activeStepIndex) : { unlocked: true } as UnlockResult;
   const nextStep = activeStepIndex + 1 < steps.length ? steps[activeStepIndex + 1] : null;
-  const activeCountdown = activeUnlock.reason === "delay_countdown" ? (activeUnlock.unlockAt ?? countdownUnlocks[activeStep?.id] ?? null) : (countdownUnlocks[activeStep?.id] ?? null);
+  const activeCountdown = activeStep?.is_locked ? (countdownUnlocks[activeStep.id] ?? getServerCountdownAt(activeStep) ?? null) : null;
   const isTimerBlurActive = !!(activeCountdown && activeStep?.step_type === "video");
 
-  const nextStepUnlock = nextStep ? stepStates[activeStepIndex + 1]?.unlockResult ?? getStepUnlockStatus(activeStepIndex + 1) : null;
-  const nextCountdownAt = nextStep ? (nextStepUnlock?.reason === "delay_countdown" ? (nextStepUnlock.unlockAt ?? countdownUnlocks[nextStep.id] ?? null) : (countdownUnlocks[nextStep.id] ?? null)) : null;
+  const nextCountdownAt = nextStep?.is_locked ? (countdownUnlocks[nextStep.id] ?? getServerCountdownAt(nextStep) ?? null) : null;
+  const nextStepUnlock = nextStep
+    ? {
+        unlocked: !nextStep.is_locked,
+        reason: nextCountdownAt ? "delay_countdown" : (nextStep.lock_reason ?? undefined),
+        unlockAt: nextCountdownAt ?? undefined,
+      }
+    : null;
   const currentWatchPct = activeProgress?.watch_percent ?? 0;
 
   if (steps.length === 0) {

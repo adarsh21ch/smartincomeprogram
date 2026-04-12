@@ -5,6 +5,112 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const getConditionMetTimestamp = (progress: any) =>
+  progress?.condition_met_at || progress?.completed_at || null;
+
+const getStepUnlockState = (
+  step: any,
+  stepIndex: number,
+  prevProgress: any,
+  currentProgress: any,
+) => {
+  if (stepIndex === 0) {
+    return {
+      unlocked: true,
+      lockReason: null,
+      unlockAt: null,
+      shouldPersistPermanentUnlock: false,
+      conditionMetAt: null,
+    };
+  }
+
+  if (currentProgress?.permanently_unlocked === true) {
+    return {
+      unlocked: true,
+      lockReason: null,
+      unlockAt: null,
+      shouldPersistPermanentUnlock: false,
+      conditionMetAt: currentProgress.condition_met_at || null,
+    };
+  }
+
+  if (!prevProgress) {
+    return {
+      unlocked: false,
+      lockReason: "condition_not_met",
+      unlockAt: null,
+      shouldPersistPermanentUnlock: false,
+      conditionMetAt: null,
+    };
+  }
+
+  const condition = step.unlock_condition || "full_watch";
+  const watchPercent = prevProgress?.watched_percentage || 0;
+  const timeSpentSeconds = prevProgress?.time_spent_seconds || 0;
+
+  let conditionMet = false;
+  if (condition === "percentage") {
+    conditionMet = watchPercent >= (step.unlock_percentage || 80);
+  } else if (condition === "time_spent") {
+    conditionMet = timeSpentSeconds >= ((step.unlock_percentage || 10) * 60);
+  } else {
+    conditionMet = watchPercent >= 95 || prevProgress?.status === "completed" || !!prevProgress?.completed_at;
+  }
+
+  if (!conditionMet) {
+    return {
+      unlocked: false,
+      lockReason: "condition_not_met",
+      unlockAt: null,
+      shouldPersistPermanentUnlock: false,
+      conditionMetAt: null,
+    };
+  }
+
+  const conditionMetAt = getConditionMetTimestamp(prevProgress);
+
+  if (step.time_delay_enabled && (step.time_delay_minutes || 0) > 0) {
+    if (!conditionMetAt) {
+      return {
+        unlocked: false,
+        lockReason: "delay_waiting",
+        unlockAt: null,
+        shouldPersistPermanentUnlock: false,
+        conditionMetAt: null,
+      };
+    }
+
+    const unlockAtMs = new Date(conditionMetAt).getTime() + (step.time_delay_minutes || 0) * 60 * 1000;
+    const unlockAt = new Date(unlockAtMs).toISOString();
+
+    if (Date.now() < unlockAtMs) {
+      return {
+        unlocked: false,
+        lockReason: "delay_countdown",
+        unlockAt,
+        shouldPersistPermanentUnlock: false,
+        conditionMetAt,
+      };
+    }
+
+    return {
+      unlocked: true,
+      lockReason: null,
+      unlockAt,
+      shouldPersistPermanentUnlock: true,
+      conditionMetAt,
+    };
+  }
+
+  return {
+    unlocked: true,
+    lockReason: null,
+    unlockAt: null,
+    shouldPersistPermanentUnlock: true,
+    conditionMetAt,
+  };
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -163,28 +269,45 @@ Deno.serve(async (req) => {
       }
     }
 
+    const pendingPermanentUnlocks: any[] = [];
+    const unlockWriteTimestamp = new Date().toISOString();
+
     // Build response steps with full data
     const totalSteps = (steps || []).length;
     let completedCount = 0;
 
     const responseSteps = (steps || []).map((step: any, index: number) => {
-      const progress = progressMap[step.id];
-      const isCompleted = progress?.status === "completed" || !!progress?.completed_at;
-      if (isCompleted) completedCount++;
+      const progress = progressMap[step.id] || null;
+      const prevProgress = index > 0 ? progressMap[(steps as any[])[index - 1]?.id] || null : null;
+      const unlockState = getStepUnlockState(step, index, prevProgress, progress);
 
-      let isLocked = false;
-      if (index > 0) {
-        // Check if this step is permanently unlocked first
-        const thisStepProgress = progressMap[step.id];
-        if (thisStepProgress?.permanently_unlocked) {
-          isLocked = false;
-        } else {
-          const prevStep = (steps as any[])[index - 1];
-          const prevProgress = progressMap[prevStep.id];
-          const prevCompleted = prevProgress?.status === "completed" || !!prevProgress?.completed_at;
-          isLocked = !prevCompleted;
-        }
+      let effectiveProgress = progress;
+
+      if (unlockState.shouldPersistPermanentUnlock && !progress?.permanently_unlocked) {
+        effectiveProgress = {
+          ...progress,
+          permanently_unlocked: true,
+          status: progress?.status === "completed" ? "completed" : (progress?.status || "unlocked"),
+          condition_met_at: progress?.condition_met_at || unlockState.conditionMetAt || null,
+          unlocked_at: progress?.unlocked_at || unlockWriteTimestamp,
+        };
+
+        progressMap[step.id] = effectiveProgress;
+
+        pendingPermanentUnlocks.push({
+          funnel_id: funnelId,
+          funnel_step_id: step.id,
+          session_id: user.id,
+          status: effectiveProgress.status,
+          permanently_unlocked: true,
+          condition_met_at: unlockState.conditionMetAt || null,
+          unlocked_at: unlockWriteTimestamp,
+          updated_at: unlockWriteTimestamp,
+        });
       }
+
+      const isCompleted = effectiveProgress?.status === "completed" || !!effectiveProgress?.completed_at;
+      if (isCompleted) completedCount++;
 
       const asset = step.video_asset_id ? videoAssets[step.video_asset_id] : null;
       const videoUrl = asset?.public_url || (asset?.r2_key && r2PublicUrl ? `${r2PublicUrl}/${asset.r2_key}` : null);
@@ -198,7 +321,9 @@ Deno.serve(async (req) => {
         video_url: videoUrl,
         thumbnail_url: asset?.thumbnail_url || null,
         duration_seconds: asset?.duration_seconds || null,
-        is_locked: isLocked,
+        is_locked: !unlockState.unlocked,
+        lock_reason: unlockState.lockReason,
+        unlock_at: unlockState.unlockAt,
         // Rich fields
         cta_text: step.cta_text,
         cta_url: step.cta_url,
@@ -219,16 +344,22 @@ Deno.serve(async (req) => {
         timer_cta_url: step.timer_cta_url,
         timer_cta_style: step.timer_cta_style,
         progress: {
-          watch_percent: progress?.watched_percentage || 0,
+          watch_percent: effectiveProgress?.watched_percentage || 0,
           is_completed: isCompleted,
-          last_position_seconds: progress?.last_position_seconds || 0,
-          condition_met_at: progress?.condition_met_at || null,
-          max_watched_seconds: progress?.max_watched_seconds || 0,
-          time_spent_seconds: progress?.time_spent_seconds || 0,
-          permanently_unlocked: progress?.permanently_unlocked || false,
+          last_position_seconds: effectiveProgress?.last_position_seconds || 0,
+          condition_met_at: effectiveProgress?.condition_met_at || null,
+          max_watched_seconds: effectiveProgress?.max_watched_seconds || 0,
+          time_spent_seconds: effectiveProgress?.time_spent_seconds || 0,
+          permanently_unlocked: effectiveProgress?.permanently_unlocked || false,
         },
       };
     });
+
+    if (pendingPermanentUnlocks.length > 0) {
+      await supabase
+        .from("funnel_step_progress")
+        .upsert(pendingPermanentUnlocks, { onConflict: "funnel_id,funnel_step_id,session_id", ignoreDuplicates: false });
+    }
 
     const overallPercent = totalSteps > 0 ? Math.round((completedCount / totalSteps) * 100) : 0;
 
