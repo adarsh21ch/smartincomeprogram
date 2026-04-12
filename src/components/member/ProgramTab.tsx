@@ -517,7 +517,7 @@ const UpNextSection = ({
       </p>
       <p className="text-xs text-muted-foreground mt-1">{conditionText}</p>
       {requiredPct > 0 && (
-        <div className="mt-2">
+        <div className="mt-2 hidden md:block">
           <div className="h-1.5 rounded-full bg-muted overflow-hidden">
             <div
               className="h-full rounded-full bg-primary/60 transition-all duration-500"
