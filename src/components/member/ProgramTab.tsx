@@ -661,7 +661,7 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
     for (let i = 1; i < steps.length; i++) {
       const step = steps[i];
       const prevStep = steps[i - 1];
-      const result = checkStepUnlock(step, i, getProgressSnapshot(prevStep));
+      const result = checkStepUnlock(step, i, getProgressSnapshot(prevStep), step.progress);
 
       if (result.reason === "delay_countdown" && result.unlockAt) {
         countdowns[step.id] = result.unlockAt;
