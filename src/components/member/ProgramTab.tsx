@@ -650,7 +650,7 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
 
     // 3. Fallback: first incomplete unlocked step
     const firstAvailableIndex = steps.findIndex((_, index) => {
-      const progress = getProgressSnapshot(step);
+      const progress = getProgressSnapshot(steps[index]);
       return !progress.is_completed && (index === 0 || getStepUnlockStatus(index).unlocked || getStepUnlockStatus(index).reason === "delay_countdown");
     });
 
