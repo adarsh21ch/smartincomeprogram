@@ -41,15 +41,17 @@ export const VideoPlayer = ({
   onComplete,
   onClose,
   hideHeader = false,
+  autoPlayMuted = false,
 }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(durationSeconds || 0);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(autoPlayMuted);
   const [speed, setSpeed] = useState(1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [hasCompleted, setHasCompleted] = useState(false);
+  const [showUnmutePill, setShowUnmutePill] = useState(false);
   const progressSaveRef = useRef<NodeJS.Timeout>();
   const maxWatchedSecondsRef = useRef(initialPosition);
   const timeSpentSecondsRef = useRef(initialTimeSpentSeconds);
