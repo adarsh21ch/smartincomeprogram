@@ -935,10 +935,11 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
   const activeCountdown = activeStep?.is_locked ? (countdownUnlocks[activeStep.id] ?? getServerCountdownAt(activeStep) ?? null) : null;
   const isTimerBlurActive = !!(activeCountdown && activeStep?.step_type === "video");
 
-  const nextCountdownAt = nextStep?.is_locked ? (countdownUnlocks[nextStep.id] ?? getServerCountdownAt(nextStep) ?? null) : null;
+  const nextStepState = nextStep ? stepStates[activeStepIndex + 1] : null;
+  const nextCountdownAt = nextStepState?.hasCountdown ? (countdownUnlocks[nextStep!.id] ?? getServerCountdownAt(nextStep) ?? null) : null;
   const nextStepUnlock = nextStep
     ? {
-        unlocked: !nextStep.is_locked,
+        unlocked: nextStepState?.accessible && !nextStepState?.hasCountdown,
         reason: nextCountdownAt ? "delay_countdown" : (nextStep.lock_reason ?? undefined),
         unlockAt: nextCountdownAt ?? undefined,
       }
