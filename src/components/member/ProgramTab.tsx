@@ -47,6 +47,7 @@ export interface RichStepData {
     condition_met_at?: string | null;
     max_watched_seconds?: number;
     time_spent_seconds?: number;
+    permanently_unlocked?: boolean;
   };
 }
 
@@ -106,9 +107,16 @@ const getInitialProgressState = (step: RichStepData): LocalStepProgress => ({
 const checkStepUnlock = (
   step: RichStepData,
   stepIndex: number,
-  prevProgress: { watch_percent: number; is_completed: boolean; condition_met_at?: string | null; time_spent_seconds?: number } | null
+  prevProgress: { watch_percent: number; is_completed: boolean; condition_met_at?: string | null; time_spent_seconds?: number } | null,
+  currentStepProgress?: { permanently_unlocked?: boolean } | null
 ): UnlockResult => {
   if (stepIndex === 0) return { unlocked: true };
+
+  // CHECK FIRST: if this step was ever permanently unlocked
+  if (currentStepProgress?.permanently_unlocked === true) {
+    return { unlocked: true };
+  }
+
   if (!prevProgress) return { unlocked: false, reason: "previous_not_started" };
 
   const condition = step.unlock_condition || "full_watch";
