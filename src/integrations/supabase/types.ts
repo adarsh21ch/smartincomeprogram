@@ -2433,6 +2433,7 @@ export type Database = {
           granted_by: string
           id: string
           is_active: boolean | null
+          is_group_admin: boolean | null
           revoked_at: string | null
           revoked_by: string | null
           training_card_id: string
@@ -2443,6 +2444,7 @@ export type Database = {
           granted_by: string
           id?: string
           is_active?: boolean | null
+          is_group_admin?: boolean | null
           revoked_at?: string | null
           revoked_by?: string | null
           training_card_id: string
@@ -2453,6 +2455,7 @@ export type Database = {
           granted_by?: string
           id?: string
           is_active?: boolean | null
+          is_group_admin?: boolean | null
           revoked_at?: string | null
           revoked_by?: string | null
           training_card_id?: string
