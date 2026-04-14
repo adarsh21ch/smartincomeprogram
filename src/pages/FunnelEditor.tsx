@@ -1288,9 +1288,9 @@ const FunnelEditor = () => {
           </div>
         )}
 
-        {/* Main content + Live Preview */}
+        {/* Main content + Right Panel */}
         <div className="flex-1 flex gap-6 min-w-0">
-          <div className="flex-1 max-w-2xl min-w-0">
+          <div className={`flex-1 min-w-0 ${isMulti && wizardStep === 1 ? "max-w-none" : "max-w-2xl"}`}>
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex-1 min-w-0">
@@ -1304,7 +1304,7 @@ const FunnelEditor = () => {
               )}
             </div>
 
-            {/* Mobile compact step selector — wrapping grid, no horizontal scroll */}
+            {/* Mobile compact step selector */}
             {modeChosen && (
               <div className="lg:hidden grid grid-cols-4 sm:grid-cols-5 gap-1.5 pb-3 mb-3">
                 {visibleSteps.map((s, i) => (
@@ -1336,7 +1336,7 @@ const FunnelEditor = () => {
               {renderWizardContent()}
             </div>
 
-            {/* Navigation — always visible, no horizontal scroll needed */}
+            {/* Navigation */}
             <div className="flex gap-3 mt-4">
               {(modeChosen && wizardStep > 0) && <Button variant="outline" size="sm" onClick={() => setWizardStep(wizardStep - 1)}>Previous</Button>}
               <div className="flex-1" />
@@ -1350,16 +1350,44 @@ const FunnelEditor = () => {
             </div>
           </div>
 
-          {/* Live Preview — desktop only */}
+          {/* Right Panel — desktop only */}
           {modeChosen && (
-            <div className="hidden xl:block w-[300px] shrink-0 sticky top-4 h-[calc(100vh-10rem)]">
-              <FunnelLivePreview
-                funnel={funnel}
-                selectedVideo={selectedVideo}
-                flowSteps={flowSteps}
-                leadForm={leadForm}
-                previewStepIndex={editingStepIdx}
-              />
+            <div className="hidden lg:block w-[320px] shrink-0">
+              <div className="sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
+                {/* When on Build Journey and editing a step, show config panel inline */}
+                {isMulti && wizardStep === 1 && editingStepIdx !== null && flowSteps[editingStepIdx] ? (
+                  <div className="rounded-xl border border-border bg-card overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setEditingStepIdx(null)}
+                          className="text-muted-foreground hover:text-foreground transition-colors text-sm flex items-center gap-1"
+                        >
+                          ← Back
+                        </button>
+                      </div>
+                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Step {editingStepIdx + 1}</span>
+                    </div>
+                    <div className="p-4 space-y-4">
+                      <InlineStepConfig
+                        step={flowSteps[editingStepIdx]}
+                        stepIndex={editingStepIdx}
+                        totalSteps={flowSteps.length}
+                        onUpdate={(key, value) => updateFlowStep(editingStepIdx, key, value)}
+                        onOpenVideoPicker={() => setStepVideoPickerIdx(editingStepIdx)}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <FunnelLivePreview
+                    funnel={funnel}
+                    selectedVideo={selectedVideo}
+                    flowSteps={flowSteps}
+                    leadForm={leadForm}
+                    previewStepIndex={editingStepIdx}
+                  />
+                )}
+              </div>
             </div>
           )}
         </div>
