@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Video, Lock, Clock, MessageSquare, Music, User, ListChecks, Plus, X } from "lucide-react";
+import { Video, Lock, Clock, MessageSquare, Music, User, ListChecks, Plus, X, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { getStepTypeMeta } from "./StepTypeSelector";
 import { SpeakerPhotoUpload } from "./SpeakerPhotoUpload";
 
