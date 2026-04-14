@@ -44,6 +44,10 @@ interface FlowStep {
   timer_cta_text?: string;
   timer_cta_url?: string;
   timer_cta_style?: string;
+  access_code_enabled?: boolean;
+  access_code_hash?: string | null;
+  access_code_message?: string;
+  _access_code_raw?: string;
 }
 
 interface StepConfigPanelProps {
