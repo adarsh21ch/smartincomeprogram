@@ -1,5 +1,4 @@
 import { Play, Lock, MessageCircle, Phone as PhoneIcon, Eye, Layers } from "lucide-react";
-import logoImg from "@/assets/logo.png";
 
 interface PreviewStep {
   title: string;
