@@ -910,16 +910,17 @@ const FunnelEditor = () => {
                 </button>
               ))}
             </div>
-            {funnel.speaker_scope === "per_step" && (
-              <p className="text-sm text-muted-foreground">Speaker settings are now managed inside each step. Go to <strong>Build Journey → Edit any step → Speaker</strong> section.</p>
-            )}
           </div>
+        )}
+
+        {/* Per-step speaker assignment UI */}
+        {isMulti && funnel.speaker_scope === "per_step" && (
+          <PerStepSpeakerAssignment steps={flowSteps} setSteps={setFlowSteps} />
         )}
 
         {/* Global speaker settings — shown when scope is global (or single mode) */}
         {(funnel.speaker_scope === "global" || !isMulti) && (
           <>
-            {/* Mode selector */}
             <div className="flex rounded-xl border border-border overflow-hidden">
               {(["none", "account", "custom"] as const).map((mode) => (
                 <button
