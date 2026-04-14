@@ -38,6 +38,20 @@ Deno.serve(async (req) => {
       })
     }
 
+    // If page is private, return minimal info so frontend shows gate
+    if (page.visibility === 'private') {
+      // Check if session has access (via query param)
+      const verified = url.searchParams.get('verified')
+      if (verified !== 'true') {
+        return new Response(JSON.stringify({
+          requiresCode: true,
+          page: { id: page.id, title: page.title, visibility: page.visibility },
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+    }
+
     // Fetch creator profile
     const { data: creator } = await supabase
       .from('profiles')
