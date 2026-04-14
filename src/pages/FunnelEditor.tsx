@@ -352,26 +352,43 @@ const FunnelEditor = () => {
       }
       if (funnel.funnel_mode === "multi" && flowSteps.length > 0) {
         await supabase.from("funnel_steps").delete().eq("funnel_id", funnelId);
-        const stepsPayload = flowSteps.map((s, i) => ({
-          funnel_id: funnelId, step_order: i, title: s.title, description: s.description || null,
-          step_type: s.step_type, video_asset_id: s.video_asset_id || null, is_active: s.is_active,
-          unlock_rule_type: s.unlock_rule_type, unlock_rule_value: s.unlock_rule_value || null,
-          cta_text: s.cta_text || null, cta_url: s.cta_url || null, booking_url: s.booking_url || null,
-          unlock_condition: s.unlock_condition || "full_watch",
-          unlock_percentage: s.unlock_percentage ?? 80,
-          time_delay_enabled: s.time_delay_enabled ?? false,
-          time_delay_minutes: s.time_delay_minutes ?? 0,
-          speaker_mode_step: s.speaker_mode_step || "none",
-          speaker_name_custom: s.speaker_name_custom || null,
-          speaker_title: s.speaker_title || null,
-          speaker_bio: s.speaker_bio || null,
-          speaker_photo_url_custom: s.speaker_photo_url_custom || null,
-          video_topics_step_enabled: s.video_topics_step_enabled ?? false,
-          video_topics_step: s.video_topics_step || [],
-          timer_cta_enabled: s.timer_cta_enabled ?? false,
-          timer_cta_text: s.timer_cta_text || null,
-          timer_cta_url: s.timer_cta_url || null,
-          timer_cta_style: s.timer_cta_style || "gold",
+        const stepsPayload = await Promise.all(flowSteps.map(async (s, i) => {
+          // Hash access code if enabled and provided
+          let accessCodeHash: string | null = null;
+          if (s.access_code_enabled && (s as any)._access_code_raw) {
+            const encoder = new TextEncoder();
+            const hashBuffer = await crypto.subtle.digest("SHA-256", encoder.encode((s as any)._access_code_raw.trim().toUpperCase()));
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            accessCodeHash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+          } else if (s.access_code_enabled && s.access_code_hash) {
+            // Keep existing hash if code wasn't changed
+            accessCodeHash = s.access_code_hash;
+          }
+
+          return {
+            funnel_id: funnelId, step_order: i, title: s.title, description: s.description || null,
+            step_type: s.step_type, video_asset_id: s.video_asset_id || null, is_active: s.is_active,
+            unlock_rule_type: s.unlock_rule_type, unlock_rule_value: s.unlock_rule_value || null,
+            cta_text: s.cta_text || null, cta_url: s.cta_url || null, booking_url: s.booking_url || null,
+            unlock_condition: s.unlock_condition || "full_watch",
+            unlock_percentage: s.unlock_percentage ?? 80,
+            time_delay_enabled: s.time_delay_enabled ?? false,
+            time_delay_minutes: s.time_delay_minutes ?? 0,
+            speaker_mode_step: s.speaker_mode_step || "none",
+            speaker_name_custom: s.speaker_name_custom || null,
+            speaker_title: s.speaker_title || null,
+            speaker_bio: s.speaker_bio || null,
+            speaker_photo_url_custom: s.speaker_photo_url_custom || null,
+            video_topics_step_enabled: s.video_topics_step_enabled ?? false,
+            video_topics_step: s.video_topics_step || [],
+            timer_cta_enabled: s.timer_cta_enabled ?? false,
+            timer_cta_text: s.timer_cta_text || null,
+            timer_cta_url: s.timer_cta_url || null,
+            timer_cta_style: s.timer_cta_style || "gold",
+            access_code_enabled: s.access_code_enabled ?? false,
+            access_code_hash: accessCodeHash,
+            access_code_message: s.access_code_message || "To unlock this step, contact your mentor and request the access code for this session.",
+          };
         }));
         const { error: stepErr } = await supabase.from("funnel_steps").insert(stepsPayload);
         if (stepErr) throw stepErr;
