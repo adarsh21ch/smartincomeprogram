@@ -76,6 +76,7 @@ const UNLOCK_OPTIONS: { value: string; label: string; description: string }[] = 
 ];
 
 export const StepConfigPanel = ({ open, onClose, step, stepIndex, onUpdate, onOpenVideoPicker, totalSteps, speakerScope, videoTopicsScope, userProfile }: StepConfigPanelProps) => {
+  const [showAccessCode, setShowAccessCode] = useState(false);
   if (!step) return null;
   const meta = getStepTypeMeta(step.step_type);
 
