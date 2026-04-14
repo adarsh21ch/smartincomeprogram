@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Video, Lock, Clock, MessageSquare, Music, User, ListChecks, Plus, X } from "lucide-react";
+import { Video, Lock, Clock, MessageSquare, Music, User, ListChecks, Plus, X, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { getStepTypeMeta } from "./StepTypeSelector";
 import { SpeakerPhotoUpload } from "./SpeakerPhotoUpload";
 
@@ -44,6 +44,10 @@ interface FlowStep {
   timer_cta_text?: string;
   timer_cta_url?: string;
   timer_cta_style?: string;
+  access_code_enabled?: boolean;
+  access_code_hash?: string | null;
+  access_code_message?: string;
+  _access_code_raw?: string;
 }
 
 interface StepConfigPanelProps {
@@ -72,6 +76,7 @@ const UNLOCK_OPTIONS: { value: string; label: string; description: string }[] = 
 ];
 
 export const StepConfigPanel = ({ open, onClose, step, stepIndex, onUpdate, onOpenVideoPicker, totalSteps, speakerScope, videoTopicsScope, userProfile }: StepConfigPanelProps) => {
+  const [showAccessCode, setShowAccessCode] = useState(false);
   if (!step) return null;
   const meta = getStepTypeMeta(step.step_type);
 
@@ -406,6 +411,65 @@ export const StepConfigPanel = ({ open, onClose, step, stepIndex, onUpdate, onOp
                           </div>
                         </div>
                       </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Access Code Gate */}
+              <div className="space-y-3 pt-3 border-t border-border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium flex items-center gap-1.5">
+                      <ShieldCheck size={12} className="text-muted-foreground" />
+                      Access Code Gate
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">Require a code before this step can be viewed</p>
+                  </div>
+                  <Switch
+                    checked={step.access_code_enabled ?? false}
+                    onCheckedChange={(v) => onUpdate("access_code_enabled" as keyof FlowStep, v)}
+                  />
+                </div>
+                {step.access_code_enabled && (
+                  <div className="space-y-3 animate-in slide-in-from-top-2 duration-300">
+                    <div>
+                      <Label className="text-xs">Access Code</Label>
+                      <div className="relative mt-1">
+                        <Input
+                          type={showAccessCode ? "text" : "password"}
+                          value={(step as any)._access_code_raw || ""}
+                          onChange={(e) => onUpdate("_access_code_raw" as keyof FlowStep, e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 20))}
+                          placeholder={step.access_code_hash ? "••••••••" : "E.g. MENTOR2024, VIP123"}
+                          className="bg-muted border-border pr-10 uppercase tracking-wider font-mono"
+                          maxLength={20}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowAccessCode(!showAccessCode)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showAccessCode ? <EyeOff size={16} /> : <Eye size={16} />}
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1.5">
+                        {step.access_code_hash && !(step as any)._access_code_raw
+                          ? "Code is set. Enter a new code to change it."
+                          : "This code will be hashed and stored securely. Save it somewhere safe."}
+                      </p>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Message shown to viewer when step is locked</Label>
+                      <Textarea
+                        value={step.access_code_message || "To unlock this step, contact your mentor and request the access code for this session."}
+                        onChange={(e) => onUpdate("access_code_message" as keyof FlowStep, e.target.value.slice(0, 200))}
+                        className="mt-1 bg-muted border-border"
+                        rows={3}
+                        maxLength={200}
+                      />
+                      <p className="text-[10px] text-muted-foreground text-right mt-0.5">
+                        {(step.access_code_message || "To unlock this step, contact your mentor and request the access code for this session.").length}/200
+                      </p>
                     </div>
                   </div>
                 )}

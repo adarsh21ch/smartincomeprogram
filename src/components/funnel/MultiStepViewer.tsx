@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { StepCodeGate } from "./StepCodeGate";
 import {
   Play, Lock, Check, CheckCircle2, Circle, ExternalLink,
   Calendar, CreditCard, ClipboardList, UserCheck, ChevronRight,
@@ -40,6 +41,8 @@ interface FunnelStep {
   timer_cta_text?: string;
   timer_cta_url?: string;
   timer_cta_style?: string;
+  access_code_enabled?: boolean;
+  access_code_message?: string;
 }
 
 interface StepProgress {

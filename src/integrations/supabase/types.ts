@@ -485,6 +485,48 @@ export type Database = {
           },
         ]
       }
+      funnel_step_access: {
+        Row: {
+          access_granted: boolean
+          funnel_id: string
+          granted_at: string
+          id: string
+          session_id: string
+          step_id: string
+        }
+        Insert: {
+          access_granted?: boolean
+          funnel_id: string
+          granted_at?: string
+          id?: string
+          session_id: string
+          step_id: string
+        }
+        Update: {
+          access_granted?: boolean
+          funnel_id?: string
+          granted_at?: string
+          id?: string
+          session_id?: string
+          step_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funnel_step_access_funnel_id_fkey"
+            columns: ["funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funnel_step_access_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: false
+            referencedRelation: "funnel_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       funnel_step_progress: {
         Row: {
           completed_at: string | null
@@ -575,6 +617,9 @@ export type Database = {
       }
       funnel_steps: {
         Row: {
+          access_code_enabled: boolean
+          access_code_hash: string | null
+          access_code_message: string | null
           between_step_audio_enabled: boolean | null
           between_step_audio_url: string | null
           between_step_message: string | null
@@ -613,6 +658,9 @@ export type Database = {
           video_topics_step_enabled: boolean | null
         }
         Insert: {
+          access_code_enabled?: boolean
+          access_code_hash?: string | null
+          access_code_message?: string | null
           between_step_audio_enabled?: boolean | null
           between_step_audio_url?: string | null
           between_step_message?: string | null
@@ -651,6 +699,9 @@ export type Database = {
           video_topics_step_enabled?: boolean | null
         }
         Update: {
+          access_code_enabled?: boolean
+          access_code_hash?: string | null
+          access_code_message?: string | null
           between_step_audio_enabled?: boolean | null
           between_step_audio_url?: string | null
           between_step_message?: string | null
@@ -1291,6 +1342,7 @@ export type Database = {
       }
       landing_pages: {
         Row: {
+          access_code_hash: string | null
           allow_login: boolean | null
           allow_signup: boolean | null
           background_style: string | null
@@ -1353,8 +1405,10 @@ export type Database = {
           total_registrations: number | null
           total_views: number | null
           updated_at: string | null
+          visibility: string
         }
         Insert: {
+          access_code_hash?: string | null
           allow_login?: boolean | null
           allow_signup?: boolean | null
           background_style?: string | null
@@ -1417,8 +1471,10 @@ export type Database = {
           total_registrations?: number | null
           total_views?: number | null
           updated_at?: string | null
+          visibility?: string
         }
         Update: {
+          access_code_hash?: string | null
           allow_login?: boolean | null
           allow_signup?: boolean | null
           background_style?: string | null
@@ -1481,6 +1537,7 @@ export type Database = {
           total_registrations?: number | null
           total_views?: number | null
           updated_at?: string | null
+          visibility?: string
         }
         Relationships: [
           {
