@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { LandingPageCodeGate } from "@/components/funnel/LandingPageCodeGate";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,6 +35,7 @@ const PublicLandingPage = () => {
   const [honeypot, setHoneypot] = useState("");
   const [showUnmuteHint, setShowUnmuteHint] = useState(true);
   const [showSpeakerBio, setShowSpeakerBio] = useState(false);
+  const [codeGateOpen, setCodeGateOpen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Auto-hide unmute hint after 5 seconds
@@ -62,6 +64,15 @@ const PublicLandingPage = () => {
         .single();
       if (data) {
         setPage(data);
+        // Check if private page needs code gate
+        if (data.visibility === "private" && data.access_code_hash) {
+          const codeOk = localStorage.getItem(`nf_lp_code_${data.id}`);
+          if (!codeOk) {
+            setCodeGateOpen(true);
+            setLoading(false);
+            return;
+          }
+        }
         const saved = localStorage.getItem(`nf_registered_${data.id}`);
         if (saved) setSubmitted(true);
         if (data.post_submit_video_asset_id) {
