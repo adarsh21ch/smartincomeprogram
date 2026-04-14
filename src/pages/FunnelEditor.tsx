@@ -1353,40 +1353,14 @@ const FunnelEditor = () => {
           {/* Right Panel — desktop only */}
           {modeChosen && (
             <div className="hidden lg:block w-[320px] shrink-0">
-              <div className="sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
-                {/* When on Build Journey and editing a step, show config panel inline */}
-                {isMulti && wizardStep === 1 && editingStepIdx !== null && flowSteps[editingStepIdx] ? (
-                  <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setEditingStepIdx(null)}
-                          className="text-muted-foreground hover:text-foreground transition-colors text-sm flex items-center gap-1"
-                        >
-                          ← Back
-                        </button>
-                      </div>
-                      <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Step {editingStepIdx + 1}</span>
-                    </div>
-                    <div className="p-4 space-y-4">
-                      <InlineStepConfig
-                        step={flowSteps[editingStepIdx]}
-                        stepIndex={editingStepIdx}
-                        totalSteps={flowSteps.length}
-                        onUpdate={(key, value) => updateFlowStep(editingStepIdx, key, value)}
-                        onOpenVideoPicker={() => setStepVideoPickerIdx(editingStepIdx)}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <FunnelLivePreview
-                    funnel={funnel}
-                    selectedVideo={selectedVideo}
-                    flowSteps={flowSteps}
-                    leadForm={leadForm}
-                    previewStepIndex={editingStepIdx}
-                  />
-                )}
+              <div className="sticky top-4 max-h-[calc(100vh-6rem)] overflow-y-auto rounded-xl">
+                <FunnelLivePreview
+                  funnel={funnel}
+                  selectedVideo={selectedVideo}
+                  flowSteps={flowSteps}
+                  leadForm={leadForm}
+                  previewStepIndex={editingStepIdx}
+                />
               </div>
             </div>
           )}
