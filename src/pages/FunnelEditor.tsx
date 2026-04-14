@@ -765,17 +765,15 @@ const FunnelEditor = () => {
       {/* Modals */}
       <StepTypeSelector open={stepTypeSelectorOpen} onClose={() => setStepTypeSelectorOpen(false)} onSelect={addFlowStep} />
       {/* StepConfigPanel as Sheet — only on mobile / when NOT on Build Journey desktop */}
-      <div className="lg:hidden">
-        <StepConfigPanel
-          open={editingStepIdx !== null}
-          onClose={() => setEditingStepIdx(null)}
-          step={editingStepIdx !== null ? flowSteps[editingStepIdx] : null}
-          stepIndex={editingStepIdx ?? 0}
-          totalSteps={flowSteps.length}
-          onUpdate={(key, value) => { if (editingStepIdx !== null) updateFlowStep(editingStepIdx, key, value); }}
-          onOpenVideoPicker={() => { setStepVideoPickerIdx(editingStepIdx); }}
-        />
-      </div>
+      <StepConfigPanel
+        open={editingStepIdx !== null}
+        onClose={() => setEditingStepIdx(null)}
+        step={editingStepIdx !== null ? flowSteps[editingStepIdx] : null}
+        stepIndex={editingStepIdx ?? 0}
+        totalSteps={flowSteps.length}
+        onUpdate={(key, value) => { if (editingStepIdx !== null) updateFlowStep(editingStepIdx, key, value); }}
+        onOpenVideoPicker={() => { setStepVideoPickerIdx(editingStepIdx); }}
+      />
       <VideoPickerModal
         open={stepVideoPickerIdx !== null}
         onClose={() => setStepVideoPickerIdx(null)}
