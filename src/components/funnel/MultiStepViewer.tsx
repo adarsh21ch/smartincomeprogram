@@ -41,6 +41,8 @@ interface FunnelStep {
   timer_cta_text?: string;
   timer_cta_url?: string;
   timer_cta_style?: string;
+  access_code_enabled?: boolean;
+  access_code_message?: string;
 }
 
 interface StepProgress {
