@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
     // Fetch funnel with ALL relevant fields
     const { data: funnel } = await supabase
       .from("funnels")
-      .select("id, title, description, speaker_name, speaker_photo_url, speaker_about, speaker_mode, speaker_scope, video_topics_enabled, video_topics, video_topics_scope, show_contact_buttons, contact_whatsapp, contact_phone, contact_instagram, owner_id")
+      .select("id, title, description, speaker_name, speaker_photo_url, speaker_about, speaker_mode, speaker_scope, video_topics_enabled, video_topics, video_topics_scope, show_contact_buttons, contact_whatsapp, contact_phone, contact_instagram, owner_id, allow_seek, allow_speed_change")
       .eq("id", funnelId)
       .single();
 
@@ -197,7 +197,7 @@ Deno.serve(async (req) => {
     // Fetch steps with ALL fields
     const { data: steps } = await supabase
       .from("funnel_steps")
-      .select("id, title, description, step_order, step_type, video_asset_id, cta_text, cta_url, booking_url, unlock_rule_type, unlock_rule_value, unlock_condition, unlock_percentage, time_delay_enabled, time_delay_minutes, speaker_mode_step, speaker_name_custom, speaker_title, speaker_bio, speaker_photo_url_custom, video_topics_step_enabled, video_topics_step, timer_cta_enabled, timer_cta_text, timer_cta_url, timer_cta_style")
+      .select("id, title, description, step_order, step_type, video_asset_id, cta_text, cta_url, booking_url, unlock_rule_type, unlock_rule_value, unlock_condition, unlock_percentage, time_delay_enabled, time_delay_minutes, speaker_mode_step, speaker_name_custom, speaker_title, speaker_bio, speaker_photo_url_custom, video_topics_step_enabled, video_topics_step, timer_cta_enabled, timer_cta_text, timer_cta_url, timer_cta_style, access_code_enabled, access_code_message")
       .eq("funnel_id", funnelId)
       .eq("is_active", true)
       .order("step_order");
@@ -343,6 +343,8 @@ Deno.serve(async (req) => {
         timer_cta_text: step.timer_cta_text,
         timer_cta_url: step.timer_cta_url,
         timer_cta_style: step.timer_cta_style,
+        access_code_enabled: step.access_code_enabled || false,
+        access_code_message: step.access_code_message || null,
         progress: {
           watch_percent: effectiveProgress?.watched_percentage || 0,
           is_completed: isCompleted,
@@ -380,6 +382,8 @@ Deno.serve(async (req) => {
           show_contact_buttons: funnel.show_contact_buttons,
           contact_whatsapp: funnel.contact_whatsapp,
           contact_phone: funnel.contact_phone,
+          allow_seek: funnel.allow_seek ?? false,
+          allow_speed_change: funnel.allow_speed_change ?? true,
         },
         creatorProfile: creatorProfile ? {
           full_name: creatorProfile.full_name,
