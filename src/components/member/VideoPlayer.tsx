@@ -27,6 +27,8 @@ interface VideoPlayerProps {
   hideHeader?: boolean;
   autoPlayMuted?: boolean;
   preloadNextUrl?: string | null;
+  allowSeek?: boolean;
+  allowSpeed?: boolean;
 }
 
 export const VideoPlayer = ({
@@ -44,6 +46,8 @@ export const VideoPlayer = ({
   hideHeader = false,
   autoPlayMuted = false,
   preloadNextUrl,
+  allowSeek = true,
+  allowSpeed = true,
 }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const seekBarRef = useRef<HTMLDivElement>(null);
@@ -59,6 +63,13 @@ export const VideoPlayer = ({
   const progressSaveRef = useRef<NodeJS.Timeout>();
   const maxWatchedSecondsRef = useRef(initialPosition);
   const timeSpentSecondsRef = useRef(initialTimeSpentSeconds);
+  const seekDisabledToastRef = useRef<ReturnType<typeof setTimeout>>();
+
+  const showSeekDisabledToast = useCallback(() => {
+    if (seekDisabledToastRef.current) clearTimeout(seekDisabledToastRef.current);
+    toast("Forward seeking is disabled", { duration: 2000 });
+    seekDisabledToastRef.current = setTimeout(() => {}, 2000);
+  }, []);
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
@@ -239,8 +250,14 @@ export const VideoPlayer = ({
     if (!video || !bar || !video.duration) return;
     const rect = bar.getBoundingClientRect();
     const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    video.currentTime = pct * video.duration;
-  }, []);
+    const targetTime = pct * video.duration;
+    if (!allowSeek && targetTime > maxWatchedSecondsRef.current + 0.5) {
+      video.currentTime = maxWatchedSecondsRef.current;
+      showSeekDisabledToast();
+    } else {
+      video.currentTime = targetTime;
+    }
+  }, [allowSeek, showSeekDisabledToast]);
 
   const handleSeekDown = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
     setIsSeeking(true);
@@ -277,6 +294,7 @@ export const VideoPlayer = ({
   const setPlaybackSpeed = (s: number) => {
     const video = videoRef.current;
     if (!video) return;
+    if (!allowSpeed) return;
     video.playbackRate = s;
     setSpeed(s);
     setShowSpeedMenu(false);
@@ -339,6 +357,20 @@ export const VideoPlayer = ({
       video.removeEventListener("webkitendfullscreen", onEndFs);
     };
   }, []);
+
+  // Enforce seek lock via the seeking event on the video element
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || allowSeek) return;
+    const onSeekingEvent = () => {
+      if (video.currentTime > maxWatchedSecondsRef.current + 0.5) {
+        video.currentTime = maxWatchedSecondsRef.current;
+        showSeekDisabledToast();
+      }
+    };
+    video.addEventListener("seeking", onSeekingEvent);
+    return () => video.removeEventListener("seeking", onSeekingEvent);
+  }, [allowSeek, showSeekDisabledToast]);
 
   if (!videoUrl) {
     return (
@@ -440,7 +472,7 @@ export const VideoPlayer = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="relative">
+            {allowSpeed && <div className="relative">
               <button
                 onClick={() => setShowSpeedMenu(!showSpeedMenu)}
                 className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-0.5"
@@ -462,7 +494,7 @@ export const VideoPlayer = ({
                   ))}
                 </div>
               )}
-            </div>
+            </div>}
             <button
               onClick={toggleFullscreen}
               onTouchEnd={(e) => { e.preventDefault(); toggleFullscreen(); }}
