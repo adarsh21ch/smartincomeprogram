@@ -63,12 +63,13 @@ export const VideoPlayer = ({
   const progressSaveRef = useRef<NodeJS.Timeout>();
   const maxWatchedSecondsRef = useRef(initialPosition);
   const timeSpentSecondsRef = useRef(initialTimeSpentSeconds);
-  const seekDisabledToastRef = useRef<ReturnType<typeof setTimeout>>();
+  const lastSeekToastRef = useRef(0);
 
   const showSeekDisabledToast = useCallback(() => {
-    if (seekDisabledToastRef.current) clearTimeout(seekDisabledToastRef.current);
-    toast("Forward seeking is disabled", { duration: 2000 });
-    seekDisabledToastRef.current = setTimeout(() => {}, 2000);
+    const now = Date.now();
+    if (now - lastSeekToastRef.current < 3000) return;
+    lastSeekToastRef.current = now;
+    toast.error("You can't skip ahead in this video", { duration: 2000 });
   }, []);
 
   const formatTime = (s: number) => {
@@ -169,7 +170,7 @@ export const VideoPlayer = ({
         video.playsInline = true;
         video.play().then(() => {
           setIsPlaying(true);
-          setIsMuted(true);
+          setIsMuted(video.muted);
           (window as any).__playingVideo = video;
         }).catch(() => {
           // Autoplay blocked
@@ -184,7 +185,10 @@ export const VideoPlayer = ({
 
     const handleCanPlay = () => setIsBuffering(false);
     const handleWaiting = () => setIsBuffering(true);
-    const handlePlaying = () => setIsBuffering(false);
+    const handlePlaying = () => {
+      setIsBuffering(false);
+      setIsMuted(video.muted);
+    };
 
     video.addEventListener("loadedmetadata", handleLoaded);
     video.addEventListener("timeupdate", handleTimeUpdate);
