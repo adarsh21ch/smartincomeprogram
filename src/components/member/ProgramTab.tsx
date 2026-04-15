@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { StepCodeGate } from "@/components/funnel/StepCodeGate";
 
 /* ─── Types ─── */
 export interface RichStepData {
@@ -42,6 +43,8 @@ export interface RichStepData {
   timer_cta_text?: string | null;
   timer_cta_url?: string | null;
   timer_cta_style?: string | null;
+  access_code_enabled?: boolean;
+  access_code_message?: string | null;
   progress: {
     watch_percent: number;
     is_completed: boolean;
@@ -65,6 +68,8 @@ interface FunnelData {
   video_topics_enabled?: boolean;
   video_topics?: Array<{ icon: string; text: string }>;
   video_topics_scope?: string;
+  allow_seek?: boolean;
+  allow_speed_change?: boolean;
 }
 
 interface CreatorData {
@@ -525,6 +530,21 @@ export const ProgramTab = ({ funnel, steps, completionPct, creatorProfile, onSte
   const [localProgress, setLocalProgress] = useState<Record<string, LocalStepProgress>>(cachedResume.current.progress);
   const hasInitializedStepRef = useRef(false);
   const pendingConditionPersistRef = useRef<Record<string, boolean>>({});
+  const [stepCodeUnlocked, setStepCodeUnlocked] = useState<Record<string, boolean>>({});
+
+  // Check localStorage for previously unlocked step codes
+  useEffect(() => {
+    const unlocked: Record<string, boolean> = {};
+    for (const step of steps) {
+      if (step.access_code_enabled) {
+        const key = `nf_step_code_${step.id}_${user?.id || "anon"}`;
+        if (localStorage.getItem(key) === "true") {
+          unlocked[step.id] = true;
+        }
+      }
+    }
+    setStepCodeUnlocked(unlocked);
+  }, [steps, user?.id]);
 
   const getServerCountdownAt = useCallback((step: RichStepData | null | undefined) => {
     if (!step?.is_locked || !step.unlock_at) return null;
