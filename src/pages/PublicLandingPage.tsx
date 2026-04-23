@@ -510,13 +510,12 @@ const PublicLandingPage = () => {
                         </Select>
                       ) : (f as any).fieldType === "dob" ? (
                         <>
-                          <Input
-                            type="date"
-                            max={new Date().toISOString().split("T")[0]}
+                          <DateOfBirthInput
                             value={formData[f.key] || ""}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                            onChange={(val) => setFormData((prev) => ({ ...prev, [f.key]: val }))}
                             required={f.required}
-                            className={`bg-[#181818] text-white placeholder:text-[#555] h-10 ${ageError ? "border-red-500" : "border-[rgba(197,147,14,0.2)]"}`}
+                            hasError={!!ageError}
+                            size="md"
                           />
                           {ageError && (
                             <p className="text-xs font-medium text-red-400 mt-1 flex items-center gap-1">
@@ -631,13 +630,12 @@ const PublicLandingPage = () => {
                             </Select>
                           ) : (f as any).fieldType === "dob" ? (
                             <>
-                              <Input
-                                type="date"
-                                max={new Date().toISOString().split("T")[0]}
+                              <DateOfBirthInput
                                 value={formData[f.key] || ""}
-                                onChange={(e) => setFormData((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                                onChange={(val) => setFormData((prev) => ({ ...prev, [f.key]: val }))}
                                 required={f.required}
-                                className={`bg-[#181818] text-white placeholder:text-[#555] h-12 ${ageError ? "border-red-500" : "border-[rgba(197,147,14,0.2)]"}`}
+                                hasError={!!ageError}
+                                size="lg"
                               />
                               {ageError && (
                                 <p className="text-xs font-medium text-red-400 mt-1 flex items-center gap-1">
