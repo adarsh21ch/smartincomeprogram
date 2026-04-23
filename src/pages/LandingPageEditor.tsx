@@ -38,6 +38,7 @@ const defaultFormState = {
   field_phone_enabled: true, field_phone_required: true,
   field_email_enabled: true, field_email_required: true,
   field_age_enabled: false, field_age_required: false,
+  min_age_enabled: false, min_age: 18,
   field_city_enabled: false, field_city_required: false,
   field_state_enabled: false, field_state_required: false,
   field_occupation_enabled: false, field_occupation_required: false,
@@ -94,7 +95,7 @@ const formFields = [
   { key: "name", label: "Full Name" },
   { key: "phone", label: "Phone Number" },
   { key: "email", label: "Email Address" },
-  { key: "age", label: "Age" },
+  { key: "age", label: "Date of Birth" },
   { key: "city", label: "City" },
   { key: "state", label: "State" },
   { key: "occupation", label: "Current Occupation" },
@@ -479,6 +480,41 @@ const LandingPageEditor = () => {
               );
             })}
           </div>
+
+          {/* Minimum age restriction — appears when DOB field is enabled */}
+          {form.field_age_enabled && (
+            <div className="rounded-xl border border-border p-3.5 space-y-3 animate-in fade-in slide-in-from-top-1">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Restrict by minimum age</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Block visitors below a certain age based on their Date of Birth
+                  </p>
+                </div>
+                <Switch
+                  checked={!!form.min_age_enabled}
+                  onCheckedChange={(v) => updateField("min_age_enabled", v)}
+                />
+              </div>
+              {form.min_age_enabled && (
+                <div className="flex items-center gap-3 pt-1">
+                  <Label className="text-sm whitespace-nowrap">Minimum age</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={120}
+                    value={form.min_age ?? 18}
+                    onChange={(e) => {
+                      const n = parseInt(e.target.value, 10);
+                      updateField("min_age", isNaN(n) ? 18 : Math.max(1, Math.min(120, n)));
+                    }}
+                    className="w-24 bg-muted border-border h-9"
+                  />
+                  <span className="text-xs text-muted-foreground">years and above</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {[1, 2].map((n) => {
