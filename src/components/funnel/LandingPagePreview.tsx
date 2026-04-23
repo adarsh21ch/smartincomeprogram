@@ -75,7 +75,7 @@ export const LandingPagePreview = ({
     { key: "name", label: "Full Name", enabled: form.field_name_enabled },
     { key: "phone", label: "Phone Number", enabled: form.field_phone_enabled },
     { key: "email", label: "Email Address", enabled: form.field_email_enabled },
-    { key: "age", label: "Age", enabled: form.field_age_enabled },
+    { key: "age", label: "Date of Birth", enabled: form.field_age_enabled },
     { key: "city", label: "City", enabled: form.field_city_enabled },
     { key: "state", label: "State", enabled: form.field_state_enabled },
     { key: "occupation", label: "Occupation", enabled: form.field_occupation_enabled },
