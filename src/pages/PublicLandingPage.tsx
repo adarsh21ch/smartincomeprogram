@@ -508,6 +508,22 @@ const PublicLandingPage = () => {
                             ))}
                           </SelectContent>
                         </Select>
+                      ) : (f as any).fieldType === "dob" ? (
+                        <>
+                          <Input
+                            type="date"
+                            max={new Date().toISOString().split("T")[0]}
+                            value={formData[f.key] || ""}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                            required={f.required}
+                            className={`bg-[#181818] text-white placeholder:text-[#555] h-10 ${ageError ? "border-red-500" : "border-[rgba(197,147,14,0.2)]"}`}
+                          />
+                          {ageError && (
+                            <p className="text-xs font-medium text-red-400 mt-1 flex items-center gap-1">
+                              <span aria-hidden>⚠</span> {ageError}
+                            </p>
+                          )}
+                        </>
                       ) : (
                         <Input
                           type={(f as any).type || "text"}
