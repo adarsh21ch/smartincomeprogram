@@ -81,6 +81,43 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Date of Birth handling — `age` arrives as YYYY-MM-DD when DOB field is enabled.
+    // Compute integer age and enforce min_age if configured.
+    let dobValue: string | null = null
+    let computedAge: number | null = null
+    if (page.field_age_enabled && age) {
+      const dobDate = new Date(age)
+      if (!isNaN(dobDate.getTime())) {
+        dobValue = age
+        const today = new Date()
+        let yrs = today.getFullYear() - dobDate.getFullYear()
+        const m = today.getMonth() - dobDate.getMonth()
+        if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) yrs--
+        computedAge = yrs
+      } else {
+        return new Response(JSON.stringify({ error: 'Invalid date of birth' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+    }
+    if (page.field_age_enabled && page.field_age_required && !dobValue) {
+      return new Response(JSON.stringify({ error: 'Date of birth is required' }), {
+        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+    if (page.min_age_enabled && dobValue && computedAge !== null) {
+      const requiredAge = page.min_age ?? 18
+      if (computedAge < requiredAge) {
+        return new Response(JSON.stringify({
+          success: false,
+          reason: 'underage',
+          message: `You must be ${requiredAge} or older to register.`,
+        }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+    }
+
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
 
     // Rate limit: check recent submissions from same IP
