@@ -16,6 +16,7 @@ import {
 import { Loader2, Check, Lock, ChevronRight, ChevronDown, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { TestimonialsViewer } from "@/components/funnel/TestimonialsViewer";
+import { DateOfBirthInput } from "@/components/funnel/DateOfBirthInput";
 import PublicFooterBranding from "@/components/PublicFooterBranding";
 
 const INDIAN_STATES = [
