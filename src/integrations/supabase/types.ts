@@ -1127,6 +1127,7 @@ export type Database = {
           custom_1_value: string | null
           custom_2_value: string | null
           device_type: string | null
+          dob: string | null
           email: string | null
           honeypot_triggered: boolean | null
           id: string
@@ -1155,6 +1156,7 @@ export type Database = {
           custom_1_value?: string | null
           custom_2_value?: string | null
           device_type?: string | null
+          dob?: string | null
           email?: string | null
           honeypot_triggered?: boolean | null
           id?: string
@@ -1183,6 +1185,7 @@ export type Database = {
           custom_1_value?: string | null
           custom_2_value?: string | null
           device_type?: string | null
+          dob?: string | null
           email?: string | null
           honeypot_triggered?: boolean | null
           id?: string
@@ -1380,6 +1383,8 @@ export type Database = {
           invite_code_required: boolean | null
           linked_funnel_id: string | null
           max_submissions_per_user: number | null
+          min_age: number
+          min_age_enabled: boolean
           og_description: string | null
           og_image_url: string | null
           og_title: string | null
@@ -1446,6 +1451,8 @@ export type Database = {
           invite_code_required?: boolean | null
           linked_funnel_id?: string | null
           max_submissions_per_user?: number | null
+          min_age?: number
+          min_age_enabled?: boolean
           og_description?: string | null
           og_image_url?: string | null
           og_title?: string | null
@@ -1512,6 +1519,8 @@ export type Database = {
           invite_code_required?: boolean | null
           linked_funnel_id?: string | null
           max_submissions_per_user?: number | null
+          min_age?: number
+          min_age_enabled?: boolean
           og_description?: string | null
           og_image_url?: string | null
           og_title?: string | null
