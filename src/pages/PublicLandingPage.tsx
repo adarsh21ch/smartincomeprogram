@@ -193,7 +193,7 @@ const PublicLandingPage = () => {
     { key: "name", label: "Full Name", enabled: page.field_name_enabled, required: page.field_name_required },
     { key: "phone", label: "Phone Number", enabled: page.field_phone_enabled, required: page.field_phone_required, prefix: "+91" },
     { key: "email", label: "Email Address", enabled: page.field_email_enabled, required: page.field_email_required, type: "email" },
-    { key: "age", label: "Age", enabled: page.field_age_enabled, required: page.field_age_required },
+    { key: "age", label: "Date of Birth", enabled: page.field_age_enabled, required: page.field_age_required, fieldType: "dob" },
     { key: "city", label: "City", enabled: page.field_city_enabled, required: page.field_city_required },
     { key: "state", label: "State", enabled: page.field_state_enabled, required: page.field_state_required, fieldType: "state_dropdown" },
     { key: "occupation", label: "Occupation", enabled: page.field_occupation_enabled, required: page.field_occupation_required },
