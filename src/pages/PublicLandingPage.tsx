@@ -148,6 +148,11 @@ const PublicLandingPage = () => {
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+      // Soft business-rule rejections from server (underage, missing field, limit reached, cooldown, etc.)
+      if (data && data.success === false) {
+        toast.error(data.message || "Registration could not be completed");
+        return;
+      }
 
       localStorage.setItem(`nf_registered_${page.id}`, JSON.stringify({
         name: formData.name, email: formData.email, submittedAt: Date.now(),

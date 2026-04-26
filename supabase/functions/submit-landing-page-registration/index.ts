@@ -57,28 +57,26 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Helper: business-rule rejection (return 200 so client can read the message instead of a generic non-2xx error)
+    const reject = (reason: string, message: string, extra: Record<string, unknown> = {}) =>
+      new Response(JSON.stringify({ success: false, reason, message, ...extra }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+
     // Validate required fields
     if (page.field_email_enabled && page.field_email_required && !email) {
-      return new Response(JSON.stringify({ error: 'Email is required' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return reject('missing_email', 'Email is required')
     }
     if (page.field_name_enabled && page.field_name_required && !name) {
-      return new Response(JSON.stringify({ error: 'Name is required' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return reject('missing_name', 'Name is required')
     }
     if (page.field_phone_enabled && page.field_phone_required && !phone) {
-      return new Response(JSON.stringify({ error: 'Phone is required' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return reject('missing_phone', 'Phone is required')
     }
 
     // Email format validation
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return new Response(JSON.stringify({ error: 'Invalid email format' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return reject('invalid_email', 'Please enter a valid email address')
     }
 
     // Date of Birth handling — `age` arrives as YYYY-MM-DD when DOB field is enabled.
@@ -95,26 +93,16 @@ Deno.serve(async (req) => {
         if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) yrs--
         computedAge = yrs
       } else {
-        return new Response(JSON.stringify({ error: 'Invalid date of birth' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+        return reject('invalid_dob', 'Please enter a valid date of birth')
       }
     }
     if (page.field_age_enabled && page.field_age_required && !dobValue) {
-      return new Response(JSON.stringify({ error: 'Date of birth is required' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return reject('missing_dob', 'Date of birth is required')
     }
     if (page.min_age_enabled && dobValue && computedAge !== null) {
       const requiredAge = page.min_age ?? 18
       if (computedAge < requiredAge) {
-        return new Response(JSON.stringify({
-          success: false,
-          reason: 'underage',
-          message: `You must be ${requiredAge} or older to register.`,
-        }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+        return reject('underage', `You must be ${requiredAge} or older to register.`)
       }
     }
 
