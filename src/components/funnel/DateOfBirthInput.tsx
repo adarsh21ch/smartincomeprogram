@@ -45,15 +45,37 @@ export const DateOfBirthInput = ({ value, onChange, required, hasError, size = "
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
+  // Per-field inline validation (only flag once user has entered something)
+  const dn = parts.d ? parseInt(parts.d, 10) : NaN;
+  const mn = parts.mo ? parseInt(parts.mo, 10) : NaN;
+  const yn = parts.y ? parseInt(parts.y, 10) : NaN;
+  const currentYear = new Date().getFullYear();
+
+  const dayInvalid = parts.d.length > 0 && (isNaN(dn) || dn < 1 || dn > 31);
+  const monthInvalid = parts.mo.length > 0 && (isNaN(mn) || mn < 1 || mn > 12);
+  const yearInvalid =
+    parts.y.length === 4 && (isNaN(yn) || yn < 1900 || yn > currentYear);
+
+  // Real-calendar check (e.g. Feb 30) once all 3 fields complete
+  const allComplete = parts.d.length === 2 && parts.mo.length === 2 && parts.y.length === 4;
+  const calendarInvalid =
+    allComplete && !dayInvalid && !monthInvalid && !yearInvalid && !isValidDate(dn, mn, yn);
+
+  let errorMsg: string | null = null;
+  if (dayInvalid) errorMsg = "Please enter a valid day (1–31).";
+  else if (monthInvalid) errorMsg = "Please enter a valid month (1–12).";
+  else if (yearInvalid) errorMsg = `Please enter a valid year (1900–${currentYear}).`;
+  else if (calendarInvalid) errorMsg = "This date doesn't exist. Please check.";
+
   // Emit combined value when complete & valid; clear when incomplete
   const emit = (next: { d: string; mo: string; y: string }) => {
-    const dn = parseInt(next.d, 10);
-    const mn = parseInt(next.mo, 10);
-    const yn = parseInt(next.y, 10);
-    if (next.d.length === 2 && next.mo.length === 2 && next.y.length === 4 && isValidDate(dn, mn, yn)) {
+    const dnL = parseInt(next.d, 10);
+    const mnL = parseInt(next.mo, 10);
+    const ynL = parseInt(next.y, 10);
+    if (next.d.length === 2 && next.mo.length === 2 && next.y.length === 4 && isValidDate(dnL, mnL, ynL)) {
       onChange(`${pad(next.y, 4)}-${pad(next.mo, 2)}-${pad(next.d, 2)}`);
     } else {
-      // Clear external value while incomplete so consumers don't act on partial dates
+      // Clear external value while incomplete or invalid so consumers don't act on bad dates
       if (value) onChange("");
     }
   };
@@ -67,10 +89,17 @@ export const DateOfBirthInput = ({ value, onChange, required, hasError, size = "
     setParts(next);
     emit(next);
 
-    // Auto-advance focus when a field is filled
+    // Auto-advance focus when a field is filled AND its value is in valid range
     if (trimmed.length === max) {
-      if (key === "d") mRef.current?.focus();
-      else if (key === "mo") yRef.current?.focus();
+      const num = parseInt(trimmed, 10);
+      const inRange =
+        key === "d" ? num >= 1 && num <= 31 :
+        key === "mo" ? num >= 1 && num <= 12 :
+        num >= 1900 && num <= currentYear;
+      if (inRange) {
+        if (key === "d") mRef.current?.focus();
+        else if (key === "mo") yRef.current?.focus();
+      }
     }
   };
 
@@ -82,58 +111,71 @@ export const DateOfBirthInput = ({ value, onChange, required, hasError, size = "
   };
 
   const heightCls = size === "lg" ? "h-12" : "h-10";
-  const borderCls = hasError ? "border-red-500" : "border-[rgba(197,147,14,0.2)]";
-  const baseCls = `bg-[#181818] text-white placeholder:text-[#555] text-center ${heightCls} ${borderCls} border rounded-md focus:outline-none focus:ring-2 focus:ring-[#E8B830]/40 focus:border-[#E8B830]/60 transition`;
+  const showError = hasError || !!errorMsg;
+  const borderBase = showError ? "border-red-500" : "border-[rgba(197,147,14,0.2)]";
+  const baseCls = `bg-[#181818] text-white placeholder:text-[#555] text-center ${heightCls} border rounded-md focus:outline-none focus:ring-2 focus:ring-[#E8B830]/40 focus:border-[#E8B830]/60 transition`;
+
+  const dayBorder = dayInvalid || calendarInvalid ? "border-red-500" : borderBase;
+  const monthBorder = monthInvalid || calendarInvalid ? "border-red-500" : borderBase;
+  const yearBorder = yearInvalid || calendarInvalid ? "border-red-500" : borderBase;
 
   return (
-    <div className="flex items-center gap-2 w-full">
-      <input
-        ref={dRef}
-        type="text"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        autoComplete="bday-day"
-        placeholder="DD"
-        aria-label="Day"
-        maxLength={2}
-        value={parts.d}
-        onChange={(e) => handleChange("d", e.target.value)}
-        onKeyDown={(e) => handleKeyDown("d", e)}
-        required={required}
-        className={`${baseCls} flex-1 min-w-0`}
-      />
-      <span className="text-white/40 select-none">/</span>
-      <input
-        ref={mRef}
-        type="text"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        autoComplete="bday-month"
-        placeholder="MM"
-        aria-label="Month"
-        maxLength={2}
-        value={parts.mo}
-        onChange={(e) => handleChange("mo", e.target.value)}
-        onKeyDown={(e) => handleKeyDown("mo", e)}
-        required={required}
-        className={`${baseCls} flex-1 min-w-0`}
-      />
-      <span className="text-white/40 select-none">/</span>
-      <input
-        ref={yRef}
-        type="text"
-        inputMode="numeric"
-        pattern="[0-9]*"
-        autoComplete="bday-year"
-        placeholder="YYYY"
-        aria-label="Year"
-        maxLength={4}
-        value={parts.y}
-        onChange={(e) => handleChange("y", e.target.value)}
-        onKeyDown={(e) => handleKeyDown("y", e)}
-        required={required}
-        className={`${baseCls} flex-[1.4] min-w-0`}
-      />
+    <div className="w-full">
+      <div className="flex items-center gap-2 w-full">
+        <input
+          ref={dRef}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete="bday-day"
+          placeholder="DD"
+          aria-label="Day"
+          aria-invalid={dayInvalid || calendarInvalid}
+          maxLength={2}
+          value={parts.d}
+          onChange={(e) => handleChange("d", e.target.value)}
+          onKeyDown={(e) => handleKeyDown("d", e)}
+          required={required}
+          className={`${baseCls} ${dayBorder} flex-1 min-w-0`}
+        />
+        <span className="text-white/40 select-none">/</span>
+        <input
+          ref={mRef}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete="bday-month"
+          placeholder="MM"
+          aria-label="Month"
+          aria-invalid={monthInvalid || calendarInvalid}
+          maxLength={2}
+          value={parts.mo}
+          onChange={(e) => handleChange("mo", e.target.value)}
+          onKeyDown={(e) => handleKeyDown("mo", e)}
+          required={required}
+          className={`${baseCls} ${monthBorder} flex-1 min-w-0`}
+        />
+        <span className="text-white/40 select-none">/</span>
+        <input
+          ref={yRef}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete="bday-year"
+          placeholder="YYYY"
+          aria-label="Year"
+          aria-invalid={yearInvalid || calendarInvalid}
+          maxLength={4}
+          value={parts.y}
+          onChange={(e) => handleChange("y", e.target.value)}
+          onKeyDown={(e) => handleKeyDown("y", e)}
+          required={required}
+          className={`${baseCls} ${yearBorder} flex-[1.4] min-w-0`}
+        />
+      </div>
+      {errorMsg && (
+        <p className="mt-1.5 text-xs text-red-400" role="alert">{errorMsg}</p>
+      )}
     </div>
   );
 };
