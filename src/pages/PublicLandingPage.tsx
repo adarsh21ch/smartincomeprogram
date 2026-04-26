@@ -135,11 +135,22 @@ const PublicLandingPage = () => {
     }
     setSubmitting(true);
     try {
+      // Per-browser stable id so different browsers / incognito sessions
+      // on the same network are not treated as the same user.
+      let clientId = localStorage.getItem("nf_client_id");
+      if (!clientId) {
+        clientId = (crypto as any).randomUUID
+          ? (crypto as any).randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        localStorage.setItem("nf_client_id", clientId);
+      }
+
       const payload: any = {
         landing_page_id: page.id,
         honeypot: "",
         ...formData,
         user_agent: navigator.userAgent,
+        client_id: clientId,
       };
 
       const { data, error } = await supabase.functions.invoke("submit-landing-page-registration", {
