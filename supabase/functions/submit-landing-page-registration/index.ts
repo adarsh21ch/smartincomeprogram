@@ -248,10 +248,8 @@ Deno.serve(async (req) => {
 
     if (insertErr) throw insertErr
 
-    // Update count
-    await supabase.from('landing_pages').update({
-      total_registrations: (page.total_registrations || 0) + 1,
-    }).eq('id', landing_page_id)
+    // Note: total_registrations counter update is moved to background (below)
+    // along with the confirmation email so the user gets an instant response.
 
     // Send confirmation email via Gmail API — run in background so the
     // user gets an instant response. The email still sends; we just don't
