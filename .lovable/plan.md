@@ -1,39 +1,75 @@
 
+# Plan: Stronger Duplicate-Registration Protection + Fix Build Errors
 
-# Fix: Mute Icon Glitch + Toast Spam on Seek Block
+## Part 1 — Answer to your question (no code, just clarity)
 
-## Bug 1 — Muted icon / "Tap to unmute" shows even when video has audio
+**The "already registered" message you saw is NOT a bug.** It's the system correctly remembering that your normal browser already submitted once. Incognito = fresh browser ID = treated as new user. So registration itself works perfectly.
 
-**Root cause**: `isMuted` state is initialized to `autoPlayMuted` (line 58). When `autoPlayMuted` is true, the video starts muted. But when the browser actually plays with sound (or the user unmutes), the `volumechange` listener should sync. However, the `UnmutePill` visibility check is `isMuted && isPlaying` — if the browser autoplays with sound but `isMuted` state was never updated (race condition where `volumechange` fires before the listener is attached), the pill stays visible incorrectly.
+**Safety comparison:**
 
-**Fix**:
-- In the `loadedmetadata` handler, after attempting autoplay, explicitly sync `isMuted` from `video.muted` (read actual state from the element).
-- Also sync on the `playing` event — set `setIsMuted(video.muted)` so whenever the video actually starts playing, the icon reflects reality.
+| Approach | Stops same person? | Blocks innocent users? |
+|---|---|---|
+| Old (IP + UA) | Weak — same person on diff WiFi gets through | ❌ Blocks family/office on shared WiFi |
+| Current (client_id only) | Weak — incognito / cleared cookies bypass | ✅ Doesn't block innocents |
+| **Hybrid (proposed)** | **Strong — email/phone always identifies them** | ✅ Doesn't block innocents |
 
-## Bug 2 — "Forward seeking is disabled" toast fires 5-6 times at once
-
-**Root cause**: The current debounce logic (lines 68-72) doesn't actually prevent duplicate toasts — it clears a timeout but fires `toast()` every time. On mobile touch, the `seeking` event fires rapidly (multiple times per gesture), and each one calls `showSeekDisabledToast()` which fires a new toast each time.
-
-**Fix**:
-- Add a proper cooldown: track the last toast timestamp in a ref, and only show a new toast if at least 3 seconds have passed since the last one.
-- Use `toast.dismiss()` + single `toast()` pattern, or simply gate on timestamp.
-
-## Bug 3 — Toast message too technical
-
-**Current**: "Forward seeking is disabled"
-**New**: "You can't skip ahead in this video" — simple, human language.
+→ **Hybrid is the safest and most production-ready.**
 
 ---
 
-## Changes (single file: `VideoPlayer.tsx`)
+## Part 2 — What I'll change
 
-1. **`showSeekDisabledToast`** — replace with timestamp-based cooldown (3s) and change message to "You can't skip ahead in this video".
+### A. Strengthen duplicate detection in `submit-landing-page-registration` edge function
 
-2. **`handleLoaded` / autoplay block** — after `video.play()` resolves, explicitly call `setIsMuted(video.muted)` to sync real state.
+Block a new submission if **ANY** of these match a prior registration for the same landing page:
 
-3. **`handlePlaying` callback** — add `setIsMuted(video.muted)` so every time the video enters playing state, the mute icon reflects the actual audio state.
+1. **Same email** (case-insensitive, trimmed) — strongest signal
+2. **Same phone** (digits-only normalized) — if phone field is enabled
+3. **Same `client_id` fingerprint** — catches same browser even without email match
 
-4. **`seekToPosition`** and **`onSeekingEvent`** — both call the debounced toast function (already do), but the debounce will now actually work with the cooldown.
+Logic:
+- Run 3 parallel checks against `landing_page_registrations` for the given `landing_page_id`
+- If any match exists AND `max_submissions_per_user` is reached, return the friendly `limit_reached` message (200 OK, `success:false`) — same UX you have today
+- Cooldown logic stays the same but now keyed on whichever match was found
 
-No database, edge function, or other file changes needed.
+This means:
+- ✅ Family on same WiFi with different emails → all can register
+- ✅ Same person trying incognito with same email → blocked
+- ✅ Same person clearing cookies + new browser, same phone → blocked
+- ⚠️ Only bypass = use a completely new email AND phone (acceptable friction; this is industry standard)
 
+### B. Frontend toast clarity (`PublicLandingPage.tsx`)
+
+The current "You have already registered for this session" message is good. I'll keep it but make sure it shows clearly when duplicate is detected by email/phone too (not just by client_id).
+
+### C. Fix the build errors in `supabase/functions/process-email-queue/index.ts`
+
+These are TypeScript strict-typing errors from the Supabase SDK (unrelated to DOB work, but blocking deploys). Two small fixes:
+
+1. **Line 81** — `supabase.from('email_send_log').insert(...)` needs the payload typed as `any` (the table isn't in the generated types for edge functions).
+2. **Line 88** — `supabase.rpc('move_to_dlq', {...})` needs `as any` cast on the args object (custom RPC not in generated types).
+3. **Lines 210, 216, 276** — `moveToDlq(supabase, ...)` — the `supabase` parameter type signature in the helper is too strict; widen it to `any` or `SupabaseClient<any, any, any>`.
+
+These are pure type-cast fixes — no runtime behavior changes.
+
+---
+
+## Files to edit
+
+1. `supabase/functions/submit-landing-page-registration/index.ts` — hybrid duplicate check
+2. `supabase/functions/process-email-queue/index.ts` — fix 5 TS errors (type casts only)
+3. `src/pages/PublicLandingPage.tsx` — minor: ensure toast shows server's specific reason for email/phone duplicates
+
+## What stays the same
+
+- DOB validation, age gating, calendar checks — untouched
+- Honeypot, rate limiting (10/hr per IP), confirmation email — untouched
+- `max_submissions_per_user` and `submission_cooldown_hours` settings — untouched, just better enforced
+
+## Verification after deploy
+
+- Submit with email A in normal browser → success
+- Submit again same browser → blocked ("already registered") ✅
+- Open incognito, submit with **same email A** → blocked (NEW behavior) ✅
+- Open incognito, submit with **different email B** → success ✅
+- Build passes (no more TS errors in edge functions) ✅
