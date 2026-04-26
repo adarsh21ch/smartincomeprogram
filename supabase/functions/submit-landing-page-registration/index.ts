@@ -4,9 +4,14 @@ const corsHeaders = {
 };
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const generateFingerprint = async (ip: string, userAgent: string): Promise<string> => {
+const generateFingerprint = async (ip: string, userAgent: string, clientId: string): Promise<string> => {
   const normalized = userAgent.replace(/\d+\.\d+\.\d+/g, '').toLowerCase().trim();
-  const combined = `${ip}::${normalized}`;
+  // When a per-browser client_id is present, use it as the primary
+  // dedupe key so different browsers / incognito sessions on the same
+  // IP are treated as distinct users.
+  const combined = clientId
+    ? `cid::${clientId}`
+    : `${ip}::${normalized}`;
   const data = new TextEncoder().encode(combined);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
@@ -27,7 +32,7 @@ Deno.serve(async (req) => {
     const body = await req.json()
     const {
       landing_page_id, name, phone, email, age, city, state,
-      occupation, custom_1_value, custom_2_value, honeypot, user_agent,
+      occupation, custom_1_value, custom_2_value, honeypot, user_agent, client_id,
     } = body
 
     // Honeypot check — fake success
@@ -126,7 +131,7 @@ Deno.serve(async (req) => {
     // Submission limit enforcement
     const maxSubmissions = page.max_submissions_per_user ?? 1;
     const cooldownHours = page.submission_cooldown_hours ?? 0;
-    const userFingerprint = await generateFingerprint(ip, user_agent || '');
+    const userFingerprint = await generateFingerprint(ip, user_agent || '', client_id || '');
 
     const { data: existingSubmissions } = await supabase
       .from('landing_page_registrations')
