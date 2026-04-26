@@ -93,26 +93,16 @@ Deno.serve(async (req) => {
         if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) yrs--
         computedAge = yrs
       } else {
-        return new Response(JSON.stringify({ error: 'Invalid date of birth' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+        return reject('invalid_dob', 'Please enter a valid date of birth')
       }
     }
     if (page.field_age_enabled && page.field_age_required && !dobValue) {
-      return new Response(JSON.stringify({ error: 'Date of birth is required' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return reject('missing_dob', 'Date of birth is required')
     }
     if (page.min_age_enabled && dobValue && computedAge !== null) {
       const requiredAge = page.min_age ?? 18
       if (computedAge < requiredAge) {
-        return new Response(JSON.stringify({
-          success: false,
-          reason: 'underage',
-          message: `You must be ${requiredAge} or older to register.`,
-        }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+        return reject('underage', `You must be ${requiredAge} or older to register.`)
       }
     }
 
