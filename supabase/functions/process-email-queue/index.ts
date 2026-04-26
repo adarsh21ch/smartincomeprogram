@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
     )
   }
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  const supabase: any = createClient(supabaseUrl, supabaseServiceKey)
 
   const { data: state } = await supabase
     .from('email_send_state')
