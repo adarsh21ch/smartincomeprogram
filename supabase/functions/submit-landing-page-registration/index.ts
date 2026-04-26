@@ -57,28 +57,26 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Helper: business-rule rejection (return 200 so client can read the message instead of a generic non-2xx error)
+    const reject = (reason: string, message: string, extra: Record<string, unknown> = {}) =>
+      new Response(JSON.stringify({ success: false, reason, message, ...extra }), {
+        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+
     // Validate required fields
     if (page.field_email_enabled && page.field_email_required && !email) {
-      return new Response(JSON.stringify({ error: 'Email is required' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return reject('missing_email', 'Email is required')
     }
     if (page.field_name_enabled && page.field_name_required && !name) {
-      return new Response(JSON.stringify({ error: 'Name is required' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return reject('missing_name', 'Name is required')
     }
     if (page.field_phone_enabled && page.field_phone_required && !phone) {
-      return new Response(JSON.stringify({ error: 'Phone is required' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return reject('missing_phone', 'Phone is required')
     }
 
     // Email format validation
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return new Response(JSON.stringify({ error: 'Invalid email format' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return reject('invalid_email', 'Please enter a valid email address')
     }
 
     // Date of Birth handling — `age` arrives as YYYY-MM-DD when DOB field is enabled.
