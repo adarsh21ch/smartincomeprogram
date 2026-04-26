@@ -4,9 +4,14 @@ const corsHeaders = {
 };
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const generateFingerprint = async (ip: string, userAgent: string): Promise<string> => {
+const generateFingerprint = async (ip: string, userAgent: string, clientId: string): Promise<string> => {
   const normalized = userAgent.replace(/\d+\.\d+\.\d+/g, '').toLowerCase().trim();
-  const combined = `${ip}::${normalized}`;
+  // When a per-browser client_id is present, use it as the primary
+  // dedupe key so different browsers / incognito sessions on the same
+  // IP are treated as distinct users.
+  const combined = clientId
+    ? `cid::${clientId}`
+    : `${ip}::${normalized}`;
   const data = new TextEncoder().encode(combined);
   const hashBuffer = await crypto.subtle.digest('SHA-256', data);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
