@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
     // Submission limit enforcement
     const maxSubmissions = page.max_submissions_per_user ?? 1;
     const cooldownHours = page.submission_cooldown_hours ?? 0;
-    const userFingerprint = await generateFingerprint(ip, user_agent || '');
+    const userFingerprint = await generateFingerprint(ip, user_agent || '', client_id || '');
 
     const { data: existingSubmissions } = await supabase
       .from('landing_page_registrations')
