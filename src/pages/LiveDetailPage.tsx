@@ -77,7 +77,7 @@ const LiveDetailPage = () => {
 
   const updateMutation = useMutation({
     mutationFn: async (updates: Record<string, any>) => {
-      const { error } = await supabase.from("live_sessions").update(updates).eq("id", id!);
+      const { error } = await supabase.from("live_sessions").update(updates as any).eq("id", id!);
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["live-session", id] }),
