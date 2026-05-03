@@ -87,7 +87,7 @@ const LiveDetailPage = () => {
     return <DashboardLayout><div className="py-20 text-center text-sm text-muted-foreground">Loading…</div></DashboardLayout>;
   }
 
-  const slots: Date[] = (session.scheduled_times ?? []).map((t: string) => new Date(t)).sort((a: Date, b: Date) => a.getTime() - b.getTime());
+  const slots: Date[] = (Array.isArray(session.scheduled_times) ? session.scheduled_times : []).map((t: any) => new Date(t)).sort((a: Date, b: Date) => a.getTime() - b.getTime());
   const now = Date.now();
   const upcoming = slots.find((d) => d.getTime() > now);
   const lastPlayed = [...slots].reverse().find((d) => d.getTime() <= now);
