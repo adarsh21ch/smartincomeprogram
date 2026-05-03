@@ -102,7 +102,7 @@ const LivePage = () => {
 
   const shareWhatsApp = (s: any) => {
     const url = `${window.location.origin}/s/${s.slug}`;
-    const slots = (s.scheduled_times ?? []).map((t: string) => new Date(t)).sort((a: Date, b: Date) => a.getTime() - b.getTime());
+    const slots = (Array.isArray(s.scheduled_times) ? s.scheduled_times : []).map((t: any) => new Date(t)).sort((a: Date, b: Date) => a.getTime() - b.getTime());
     const next = slots.find((d: Date) => d.getTime() > Date.now()) ?? slots[0];
     const time = next ? format(next, "MMM d, h:mm a") : "soon";
     const msg = encodeURIComponent(`Join ${s.title} — live at ${time}. Click here: ${url}`);
