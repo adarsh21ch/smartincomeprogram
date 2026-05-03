@@ -239,6 +239,9 @@ export const LiveSessionWizard = ({ open, onClose, editing }: Props) => {
         registration_required: s.registrationRequired,
         registration_fields: s.regFields,
         max_attendees: s.maxAttendees,
+        send_confirmation_email: s.sendConfirmationEmail,
+        send_reminder_email: s.sendReminderEmail,
+        reminder_minutes_before: s.reminderMinutesBefore,
         status: isEdit ? editing?.status : (s.isPublished ? "scheduled" : "draft"),
       };
 
