@@ -1628,6 +1628,88 @@ export type Database = {
           },
         ]
       }
+      live_session_analytics: {
+        Row: {
+          created_at: string
+          id: string
+          peak_concurrent: number
+          session_id: string
+          session_slot: string | null
+          total_watch_seconds: number
+          unique_viewers: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          peak_concurrent?: number
+          session_id: string
+          session_slot?: string | null
+          total_watch_seconds?: number
+          unique_viewers?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          peak_concurrent?: number
+          session_id?: string
+          session_slot?: string | null
+          total_watch_seconds?: number
+          unique_viewers?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_session_analytics_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      live_session_registrations: {
+        Row: {
+          email: string | null
+          id: string
+          joined_at: string | null
+          name: string | null
+          phone: string | null
+          registered_at: string
+          reminder_sent_at: string | null
+          session_id: string
+          watched_duration_seconds: number
+        }
+        Insert: {
+          email?: string | null
+          id?: string
+          joined_at?: string | null
+          name?: string | null
+          phone?: string | null
+          registered_at?: string
+          reminder_sent_at?: string | null
+          session_id: string
+          watched_duration_seconds?: number
+        }
+        Update: {
+          email?: string | null
+          id?: string
+          joined_at?: string | null
+          name?: string | null
+          phone?: string | null
+          registered_at?: string
+          reminder_sent_at?: string | null
+          session_id?: string
+          watched_duration_seconds?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_session_registrations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_sessions: {
         Row: {
           access_type: string
@@ -1636,19 +1718,33 @@ export type Database = {
           created_at: string | null
           description: string | null
           duration_minutes: number | null
+          funnel_id: string | null
           id: string
+          is_published: boolean
           lead_form_enabled: boolean | null
           max_attendees: number | null
           meeting_url: string | null
           owner_id: string
           payment_amount: number | null
           payment_instructions: string | null
+          peak_concurrent: number
           qr_code_url: string | null
+          registered_count: number
           registration_count: number | null
+          registration_fields: Json
+          registration_required: boolean
+          reminder_sent: boolean
+          repeat_end_date: string | null
+          repeat_interval_hours: number | null
+          repeat_type: string
+          replay_delay_minutes: number
           replay_enabled: boolean | null
           replay_expires_at: string | null
+          replay_expires_hours: number | null
+          replay_per_slot: boolean
           replay_url: string | null
           scheduled_at: string | null
+          scheduled_times: Json
           session_type: string
           show_city: boolean | null
           show_email: boolean | null
@@ -1657,9 +1753,13 @@ export type Database = {
           slug: string
           status: string
           thumbnail_url: string | null
+          timezone: string
           title: string
+          total_views: number
           updated_at: string | null
           upi_id: string | null
+          video_asset_id: string | null
+          video_duration_seconds: number | null
         }
         Insert: {
           access_type?: string
@@ -1668,19 +1768,33 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           duration_minutes?: number | null
+          funnel_id?: string | null
           id?: string
+          is_published?: boolean
           lead_form_enabled?: boolean | null
           max_attendees?: number | null
           meeting_url?: string | null
           owner_id: string
           payment_amount?: number | null
           payment_instructions?: string | null
+          peak_concurrent?: number
           qr_code_url?: string | null
+          registered_count?: number
           registration_count?: number | null
+          registration_fields?: Json
+          registration_required?: boolean
+          reminder_sent?: boolean
+          repeat_end_date?: string | null
+          repeat_interval_hours?: number | null
+          repeat_type?: string
+          replay_delay_minutes?: number
           replay_enabled?: boolean | null
           replay_expires_at?: string | null
+          replay_expires_hours?: number | null
+          replay_per_slot?: boolean
           replay_url?: string | null
           scheduled_at?: string | null
+          scheduled_times?: Json
           session_type?: string
           show_city?: boolean | null
           show_email?: boolean | null
@@ -1689,9 +1803,13 @@ export type Database = {
           slug: string
           status?: string
           thumbnail_url?: string | null
+          timezone?: string
           title: string
+          total_views?: number
           updated_at?: string | null
           upi_id?: string | null
+          video_asset_id?: string | null
+          video_duration_seconds?: number | null
         }
         Update: {
           access_type?: string
@@ -1700,19 +1818,33 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           duration_minutes?: number | null
+          funnel_id?: string | null
           id?: string
+          is_published?: boolean
           lead_form_enabled?: boolean | null
           max_attendees?: number | null
           meeting_url?: string | null
           owner_id?: string
           payment_amount?: number | null
           payment_instructions?: string | null
+          peak_concurrent?: number
           qr_code_url?: string | null
+          registered_count?: number
           registration_count?: number | null
+          registration_fields?: Json
+          registration_required?: boolean
+          reminder_sent?: boolean
+          repeat_end_date?: string | null
+          repeat_interval_hours?: number | null
+          repeat_type?: string
+          replay_delay_minutes?: number
           replay_enabled?: boolean | null
           replay_expires_at?: string | null
+          replay_expires_hours?: number | null
+          replay_per_slot?: boolean
           replay_url?: string | null
           scheduled_at?: string | null
+          scheduled_times?: Json
           session_type?: string
           show_city?: boolean | null
           show_email?: boolean | null
@@ -1721,16 +1853,34 @@ export type Database = {
           slug?: string
           status?: string
           thumbnail_url?: string | null
+          timezone?: string
           title?: string
+          total_views?: number
           updated_at?: string | null
           upi_id?: string | null
+          video_asset_id?: string | null
+          video_duration_seconds?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "live_sessions_funnel_id_fkey"
+            columns: ["funnel_id"]
+            isOneToOne: false
+            referencedRelation: "funnels"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "live_sessions_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "live_sessions_video_asset_id_fkey"
+            columns: ["video_asset_id"]
+            isOneToOne: false
+            referencedRelation: "video_assets"
             referencedColumns: ["id"]
           },
         ]
