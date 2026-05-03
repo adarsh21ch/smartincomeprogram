@@ -176,18 +176,22 @@ const PublicLivePage = () => {
       if (fields.email && !regForm.email.trim()) return toast.error("Email is required");
       if (fields.phone && !regForm.phone.trim()) return toast.error("Phone is required");
       setSubmitting(true);
-      const { error } = await supabase.from("live_session_registrations").insert({
+      const { data: insRow, error } = await supabase.from("live_session_registrations").insert({
         session_id: sessionId!,
         name: regForm.name || null,
         email: regForm.email || null,
         phone: regForm.phone || null,
-      });
+      }).select("id").single();
       setSubmitting(false);
       if (error) { toast.error("Registration failed"); return; }
       localStorage.setItem(`lsr-registered-${sessionId}`, "1");
-      // bump count (best effort)
-      supabase.rpc("noop" as any).then(() => {});
-      toast.success("You're registered!");
+      // fire-and-forget confirmation email
+      if (insRow?.id && regForm.email) {
+        supabase.functions.invoke("send-live-session-email", {
+          body: { registration_id: insRow.id, type: "confirmation" },
+        }).catch(() => {});
+      }
+      toast.success("You're registered! Check your inbox.");
       setNeedsReg(false);
       fetchState();
     };

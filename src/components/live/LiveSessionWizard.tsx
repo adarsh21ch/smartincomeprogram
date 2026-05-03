@@ -133,6 +133,9 @@ interface WizardState {
   registrationRequired: boolean;
   regFields: { name: boolean; phone: boolean; email: boolean };
   maxAttendees: number | null;
+  sendConfirmationEmail: boolean;
+  sendReminderEmail: boolean;
+  reminderMinutesBefore: number;
 }
 
 const initialState = (editing?: SessionRow | null): WizardState => {
@@ -173,6 +176,9 @@ const initialState = (editing?: SessionRow | null): WizardState => {
       email: editing?.registration_fields?.email ?? true,
     },
     maxAttendees: editing?.max_attendees ?? null,
+    sendConfirmationEmail: (editing as any)?.send_confirmation_email ?? true,
+    sendReminderEmail: (editing as any)?.send_reminder_email ?? true,
+    reminderMinutesBefore: (editing as any)?.reminder_minutes_before ?? 15,
   };
 };
 
@@ -233,6 +239,9 @@ export const LiveSessionWizard = ({ open, onClose, editing }: Props) => {
         registration_required: s.registrationRequired,
         registration_fields: s.regFields,
         max_attendees: s.maxAttendees,
+        send_confirmation_email: s.sendConfirmationEmail,
+        send_reminder_email: s.sendReminderEmail,
+        reminder_minutes_before: s.reminderMinutesBefore,
         status: isEdit ? editing?.status : (s.isPublished ? "scheduled" : "draft"),
       };
 
@@ -654,6 +663,31 @@ export const LiveSessionWizard = ({ open, onClose, editing }: Props) => {
                 <Label className="text-xs">Max viewers per session (optional)</Label>
                 <Input type="number" value={s.maxAttendees ?? ""} onChange={(e) => upd("maxAttendees", e.target.value ? parseInt(e.target.value) : null)} placeholder="Unlimited" className="mt-1" />
               </div>
+            </Card>
+
+            {/* Email reminders */}
+            <Card className="p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm font-semibold">Send confirmation email</Label>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Sent immediately after a viewer registers</p>
+                </div>
+                <Switch checked={s.sendConfirmationEmail} onCheckedChange={(v) => upd("sendConfirmationEmail", v)} />
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-border">
+                <div>
+                  <Label className="text-sm font-semibold">Send reminder before each slot</Label>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Auto-emails registrants before the session starts</p>
+                </div>
+                <Switch checked={s.sendReminderEmail} onCheckedChange={(v) => upd("sendReminderEmail", v)} />
+              </div>
+              {s.sendReminderEmail && (
+                <div>
+                  <Label className="text-xs">Reminder lead time (minutes before)</Label>
+                  <Input type="number" min={5} max={120} value={s.reminderMinutesBefore} onChange={(e) => upd("reminderMinutesBefore", parseInt(e.target.value) || 15)} className="mt-1" />
+                </div>
+              )}
+              <p className="text-[11px] text-muted-foreground">Emails are sent only when registration is enabled and the viewer provided an email.</p>
             </Card>
           </div>
         )}

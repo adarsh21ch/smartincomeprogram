@@ -1668,6 +1668,7 @@ export type Database = {
       }
       live_session_registrations: {
         Row: {
+          confirmation_sent_at: string | null
           email: string | null
           id: string
           joined_at: string | null
@@ -1675,10 +1676,12 @@ export type Database = {
           phone: string | null
           registered_at: string
           reminder_sent_at: string | null
+          reminder_slot: string | null
           session_id: string
           watched_duration_seconds: number
         }
         Insert: {
+          confirmation_sent_at?: string | null
           email?: string | null
           id?: string
           joined_at?: string | null
@@ -1686,10 +1689,12 @@ export type Database = {
           phone?: string | null
           registered_at?: string
           reminder_sent_at?: string | null
+          reminder_slot?: string | null
           session_id: string
           watched_duration_seconds?: number
         }
         Update: {
+          confirmation_sent_at?: string | null
           email?: string | null
           id?: string
           joined_at?: string | null
@@ -1697,6 +1702,7 @@ export type Database = {
           phone?: string | null
           registered_at?: string
           reminder_sent_at?: string | null
+          reminder_slot?: string | null
           session_id?: string
           watched_duration_seconds?: number
         }
@@ -1718,6 +1724,8 @@ export type Database = {
           created_at: string | null
           description: string | null
           duration_minutes: number | null
+          email_body: string | null
+          email_subject: string | null
           funnel_id: string | null
           id: string
           is_published: boolean
@@ -1733,6 +1741,7 @@ export type Database = {
           registration_count: number | null
           registration_fields: Json
           registration_required: boolean
+          reminder_minutes_before: number
           reminder_sent: boolean
           repeat_end_date: string | null
           repeat_interval_hours: number | null
@@ -1745,6 +1754,8 @@ export type Database = {
           replay_url: string | null
           scheduled_at: string | null
           scheduled_times: Json
+          send_confirmation_email: boolean
+          send_reminder_email: boolean
           session_type: string
           show_city: boolean | null
           show_email: boolean | null
@@ -1768,6 +1779,8 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           duration_minutes?: number | null
+          email_body?: string | null
+          email_subject?: string | null
           funnel_id?: string | null
           id?: string
           is_published?: boolean
@@ -1783,6 +1796,7 @@ export type Database = {
           registration_count?: number | null
           registration_fields?: Json
           registration_required?: boolean
+          reminder_minutes_before?: number
           reminder_sent?: boolean
           repeat_end_date?: string | null
           repeat_interval_hours?: number | null
@@ -1795,6 +1809,8 @@ export type Database = {
           replay_url?: string | null
           scheduled_at?: string | null
           scheduled_times?: Json
+          send_confirmation_email?: boolean
+          send_reminder_email?: boolean
           session_type?: string
           show_city?: boolean | null
           show_email?: boolean | null
@@ -1818,6 +1834,8 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           duration_minutes?: number | null
+          email_body?: string | null
+          email_subject?: string | null
           funnel_id?: string | null
           id?: string
           is_published?: boolean
@@ -1833,6 +1851,7 @@ export type Database = {
           registration_count?: number | null
           registration_fields?: Json
           registration_required?: boolean
+          reminder_minutes_before?: number
           reminder_sent?: boolean
           repeat_end_date?: string | null
           repeat_interval_hours?: number | null
@@ -1845,6 +1864,8 @@ export type Database = {
           replay_url?: string | null
           scheduled_at?: string | null
           scheduled_times?: Json
+          send_confirmation_email?: boolean
+          send_reminder_email?: boolean
           session_type?: string
           show_city?: boolean | null
           show_email?: boolean | null
