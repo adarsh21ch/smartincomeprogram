@@ -39,7 +39,7 @@ const StatusBadge = ({ status }: { status: string }) => {
 };
 
 const nextSlotLabel = (s: any): string => {
-  const slots = (s.scheduled_times ?? []).map((t: string) => new Date(t)).sort((a: Date, b: Date) => a.getTime() - b.getTime());
+  const slots = (Array.isArray(s.scheduled_times) ? s.scheduled_times : []).map((t: any) => new Date(t)).sort((a: Date, b: Date) => a.getTime() - b.getTime());
   const now = Date.now();
   if (s.status === "live") return "● Currently live";
   const upcoming = slots.find((d: Date) => d.getTime() > now);
